@@ -1,7 +1,9 @@
 'use client'
 
 import { useEffect, useState } from 'react'
+import Link from 'next/link'
 import type { GlobalWebhook, NotificationEvent, SmtpConfig } from '@launchpad/shared'
+import { ArrowRight, BookOpen } from 'lucide-react'
 import { toast } from 'sonner'
 import { Button } from '@/components/ui/Button'
 import { Input } from '@/components/ui/Input'
@@ -142,6 +144,27 @@ export default function SettingsPage() {
         <p className="mt-2 text-sm text-[var(--text-muted)]">
           Configure SMTP delivery and global outbound webhooks for deploy notifications.
         </p>
+      </section>
+
+      <section className="rounded-[22px] border border-[var(--border)] bg-[var(--surface)] p-6">
+        <div className="flex flex-wrap items-center justify-between gap-4">
+          <div>
+            <div className="flex items-center gap-3 text-[var(--text)]">
+              <BookOpen size={18} className="text-[var(--yellow)]" />
+              <h2 className="text-lg font-semibold">Need setup guidance?</h2>
+            </div>
+            <p className="mt-2 text-sm text-[var(--text-muted)]">
+              The help page explains Launchpad&apos;s trust model, project types, first-server checklist, and recommended operator workflow.
+            </p>
+          </div>
+          <Link
+            href="/help"
+            className="inline-flex items-center gap-2 rounded-[16px] border border-[var(--border)] px-4 py-2 text-sm text-[var(--text)] transition-colors hover:bg-[var(--surface-2)]"
+          >
+            Open help
+            <ArrowRight size={16} />
+          </Link>
+        </div>
       </section>
 
       <section className="rounded-2xl border border-[var(--border)] bg-[var(--surface)] p-6">

@@ -21,10 +21,10 @@ export function ServerCard({ server, status, resources, onTest, testing }: Serve
   const [showSshKey, setShowSshKey] = useState(false)
 
   return (
-    <article className="rounded-xl border border-[var(--border)] bg-[var(--surface)] p-5">
+    <article className="rounded-[22px] border border-[var(--border)] bg-[linear-gradient(180deg,rgba(16,25,24,0.96),rgba(23,35,34,0.92))] p-5 shadow-[var(--shadow)]">
       <div className="flex items-start justify-between gap-4">
         <div>
-          <h2 className="text-base font-semibold text-[var(--text)]">{server.name}</h2>
+          <h2 className="text-lg font-semibold text-[var(--text)]">{server.name}</h2>
           <p className="mt-1 text-sm text-[var(--text-muted)]">
             <SensitiveText value={`${server.user}@${server.host}:${server.port}`} />
           </p>
@@ -33,7 +33,7 @@ export function ServerCard({ server, status, resources, onTest, testing }: Serve
       </div>
 
       <div className="mt-5 grid gap-3 md:grid-cols-2 xl:grid-cols-3">
-        <div className="border border-[var(--border)] bg-[var(--surface-2)] px-3 py-3">
+        <div className="rounded-[18px] border border-[var(--border)] bg-[var(--surface-2)] px-3 py-3">
           <div className="flex items-center gap-2 text-xs uppercase tracking-[0.18em] text-[var(--text-muted)]">
             <FolderGit2 size={13} />
             Projects
@@ -43,7 +43,7 @@ export function ServerCard({ server, status, resources, onTest, testing }: Serve
           </div>
         </div>
 
-        <div className="border border-[var(--border)] bg-[var(--surface-2)] px-3 py-3">
+        <div className="rounded-[18px] border border-[var(--border)] bg-[var(--surface-2)] px-3 py-3">
           <div className="flex items-center justify-between gap-3">
             <div className="flex items-center gap-2 text-xs uppercase tracking-[0.18em] text-[var(--text-muted)]">
               <PlugZap size={13} />
@@ -63,7 +63,7 @@ export function ServerCard({ server, status, resources, onTest, testing }: Serve
           </div>
         </div>
 
-        <div className="border border-[var(--border)] bg-[var(--surface-2)] px-3 py-3">
+        <div className="rounded-[18px] border border-[var(--border)] bg-[var(--surface-2)] px-3 py-3">
           <div className="flex items-center gap-2 text-xs uppercase tracking-[0.18em] text-[var(--text-muted)]">
             <Cpu size={13} />
             CPU
@@ -73,7 +73,7 @@ export function ServerCard({ server, status, resources, onTest, testing }: Serve
           </div>
         </div>
 
-        <div className="border border-[var(--border)] bg-[var(--surface-2)] px-3 py-3">
+        <div className="rounded-[18px] border border-[var(--border)] bg-[var(--surface-2)] px-3 py-3">
           <div className="flex items-center gap-2 text-xs uppercase tracking-[0.18em] text-[var(--text-muted)]">
             <Activity size={13} />
             RAM
@@ -83,7 +83,7 @@ export function ServerCard({ server, status, resources, onTest, testing }: Serve
           </div>
         </div>
 
-        <div className="border border-[var(--border)] bg-[var(--surface-2)] px-3 py-3">
+        <div className="rounded-[18px] border border-[var(--border)] bg-[var(--surface-2)] px-3 py-3">
           <div className="flex items-center gap-2 text-xs uppercase tracking-[0.18em] text-[var(--text-muted)]">
             <HardDrive size={13} />
             Disk
@@ -93,7 +93,7 @@ export function ServerCard({ server, status, resources, onTest, testing }: Serve
           </div>
         </div>
 
-        <div className="border border-[var(--border)] bg-[var(--surface-2)] px-3 py-3">
+        <div className="rounded-[18px] border border-[var(--border)] bg-[var(--surface-2)] px-3 py-3">
           <div className="flex items-center gap-2 text-xs uppercase tracking-[0.18em] text-[var(--text-muted)]">
             <TimerReset size={13} />
             Uptime
@@ -126,7 +126,7 @@ export function ServerCard({ server, status, resources, onTest, testing }: Serve
         </Button>
         <Link
           href={`/servers/${server.id}`}
-          className="inline-flex h-8 items-center gap-2 rounded border border-[var(--border)] px-3 text-xs font-medium text-[var(--text)] transition-colors hover:bg-[var(--surface-2)]"
+          className="inline-flex h-8 items-center gap-2 rounded-[14px] border border-[var(--border)] px-3 text-xs font-medium text-[var(--text)] transition-colors hover:bg-[var(--surface-2)]"
         >
           Open
           <ArrowRight size={14} />

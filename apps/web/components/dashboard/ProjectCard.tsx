@@ -14,7 +14,7 @@ interface ProjectCardProps {
 
 export function ProjectCard({ project }: ProjectCardProps) {
   return (
-    <article className="rounded-xl border border-[var(--border)] bg-[var(--surface)] p-4">
+    <article className="rounded-[22px] border border-[var(--border)] bg-[linear-gradient(180deg,rgba(16,25,24,0.96),rgba(23,35,34,0.92))] p-4 shadow-[var(--shadow)]">
       <div className="flex items-start justify-between gap-4">
         <div>
           <h3 className="text-sm font-semibold text-[var(--text)]">{project.name}</h3>
@@ -51,7 +51,7 @@ export function ProjectCard({ project }: ProjectCardProps) {
         </span>
       </div>
 
-      <div className="mt-4 rounded-lg border border-[var(--border)] bg-[var(--surface-2)] px-3 py-2 text-xs text-[var(--text-muted)]">
+      <div className="mt-4 rounded-[16px] border border-[var(--border)] bg-[var(--surface-2)] px-3 py-2 text-xs text-[var(--text-muted)]">
         {project.lastDeploy
           ? `Last deploy ${project.lastDeploy.status} ${formatRelative(project.lastDeploy.triggeredAt)}`
           : 'No deploy has finished for this project yet.'}
