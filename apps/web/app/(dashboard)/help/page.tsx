@@ -191,6 +191,15 @@ export default function HelpPage() {
         </div>
       </section>
 
+      <section className="rounded-[24px] border border-[var(--border)] bg-[var(--surface)] p-6">
+        <h2 className="text-2xl font-semibold text-[var(--text)]">Demo mode</h2>
+        <p className="mt-3 max-w-3xl text-sm leading-7 text-[var(--text-muted)]">
+          Use seeded demo mode from settings when you want believable screenshots without exposing real servers. It swaps the
+          main dashboards to safe sample infrastructure, sample deploy history, sample logs, and sample telemetry while keeping
+          the product model intact for walkthroughs.
+        </p>
+      </section>
+
       <section className="grid gap-6 xl:grid-cols-[0.95fr_1.05fr]">
         <div className="rounded-[24px] border border-[var(--border)] bg-[var(--surface)] p-6">
           <h2 className="text-2xl font-semibold text-[var(--text)]">Quick start checklist</h2>

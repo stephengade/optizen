@@ -2,11 +2,15 @@
 
 import { useEffect, useMemo, useState } from 'react'
 import type { Project, Server } from '@launchpad/shared'
+import { Layers3, Radar, Server as ServerIcon } from 'lucide-react'
 import { toast } from 'sonner'
 import { ProjectClassificationBadge } from '@/components/dashboard/ProjectClassificationBadge'
 import { Button } from '@/components/ui/Button'
+import { Modal } from '@/components/ui/Modal'
 import { SensitiveText } from '@/components/ui/SensitiveText'
 import { api, ApiError } from '@/lib/api'
+import { demoProjects, demoServers } from '@/lib/demo-fixtures'
+import { useDemoPrivacy } from '@/lib/demo-privacy-context'
 
 type ServerSummary = Server & { projectCount?: number }
 
@@ -45,6 +49,7 @@ interface ScanResult extends DiscoveredApp {
 }
 
 export default function ScanPage() {
+  const { demoMode } = useDemoPrivacy()
   const [servers, setServers] = useState<ServerSummary[]>([])
   const [results, setResults] = useState<ScanResult[]>([])
   const [loading, setLoading] = useState(true)
@@ -55,6 +60,11 @@ export default function ScanPage() {
 
   useEffect(() => {
     async function loadServers() {
+      if (demoMode) {
+        setServers(demoServers)
+        setLoading(false)
+        return
+      }
       try {
         const data = await api.get<ServerSummary[]>('/servers')
         setServers(data)
@@ -67,7 +77,7 @@ export default function ScanPage() {
     }
 
     void loadServers()
-  }, [])
+  }, [demoMode])
 
   const grouped = useMemo(() => {
     const map = new Map<string, ScanResult[]>()
@@ -80,6 +90,40 @@ export default function ScanPage() {
   }, [results])
 
   async function handleScan() {
+    if (demoMode) {
+      const seeded = demoProjects.map((project) => ({
+        containerId: `${project.id}-container`,
+        containerName: project.name,
+        image: project.repoImage,
+        imageRepository: project.repoImage,
+        imageTag: project.lastDeploy?.imageTag || 'latest',
+        status: project.healthStatus?.status === 'healthy' ? 'running' : 'degraded',
+        ports: project.healthCheck?.port ? [`${project.healthCheck.port}/tcp`] : ['3000/tcp'],
+        workingDir: project.workingDir,
+        envPath: project.envPath,
+        composeProject: project.runtime === 'compose' ? project.name : undefined,
+        composeService: project.runtime === 'compose' ? project.name : undefined,
+        alreadyImported: project.source === 'manual',
+        importable: true,
+        suggestedProject: {
+          name: project.name,
+          source: project.source,
+          runtime: project.runtime,
+          repoImage: project.repoImage,
+          deployCommands: project.deployCommands,
+          envPath: project.envPath,
+          workingDir: project.workingDir,
+          proxyType: project.proxyType,
+          webhookEnabled: project.webhookEnabled,
+          notifications: project.notifications,
+        },
+        sourceServerId: project.serverId,
+        sourceServerName: demoServers.find((server) => server.id === project.serverId)?.name || 'Demo server',
+      }))
+      setResults(seeded)
+      toast.success(`Loaded ${seeded.length} seeded demo app${seeded.length === 1 ? '' : 's'}`)
+      return
+    }
     setScanning(true)
     try {
       const discovered = await Promise.all(
@@ -111,6 +155,12 @@ export default function ScanPage() {
 
   async function handleImport() {
     if (!selected || !targetServerId) return
+    if (demoMode) {
+      toast.success(`Demo import reviewed for ${selected.suggestedProject.name}. Seeded data stays read-only.`)
+      setSelected(null)
+      setTargetServerId('')
+      return
+    }
     setImporting(true)
     try {
       await api.post<Project>(`/servers/${targetServerId}/projects`, selected.suggestedProject)
@@ -150,22 +200,51 @@ export default function ScanPage() {
   }
 
   return (
-    <div className="mx-auto flex w-full max-w-7xl flex-col gap-8 px-6 py-8 lg:px-8">
-      <section className="flex flex-wrap items-start justify-between gap-4">
-        <div>
-          <p className="text-xs uppercase tracking-[0.24em] text-[var(--green)]">Discovery</p>
-          <h1 className="mt-2 text-3xl font-semibold text-[var(--text)]">Scan</h1>
-          <p className="mt-2 max-w-3xl text-sm text-[var(--text-muted)]">
-            Scan every connected server for running Docker apps, then import the good candidates into Launchpad from one place.
-          </p>
+    <div className="mx-auto flex w-full max-w-7xl flex-col gap-8 px-5 py-6 lg:px-8 lg:py-8">
+      <section className="rounded-[26px] border border-[var(--border)] bg-[linear-gradient(135deg,rgba(121,188,255,0.1),rgba(104,240,167,0.08)_40%,rgba(16,25,24,0.78))] p-6 lg:p-8">
+        <div className="flex flex-wrap items-start justify-between gap-4">
+          <div className="max-w-3xl">
+            <p className="text-xs uppercase tracking-[0.24em] text-[var(--green)]">Discovery</p>
+            <h1 className="mt-2 text-4xl font-semibold tracking-tight text-[var(--text)]">Scan running apps</h1>
+            <p className="mt-3 text-base leading-7 text-[var(--text-muted)]">
+              Sweep connected servers for live Docker workloads, review the inferred project model, and import only the
+              candidates that look safe and understandable.
+            </p>
+          </div>
+          <Button onClick={() => void handleScan()} loading={scanning} disabled={servers.length === 0}>
+            Scan all servers
+          </Button>
         </div>
-        <Button onClick={() => void handleScan()} loading={scanning} disabled={servers.length === 0}>
-          Scan all servers
-        </Button>
+
+        <div className="mt-6 grid gap-4 md:grid-cols-3">
+          <div className="rounded-[20px] border border-[var(--border)] bg-[rgba(7,16,15,0.35)] p-4">
+            <div className="inline-flex items-center gap-2 text-sm font-medium text-[var(--text)]">
+              <ServerIcon size={16} className="text-[var(--green)]" />
+              Connected servers
+            </div>
+            <div className="mt-2 text-3xl font-semibold text-[var(--text)]">{servers.length}</div>
+          </div>
+          <div className="rounded-[20px] border border-[var(--border)] bg-[rgba(7,16,15,0.35)] p-4">
+            <div className="inline-flex items-center gap-2 text-sm font-medium text-[var(--text)]">
+              <Radar size={16} className="text-[var(--blue)]" />
+              Results loaded
+            </div>
+            <div className="mt-2 text-3xl font-semibold text-[var(--text)]">{results.length}</div>
+          </div>
+          <div className="rounded-[20px] border border-[var(--border)] bg-[rgba(7,16,15,0.35)] p-4">
+            <div className="inline-flex items-center gap-2 text-sm font-medium text-[var(--text)]">
+              <Layers3 size={16} className="text-[var(--yellow)]" />
+              What scan is good at
+            </div>
+            <div className="mt-2 text-sm leading-6 text-[var(--text-muted)]">
+              Best for Compose-managed apps with a detectable working directory and env path.
+            </div>
+          </div>
+        </div>
       </section>
 
       {servers.length === 0 ? (
-        <div className="border border-dashed border-[var(--border)] bg-[var(--surface)] p-6 text-sm text-[var(--text-muted)]">
+        <div className="rounded-[22px] border border-dashed border-[var(--border)] bg-[var(--surface)] p-6 text-sm text-[var(--text-muted)]">
           No servers configured yet.
         </div>
       ) : null}
@@ -173,7 +252,7 @@ export default function ScanPage() {
       {servers.map((server) => {
         const items = grouped.get(server.id) ?? []
         return (
-          <section key={server.id} className="border border-[var(--border)] bg-[var(--surface)] p-6">
+          <section key={server.id} className="rounded-[22px] border border-[var(--border)] bg-[var(--surface)] p-6">
             <div className="flex flex-wrap items-center justify-between gap-4">
               <div>
                 <h2 className="text-lg font-semibold text-[var(--text)]">{server.name}</h2>
@@ -189,7 +268,7 @@ export default function ScanPage() {
             <div className="mt-5 space-y-4">
               {items.length > 0 ? (
                 items.map((app) => (
-                  <div key={`${app.sourceServerId}-${app.containerId}`} className="border border-[var(--border)] bg-[var(--surface-2)] p-4">
+                  <div key={`${app.sourceServerId}-${app.containerId}`} className="rounded-[20px] border border-[var(--border)] bg-[var(--surface-2)] p-4">
                     <div className="flex flex-wrap items-start justify-between gap-4">
                       <div>
                         <h3 className="text-sm font-semibold text-[var(--text)]">{app.suggestedProject.name}</h3>
@@ -215,7 +294,7 @@ export default function ScanPage() {
                       <div>Env path: <SensitiveText value={app.envPath || 'not detected'} className="font-mono text-[var(--text)]" /></div>
                     </div>
 
-                    <div className="mt-4 border border-[var(--border)] bg-[var(--surface)] px-3 py-2 text-xs text-[var(--text-muted)]">
+                    <div className="mt-4 rounded-[16px] border border-[var(--border)] bg-[var(--surface)] px-3 py-2 text-xs text-[var(--text-muted)]">
                       Suggested deploy commands:
                       <pre data-sensitive="true" className="mt-2 whitespace-pre-wrap font-mono text-[var(--text)]">
                         {app.suggestedProject.deployCommands.join('\n')}
@@ -238,7 +317,7 @@ export default function ScanPage() {
                   </div>
                 ))
               ) : (
-                <div className="border border-dashed border-[var(--border)] bg-[var(--surface-2)] p-4 text-sm text-[var(--text-muted)]">
+                <div className="rounded-[20px] border border-dashed border-[var(--border)] bg-[var(--surface-2)] p-4 text-sm text-[var(--text-muted)]">
                   No scanned apps for this server yet.
                 </div>
               )}
@@ -247,63 +326,57 @@ export default function ScanPage() {
         )
       })}
 
-      {selected ? (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 px-6">
-          <div className="w-full max-w-xl border border-[var(--border)] bg-[var(--surface)] p-6 shadow-2xl">
-            <div className="flex items-start justify-between gap-4">
-              <div>
-                <p className="text-xs uppercase tracking-[0.24em] text-[var(--green)]">Import</p>
-                <h2 className="mt-2 text-lg font-semibold text-[var(--text)]">{selected.suggestedProject.name}</h2>
-                <p className="mt-1 text-sm text-[var(--text-muted)]">
-                  Discovered on {selected.sourceServerName}. Choose which Launchpad server record should own this project.
-                </p>
+      <Modal
+        open={Boolean(selected)}
+        title={selected ? `Import ${selected.suggestedProject.name}` : 'Import app'}
+        description={
+          selected
+            ? `Discovered on ${selected.sourceServerName}. Choose which Launchpad server record should own this project.`
+            : undefined
+        }
+        onClose={() => setSelected(null)}
+      >
+        {selected ? (
+          <div className="space-y-4">
+            <label className="flex flex-col gap-1.5">
+              <span className="text-xs font-medium uppercase tracking-wider text-[var(--text-muted)]">Import to server</span>
+              <select
+                value={targetServerId}
+                onChange={(event) => setTargetServerId(event.target.value)}
+                className="h-10 rounded-[14px] border border-[var(--border)] bg-[var(--surface-2)] px-3 text-sm text-[var(--text)] outline-none focus:border-[var(--green)]"
+              >
+                <option value="">Select a server</option>
+                {servers.map((server) => (
+                  <option key={server.id} value={server.id}>
+                    {server.name}
+                  </option>
+                ))}
+              </select>
+            </label>
+
+            <div className="rounded-[18px] border border-[var(--border)] bg-[var(--surface-2)] p-4 text-sm text-[var(--text-muted)]">
+              <div>Image: <SensitiveText value={selected.suggestedProject.repoImage} className="text-[var(--text)]" /></div>
+              <div className="mt-2">
+                <ProjectClassificationBadge
+                  source={selected.suggestedProject.source}
+                  runtime={selected.suggestedProject.runtime}
+                />
               </div>
-              <Button variant="ghost" size="sm" onClick={() => setSelected(null)}>
-                Close
+              <div className="mt-2">Working dir: <SensitiveText value={selected.suggestedProject.workingDir || 'not detected'} className="font-mono text-[var(--text)]" /></div>
+              <div className="mt-2">Env path: <SensitiveText value={selected.suggestedProject.envPath || 'not detected'} className="font-mono text-[var(--text)]" /></div>
+            </div>
+
+            <div className="flex flex-wrap gap-3">
+              <Button onClick={() => void handleImport()} loading={importing} disabled={!targetServerId}>
+                Confirm import
+              </Button>
+              <Button variant="ghost" onClick={() => setSelected(null)}>
+                Cancel
               </Button>
             </div>
-
-            <div className="mt-5 space-y-4">
-              <label className="flex flex-col gap-1.5">
-                <span className="text-xs font-medium uppercase tracking-wider text-[var(--text-muted)]">Import to server</span>
-                <select
-                  value={targetServerId}
-                  onChange={(event) => setTargetServerId(event.target.value)}
-                  className="h-10 border border-[var(--border)] bg-[var(--surface-2)] px-3 text-sm text-[var(--text)] outline-none focus:border-[var(--green)]"
-                >
-                  <option value="">Select a server</option>
-                  {servers.map((server) => (
-                    <option key={server.id} value={server.id}>
-                      {server.name}
-                    </option>
-                  ))}
-                </select>
-              </label>
-
-              <div className="border border-[var(--border)] bg-[var(--surface-2)] p-4 text-sm text-[var(--text-muted)]">
-                <div>Image: <SensitiveText value={selected.suggestedProject.repoImage} className="text-[var(--text)]" /></div>
-                <div className="mt-2">
-                  <ProjectClassificationBadge
-                    source={selected.suggestedProject.source}
-                    runtime={selected.suggestedProject.runtime}
-                  />
-                </div>
-                <div className="mt-2">Working dir: <SensitiveText value={selected.suggestedProject.workingDir || 'not detected'} className="font-mono text-[var(--text)]" /></div>
-                <div className="mt-2">Env path: <SensitiveText value={selected.suggestedProject.envPath || 'not detected'} className="font-mono text-[var(--text)]" /></div>
-              </div>
-
-              <div className="flex flex-wrap gap-3">
-                <Button onClick={() => void handleImport()} loading={importing} disabled={!targetServerId}>
-                  Confirm import
-                </Button>
-                <Button variant="ghost" onClick={() => setSelected(null)}>
-                  Cancel
-                </Button>
-              </div>
-            </div>
           </div>
-        </div>
-      ) : null}
+        ) : null}
+      </Modal>
     </div>
   )
 }

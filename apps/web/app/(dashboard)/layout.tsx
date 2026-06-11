@@ -1,9 +1,11 @@
 'use client'
 
+import { useEffect, useState } from 'react'
 import Link from 'next/link'
 import { usePathname, useRouter } from 'next/navigation'
-import { BookOpen, LogOut, Rocket, Search, Server, Settings, ShieldCheck, Sparkles } from 'lucide-react'
+import { BookOpen, Command, LogOut, Rocket, Search, Server, Settings, ShieldCheck, Sparkles } from 'lucide-react'
 import { useAuth } from '@/lib/auth-context'
+import { CommandPalette } from '@/components/dashboard/CommandPalette'
 import { useDemoPrivacy } from '@/lib/demo-privacy-context'
 import { cn } from '@/lib/utils'
 
@@ -18,7 +20,20 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   const pathname = usePathname()
   const router = useRouter()
   const { logout } = useAuth()
-  const { enabled: demoPrivacy } = useDemoPrivacy()
+  const { enabled: demoPrivacy, demoMode } = useDemoPrivacy()
+  const [paletteOpen, setPaletteOpen] = useState(false)
+
+  useEffect(() => {
+    function handleKeyDown(event: KeyboardEvent) {
+      if ((event.metaKey || event.ctrlKey) && event.key.toLowerCase() === 'k') {
+        event.preventDefault()
+        setPaletteOpen(true)
+      }
+    }
+
+    window.addEventListener('keydown', handleKeyDown)
+    return () => window.removeEventListener('keydown', handleKeyDown)
+  }, [])
 
   async function handleLogout() {
     await logout()
@@ -48,9 +63,11 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
               <div>
                 <div className="text-sm font-medium text-[var(--text)]">Trust mode</div>
                 <div className="mt-1 text-sm text-[var(--text-muted)]">
-                  {demoPrivacy
-                    ? 'Demo privacy is active. Sensitive values are masked across the dashboard.'
-                    : 'Live values are visible. Turn on demo privacy in settings before recording or screen-sharing.'}
+                  {demoMode
+                    ? 'Seeded demo mode is active. Launchpad is showing safe sample infrastructure data.'
+                    : demoPrivacy
+                      ? 'Demo privacy is active. Sensitive values are masked across the dashboard.'
+                      : 'Live values are visible. Turn on demo privacy in settings before recording or screen-sharing.'}
                 </div>
               </div>
             </div>
@@ -83,6 +100,18 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
             })}
           </nav>
 
+          <button
+            type="button"
+            onClick={() => setPaletteOpen(true)}
+            className="flex items-center justify-between rounded-[18px] border border-[var(--border)] bg-[var(--surface-2)] px-4 py-3 text-sm text-[var(--text-muted)] transition-colors hover:bg-[var(--surface-3)] hover:text-[var(--text)]"
+          >
+            <span className="inline-flex items-center gap-3">
+              <Command size={16} />
+              Quick actions
+            </span>
+            <span className="text-[10px] uppercase tracking-[0.2em]">Ctrl K</span>
+          </button>
+
           <div className="mt-auto rounded-[22px] border border-[var(--border)] bg-[var(--surface-2)] p-4">
             <div className="text-sm font-medium text-[var(--text)]">Quick orientation</div>
             <div className="mt-2 space-y-2 text-sm text-[var(--text-muted)]">
@@ -107,6 +136,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
           </div>
         </main>
       </div>
+      <CommandPalette open={paletteOpen} onClose={() => setPaletteOpen(false)} />
     </div>
   )
 }

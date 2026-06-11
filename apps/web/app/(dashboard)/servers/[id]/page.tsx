@@ -15,6 +15,14 @@ import { SensitiveText } from '@/components/ui/SensitiveText'
 import { Button } from '@/components/ui/Button'
 import { Modal } from '@/components/ui/Modal'
 import { api, ApiError } from '@/lib/api'
+import {
+  demoServers,
+  getDemoActivityForServer,
+  getDemoProjectsForServer,
+  getDemoServer,
+  isDemoId,
+} from '@/lib/demo-fixtures'
+import { useDemoPrivacy } from '@/lib/demo-privacy-context'
 import { formatBytes, formatPercent, formatUptime } from '@/lib/format'
 import { formatRelative } from '@/lib/utils'
 
@@ -23,6 +31,7 @@ type ServerSummary = Server & { projectCount?: number; recentDeployOutcomes?: De
 export default function ServerDetailPage() {
   const params = useParams<{ id: string }>()
   const router = useRouter()
+  const { demoMode } = useDemoPrivacy()
   const [server, setServer] = useState<ServerSummary | null>(null)
   const [projects, setProjects] = useState<Project[]>([])
   const [status, setStatus] = useState<ServerConnectionStatus | null>(null)
@@ -36,6 +45,22 @@ export default function ServerDetailPage() {
   const [confirmDeleteOpen, setConfirmDeleteOpen] = useState(false)
 
   async function loadData() {
+    if (demoMode && isDemoId(params.id)) {
+      const serverData = getDemoServer(params.id)
+      if (!serverData) {
+        toast.error('Demo server not found')
+        router.push('/servers')
+        return
+      }
+      setServer(serverData)
+      setProjects(getDemoProjectsForServer(params.id))
+      setActivity(getDemoActivityForServer(params.id))
+      setStatus(serverData.lastConnectionStatus ?? null)
+      setResources(serverData.lastResourceStatus ?? null)
+      setLoading(false)
+      return
+    }
+
     try {
       const [serverData, projectData, activityData] = await Promise.all([
         api.get<ServerSummary>(`/servers/${params.id}`),
@@ -68,12 +93,20 @@ export default function ServerDetailPage() {
     sshKeyPath: string
     sshPassphrase?: string
   }) {
+    if (demoMode) {
+      toast.success('Demo mode is active. Seeded server data stays read-only.')
+      return
+    }
     const updated = await api.patch<ServerSummary>(`/servers/${params.id}`, payload)
     setServer(updated)
     toast.success('Server updated')
   }
 
   async function handleDelete() {
+    if (demoMode) {
+      toast.success('Demo mode is active. Seeded server data stays read-only.')
+      return
+    }
     await api.delete(`/servers/${params.id}`)
     toast.success('Server deleted')
     router.push('/servers')
@@ -92,6 +125,10 @@ export default function ServerDetailPage() {
     webhookEnabled: boolean
     notifications: Project['notifications']
   }) {
+    if (demoMode) {
+      toast.success('Demo mode is active. Seeded project data stays read-only.')
+      return
+    }
     const created = await api.post<Project>(`/servers/${params.id}/projects`, payload)
     setProjects((current) => [created, ...current])
     setServer((current) => (current ? { ...current, projectCount: (current.projectCount ?? 0) + 1 } : current))
@@ -99,6 +136,10 @@ export default function ServerDetailPage() {
   }
 
   async function handleTest() {
+    if (demoMode) {
+      toast.success('Demo mode is active. Telemetry is already seeded for this server.')
+      return
+    }
     setTesting(true)
     try {
       const nextStatus = await api.post<ServerConnectionStatus>(`/servers/${params.id}/test`)
@@ -121,6 +162,10 @@ export default function ServerDetailPage() {
   }
 
   async function handleReclassifyProjects() {
+    if (demoMode) {
+      toast.success('Demo mode is active. Seeded project labels are already curated.')
+      return
+    }
     setReclassifying(true)
     try {
       const result = await api.post<{ success: boolean; updated: number }>(`/servers/${params.id}/reclassify-projects`)

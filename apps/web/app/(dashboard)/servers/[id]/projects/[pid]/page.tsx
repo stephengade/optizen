@@ -26,13 +26,26 @@ import { LogStream, type LogLine } from '@/components/dashboard/LogStream'
 import { ProjectForm } from '@/components/dashboard/ProjectForm'
 import { Button } from '@/components/ui/Button'
 import { ConfirmActionModal } from '@/components/ui/ConfirmActionModal'
+import { SensitivePanel } from '@/components/ui/SensitivePanel'
 import { SensitiveText } from '@/components/ui/SensitiveText'
 import { api, ApiError } from '@/lib/api'
+import {
+  demoImageStatus,
+  demoImageTags,
+  demoProjectLogs,
+  getDemoActivityForProject,
+  getDemoDeploysForProject,
+  getDemoProject,
+  isDemoId,
+  demoFileSuggestions,
+} from '@/lib/demo-fixtures'
+import { useDemoPrivacy } from '@/lib/demo-privacy-context'
 import { formatDateTime, formatDuration, formatRelative } from '@/lib/utils'
 
 export default function ProjectDetailPage() {
   const params = useParams<{ id: string; pid: string }>()
   const router = useRouter()
+  const { demoMode } = useDemoPrivacy()
   const [project, setProject] = useState<Project | null>(null)
   const [history, setHistory] = useState<DeployRecord[]>([])
   const [selectedDeploy, setSelectedDeploy] = useState<DeployRecord | null>(null)
@@ -77,6 +90,17 @@ export default function ProjectDetailPage() {
     : ''
 
   async function loadProject() {
+    if (demoMode && isDemoId(params.pid)) {
+      const data = getDemoProject(params.pid)
+      if (!data) {
+        toast.error('Demo project not found')
+        router.push(`/servers/${params.id}`)
+        return
+      }
+      setProject(data)
+      setLoading(false)
+      return
+    }
     try {
       const data = await api.get<Project>(`/projects/${params.pid}`)
       setProject(data)
@@ -90,6 +114,14 @@ export default function ProjectDetailPage() {
   }
 
   async function loadImageState() {
+    if (demoMode && isDemoId(params.pid)) {
+      setImageStatus(demoImageStatus[params.pid] ?? null)
+      setImageTags(demoImageTags[params.pid] ?? [])
+      if (!selectedPullTag && (demoImageTags[params.pid]?.length ?? 0) > 0) {
+        setSelectedPullTag(demoImageTags[params.pid][0])
+      }
+      return
+    }
     try {
       const [statusData, tagsData] = await Promise.all([
         api.get<ImageStatus>(`/images/${params.pid}/status`),
@@ -107,6 +139,17 @@ export default function ProjectDetailPage() {
   }
 
   async function loadHistory() {
+    if (demoMode && isDemoId(params.pid)) {
+      const records = getDemoDeploysForProject(params.pid)
+      setHistory(records)
+      if (records.length > 0) {
+        setStatus(records[0].status)
+        if (!selectedDeploy) {
+          setSelectedDeploy(records[0])
+        }
+      }
+      return
+    }
     try {
       const records = await api.get<DeployRecord[]>(`/deploy/${params.pid}/history`)
       setHistory(records)
@@ -123,6 +166,10 @@ export default function ProjectDetailPage() {
   }
 
   async function loadActivity() {
+    if (demoMode && isDemoId(params.pid)) {
+      setActivity(getDemoActivityForProject(params.pid))
+      return
+    }
     try {
       const records = await api.get<ActivityEvent[]>(`/projects/${params.pid}/activity`)
       setActivity(records)
@@ -133,6 +180,10 @@ export default function ProjectDetailPage() {
   }
 
   async function loadFileSuggestions() {
+    if (demoMode && isDemoId(params.pid)) {
+      setFileSuggestions(demoFileSuggestions[params.pid] ?? [])
+      return
+    }
     try {
       const data = await api.get<ProjectFileSuggestion[]>(`/files/projects/${params.pid}/suggestions`)
       setFileSuggestions(data)
@@ -142,6 +193,12 @@ export default function ProjectDetailPage() {
   }
 
   async function loadLogSources() {
+    if (demoMode && isDemoId(params.pid)) {
+      const data = demoProjectLogs[params.pid]?.sources ?? []
+      setLogSources(data)
+      setSelectedLogSource((current) => current || data[0]?.id || '')
+      return
+    }
     try {
       const data = await api.get<Array<{ id: string; label: string }>>(`/logs/${params.pid}/sources`)
       setLogSources(data)
@@ -153,6 +210,11 @@ export default function ProjectDetailPage() {
 
   async function loadProjectLogs(source = selectedLogSource) {
     if (!source) return
+    if (demoMode && isDemoId(params.pid)) {
+      setLogSnapshot(demoProjectLogs[params.pid]?.snapshots[source] ?? [])
+      setLogCheckedAt(new Date().toISOString())
+      return
+    }
     setLogsLoading(true)
     try {
       const data = await api.get<{ lines: string[]; checkedAt: string }>(`/logs/${params.pid}/snapshot?source=${encodeURIComponent(source)}`)
@@ -167,6 +229,11 @@ export default function ProjectDetailPage() {
   }
 
   async function selectDeploy(deployId: string) {
+    if (demoMode && isDemoId(params.pid)) {
+      const record = getDemoDeploysForProject(params.pid).find((item) => item.id === deployId) ?? null
+      setSelectedDeploy(record)
+      return
+    }
     try {
       const record = await api.get<DeployRecord>(`/deploy/${params.pid}/history/${deployId}`)
       setSelectedDeploy(record)
@@ -199,6 +266,9 @@ export default function ProjectDetailPage() {
   }, [logsAutoRefresh, selectedLogSource])
 
   useEffect(() => {
+    if (demoMode && isDemoId(params.pid)) {
+      return
+    }
     const source = new EventSource(`/api/deploy/${params.pid}/stream`, { withCredentials: true })
 
     source.onmessage = (event) => {
@@ -256,18 +326,30 @@ export default function ProjectDetailPage() {
     webhookEnabled: boolean
     notifications: Project['notifications']
   }) {
+    if (demoMode) {
+      toast.success('Demo mode is active. Seeded project data stays read-only.')
+      return
+    }
     const updated = await api.patch<Project>(`/projects/${params.pid}`, payload)
     setProject(updated)
     toast.success('Project updated')
   }
 
   async function handleDelete() {
+    if (demoMode) {
+      toast.success('Demo mode is active. Seeded project data stays read-only.')
+      return
+    }
     await api.delete(`/projects/${params.pid}`)
     toast.success('Project deleted')
     router.push(`/servers/${params.id}`)
   }
 
   async function handleRegenerate() {
+    if (demoMode) {
+      toast.success('Demo mode is active. Webhook examples are seeded and read-only.')
+      return
+    }
     setRegenerating(true)
     try {
       const data = await api.post<{ webhookSecret: string }>(`/projects/${params.pid}/webhook-secret`)
@@ -281,16 +363,11 @@ export default function ProjectDetailPage() {
     }
   }
 
-  async function handleCopy(value: string, label: string) {
-    try {
-      await navigator.clipboard.writeText(value)
-      toast.success(`${label} copied`)
-    } catch {
-      toast.error(`Failed to copy ${label.toLowerCase()}`)
-    }
-  }
-
   async function handleDeploy() {
+    if (demoMode) {
+      toast.success('Demo mode is active. Deploy state is seeded for walkthroughs.')
+      return
+    }
     setDeploying(true)
     setStatus('deploying')
     setLogs([])
@@ -311,6 +388,10 @@ export default function ProjectDetailPage() {
   }
 
   async function handleHealthCheck() {
+    if (demoMode) {
+      toast.success('Demo mode is active. Health state is already seeded.')
+      return
+    }
     setCheckingHealth(true)
     try {
       const data = await api.post<ProjectHealthState>(`/projects/${params.pid}/health`)
@@ -326,6 +407,10 @@ export default function ProjectDetailPage() {
   }
 
   async function handlePullImage() {
+    if (demoMode) {
+      toast.success('Demo mode is active. Image state is seeded and read-only.')
+      return
+    }
     setPullingImage(true)
     try {
       await api.post(`/images/${params.pid}/pull`, { tag: selectedPullTag || undefined })
@@ -340,6 +425,10 @@ export default function ProjectDetailPage() {
   }
 
   async function handlePruneImages() {
+    if (demoMode) {
+      toast.success('Demo mode is active. Image cleanup actions are disabled.')
+      return
+    }
     setPruningImages(true)
     try {
       const data = await api.post<{ output: string }>(`/images/${params.pid}/prune`)
@@ -355,6 +444,10 @@ export default function ProjectDetailPage() {
 
   async function handleRollback() {
     if (!selectedRollbackId) return
+    if (demoMode) {
+      toast.success('Demo mode is active. Rollback state is seeded and read-only.')
+      return
+    }
     setRollingBack(true)
     try {
       const data = await api.post<{ imageTag: string }>(`/images/${params.pid}/rollback`, {
@@ -591,43 +684,8 @@ export default function ProjectDetailPage() {
             </div>
           </div>
 
-          <div>
-            <div className="mb-2 flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
-              <h3 className="text-sm font-medium text-[var(--text)]">Webhook URL</h3>
-              <div className="self-start md:self-auto">
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={() => void handleCopy(webhookUrl, 'Webhook URL')}
-                  disabled={!webhookUrl}
-                >
-                  Copy URL
-                </Button>
-              </div>
-            </div>
-            <pre data-sensitive="true" className="overflow-x-auto whitespace-pre-wrap break-all rounded-lg border border-[var(--border)] bg-[var(--surface-2)] px-4 py-3 font-mono text-xs text-[var(--text)]">
-              {webhookUrl || 'No webhook URL available'}
-            </pre>
-          </div>
-
-          <div>
-            <div className="mb-2 flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
-              <h3 className="text-sm font-medium text-[var(--text)]">GitHub Actions snippet</h3>
-              <div className="self-start md:self-auto">
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={() => void handleCopy(workflowSnippet, 'Workflow snippet')}
-                  disabled={!workflowSnippet}
-                >
-                  Copy snippet
-                </Button>
-              </div>
-            </div>
-            <pre data-sensitive="true" className="overflow-x-auto whitespace-pre-wrap break-all rounded-lg border border-[var(--border)] bg-[#0b0b0d] px-4 py-3 font-mono text-xs text-[var(--text)]">
-              {workflowSnippet || 'Enable the project webhook to generate a CI snippet.'}
-            </pre>
-          </div>
+          <SensitivePanel label="Webhook URL" value={webhookUrl} emptyLabel="No webhook URL available" code />
+          <SensitivePanel label="GitHub Actions snippet" value={workflowSnippet} emptyLabel="Enable the project webhook to generate a CI snippet." code />
         </div>
       </div>
 

@@ -39,7 +39,7 @@ function createWebhook(): GlobalWebhook {
 }
 
 export default function SettingsPage() {
-  const { enabled: demoPrivacy, setEnabled: setDemoPrivacy } = useDemoPrivacy()
+  const { enabled: demoPrivacy, setEnabled: setDemoPrivacy, demoMode, setDemoMode } = useDemoPrivacy()
   const [smtp, setSmtp] = useState<SmtpConfig>(createEmptySmtp())
   const [smtpEnabled, setSmtpEnabled] = useState(false)
   const [toValue, setToValue] = useState('')
@@ -183,6 +183,26 @@ export default function SettingsPage() {
               className="h-4 w-4 accent-[var(--green)]"
             />
             Hide sensitive data
+          </label>
+        </div>
+      </section>
+
+      <section className="rounded-2xl border border-[var(--border)] bg-[var(--surface)] p-6">
+        <div className="flex flex-wrap items-center justify-between gap-4">
+          <div>
+            <h2 className="text-lg font-semibold text-[var(--text)]">Seeded demo mode</h2>
+            <p className="mt-1 text-sm text-[var(--text-muted)]">
+              Swap the main dashboards to safe sample servers, projects, deploy history, activity, telemetry, and logs for screenshots or walkthroughs.
+            </p>
+          </div>
+          <label className="flex items-center gap-3 text-sm text-[var(--text)]">
+            <input
+              type="checkbox"
+              checked={demoMode}
+              onChange={(event) => setDemoMode(event.target.checked)}
+              className="h-4 w-4 accent-[var(--green)]"
+            />
+            Use seeded demo data
           </label>
         </div>
       </section>

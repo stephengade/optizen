@@ -8,11 +8,14 @@ import { toast } from 'sonner'
 import { ServerCard } from '@/components/dashboard/ServerCard'
 import { ServerForm } from '@/components/dashboard/ServerForm'
 import { api, ApiError } from '@/lib/api'
+import { demoServers } from '@/lib/demo-fixtures'
+import { useDemoPrivacy } from '@/lib/demo-privacy-context'
 import { formatPercent } from '@/lib/format'
 
 type ServerSummary = Server & { projectCount?: number }
 
 export default function ServersPage() {
+  const { demoMode } = useDemoPrivacy()
   const [servers, setServers] = useState<ServerSummary[]>([])
   const [statuses, setStatuses] = useState<Record<string, ServerConnectionStatus>>({})
   const [resources, setResources] = useState<Record<string, ServerResourceStatus>>({})
@@ -20,6 +23,19 @@ export default function ServersPage() {
   const [testingId, setTestingId] = useState<string | null>(null)
 
   async function loadServers() {
+    if (demoMode) {
+      setServers(demoServers)
+      setResources(
+        Object.fromEntries(
+          demoServers
+            .filter((server) => server.lastResourceStatus)
+            .map((server) => [server.id, server.lastResourceStatus!])
+        )
+      )
+      setLoading(false)
+      return
+    }
+
     try {
       const data = await api.get<ServerSummary[]>('/servers')
       setServers(data)
@@ -57,7 +73,7 @@ export default function ServersPage() {
 
   useEffect(() => {
     void loadServers()
-  }, [])
+  }, [demoMode])
 
   async function handleCreate(payload: {
     name: string
@@ -67,12 +83,20 @@ export default function ServersPage() {
     sshKeyPath: string
     sshPassphrase?: string
   }) {
+    if (demoMode) {
+      toast.success('Demo mode is active. Seeded data stays read-only for presentations.')
+      return
+    }
     const created = await api.post<ServerSummary>('/servers', payload)
     setServers((current) => [created, ...current])
     toast.success('Server created')
   }
 
   async function handleTest(serverId: string) {
+    if (demoMode) {
+      toast.success('Demo mode is active. Telemetry snapshots are seeded for presentation use.')
+      return
+    }
     setTestingId(serverId)
     try {
       const status = await api.post<ServerConnectionStatus>(`/servers/${serverId}/test`)

@@ -36,9 +36,11 @@ export default function LoginPage() {
   }
 
   return (
-    <div className="rounded-lg border border-[var(--border)] bg-[var(--surface)] p-6">
-      <h1 className="mb-1 text-base font-semibold text-[var(--text)]">Welcome back</h1>
-      <p className="mb-6 text-sm text-[var(--text-muted)]">Enter your master password to continue</p>
+    <div className="rounded-[24px] border border-[var(--border)] bg-[var(--surface)] p-6 shadow-[var(--shadow)]">
+      <h1 className="mb-1 text-xl font-semibold text-[var(--text)]">Welcome back</h1>
+      <p className="mb-6 text-sm leading-6 text-[var(--text-muted)]">
+        Enter your master password to unlock Launchpad. This decrypts the local credentials and configuration state for your session.
+      </p>
 
       <form onSubmit={handleSubmit} className="flex flex-col gap-4">
         <div className="relative">
@@ -55,8 +57,8 @@ export default function LoginPage() {
           <button
             type="button"
             onClick={() => setShowPassword(v => !v)}
-            className="absolute right-3 top-[2.1rem] text-[var(--text-muted)] hover:text-[var(--text)] transition-colors"
-            tabIndex={-1}
+            className="absolute right-3 top-[2.1rem] rounded-[10px] p-1 text-[var(--text-muted)] transition-colors hover:text-[var(--text)]"
+            aria-label={showPassword ? 'Hide password' : 'Show password'}
           >
             {showPassword ? <EyeOff size={14} /> : <Eye size={14} />}
           </button>
@@ -65,6 +67,10 @@ export default function LoginPage() {
         <Button type="submit" loading={loading} disabled={!password}>
           Sign in
         </Button>
+
+        <p className="text-xs leading-5 text-[var(--text-muted)]">
+          If this is your first time here, Launchpad will redirect you to setup automatically.
+        </p>
       </form>
     </div>
   )

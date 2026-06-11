@@ -54,13 +54,14 @@ export default function SetupPage() {
   }
 
   return (
-    <div className="rounded-lg border border-[var(--border)] bg-[var(--surface)] p-6">
+    <div className="rounded-[24px] border border-[var(--border)] bg-[var(--surface)] p-6 shadow-[var(--shadow)]">
       <div className="mb-5 flex items-start gap-3">
-       
+        <div className="flex h-10 w-10 items-center justify-center rounded-[14px] bg-[var(--green-dim)] text-[var(--green)]">
+          <ShieldCheck size={18} />
+        </div>
         <div>
-          <h1 className="text-base font-semibold text-[var(--text)]">Create master password</h1>
-          
-          <p className="mt-0.5 text-sm text-[var(--text-muted)]">
+          <h1 className="text-xl font-semibold text-[var(--text)]">Create master password</h1>
+          <p className="mt-0.5 text-sm leading-6 text-[var(--text-muted)]">
             This encrypts all your server credentials. It cannot be recovered if lost.
           </p>
         </div>
@@ -81,8 +82,8 @@ export default function SetupPage() {
           <button
             type="button"
             onClick={() => setShowPassword(v => !v)}
-            className="absolute right-3 top-[2.1rem] text-[var(--text-muted)] hover:text-[var(--text)] transition-colors"
-            tabIndex={-1}
+            className="absolute right-3 top-[2.1rem] rounded-[10px] p-1 text-[var(--text-muted)] transition-colors hover:text-[var(--text)]"
+            aria-label={showPassword ? 'Hide password' : 'Show password'}
           >
             {showPassword ? <EyeOff size={14} /> : <Eye size={14} />}
           </button>
@@ -144,6 +145,10 @@ export default function SetupPage() {
         >
           Set up Launchpad
         </Button>
+
+        <p className="text-xs leading-5 text-[var(--text-muted)]">
+          Recommended: use a password manager and store this alongside the machine that hosts Launchpad.
+        </p>
       </form>
     </div>
   )

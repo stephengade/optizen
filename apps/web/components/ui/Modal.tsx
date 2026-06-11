@@ -1,6 +1,6 @@
 'use client'
 
-import type { ReactNode } from 'react'
+import { useEffect, useRef, type ReactNode } from 'react'
 
 interface ModalProps {
   open: boolean
@@ -11,11 +11,41 @@ interface ModalProps {
 }
 
 export function Modal({ open, title, description, onClose, children }: ModalProps) {
+  const closeButtonRef = useRef<HTMLButtonElement | null>(null)
+
+  useEffect(() => {
+    if (!open) return
+
+    closeButtonRef.current?.focus()
+
+    function handleKeyDown(event: KeyboardEvent) {
+      if (event.key === 'Escape') {
+        onClose()
+      }
+    }
+
+    window.addEventListener('keydown', handleKeyDown)
+    return () => window.removeEventListener('keydown', handleKeyDown)
+  }, [open, onClose])
+
   if (!open) return null
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 px-6 py-8">
-      <div className="max-h-full w-full max-w-3xl overflow-auto border border-[var(--border)] bg-[var(--surface)]">
+    <div
+      className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 px-6 py-8"
+      role="presentation"
+      onMouseDown={(event) => {
+        if (event.target === event.currentTarget) {
+          onClose()
+        }
+      }}
+    >
+      <div
+        role="dialog"
+        aria-modal="true"
+        aria-label={title}
+        className="max-h-full w-full max-w-3xl overflow-auto rounded-[24px] border border-[var(--border)] bg-[var(--surface)] shadow-[var(--shadow)]"
+      >
         <div className="flex items-start justify-between gap-4 border-b border-[var(--border)] px-6 py-5">
           <div>
             <h2 className="text-lg font-semibold text-[var(--text)]">{title}</h2>
@@ -24,9 +54,10 @@ export function Modal({ open, title, description, onClose, children }: ModalProp
             ) : null}
           </div>
           <button
+            ref={closeButtonRef}
             type="button"
             onClick={onClose}
-            className="border border-[var(--border)] px-3 py-2 text-sm text-[var(--text-muted)] transition-colors hover:bg-[var(--surface-2)] hover:text-[var(--text)]"
+            className="rounded-[14px] border border-[var(--border)] px-3 py-2 text-sm text-[var(--text-muted)] transition-colors hover:bg-[var(--surface-2)] hover:text-[var(--text)]"
           >
             Close
           </button>
