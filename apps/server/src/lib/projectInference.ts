@@ -6,6 +6,7 @@ export function inferProxyTypeFromProject(input: {
   workingDir?: string
   deployCommands?: string[]
 }) {
+  
   const haystack = [
     input.name ?? '',
     input.repoImage ?? '',
