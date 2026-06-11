@@ -3,13 +3,18 @@
 import { useEffect, useState } from 'react'
 import Link from 'next/link'
 import { useParams } from 'next/navigation'
+import type { FileRevision, ProjectFileSuggestion } from '@launchpad/shared'
 import { toast } from 'sonner'
 import { EnvEditor } from '@/components/dashboard/EnvEditor'
+import { FileRevisionList } from '@/components/dashboard/FileRevisionList'
+import { FileSuggestions } from '@/components/dashboard/FileSuggestions'
+import { ConfirmActionModal } from '@/components/ui/ConfirmActionModal'
 import { api, ApiError } from '@/lib/api'
 
 interface EnvResponse {
   path: string
   content: string
+  revisions: FileRevision[]
 }
 
 export default function ProjectEnvPage() {
@@ -17,8 +22,12 @@ export default function ProjectEnvPage() {
   const [path, setPath] = useState('')
   const [original, setOriginal] = useState('')
   const [value, setValue] = useState('')
+  const [revisions, setRevisions] = useState<FileRevision[]>([])
+  const [suggestions, setSuggestions] = useState<ProjectFileSuggestion[]>([])
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
+  const [restoringId, setRestoringId] = useState<string | null>(null)
+  const [confirmSaveOpen, setConfirmSaveOpen] = useState(false)
 
   async function loadEnv() {
     setLoading(true)
@@ -27,6 +36,7 @@ export default function ProjectEnvPage() {
       setPath(data.path)
       setOriginal(data.content)
       setValue(data.content)
+      setRevisions(data.revisions)
     } catch (error) {
       const message = error instanceof ApiError ? error.message : 'Failed to load env file'
       toast.error(message)
@@ -39,20 +49,45 @@ export default function ProjectEnvPage() {
     void loadEnv()
   }, [params.pid])
 
-  async function handleSave() {
-    const confirmed = window.confirm(`This will overwrite ${path}. Continue?`)
-    if (!confirmed) return
+  useEffect(() => {
+    async function loadSuggestions() {
+      try {
+        const data = await api.get<ProjectFileSuggestion[]>(`/files/projects/${params.pid}/suggestions`)
+        setSuggestions(data)
+      } catch {
+        setSuggestions([])
+      }
+    }
 
+    void loadSuggestions()
+  }, [params.pid])
+
+  async function handleSave() {
     setSaving(true)
     try {
-      await api.put(`/env/${params.pid}`, { content: value })
+      const response = await api.put<{ backupPath?: string }>(`/env/${params.pid}`, { content: value })
       setOriginal(value)
-      toast.success('Env file updated')
+      await loadEnv()
+      toast.success(response.backupPath ? `Env file updated with backup at ${response.backupPath}` : 'Env file updated')
     } catch (error) {
       const message = error instanceof ApiError ? error.message : 'Failed to save env file'
       toast.error(message)
     } finally {
       setSaving(false)
+    }
+  }
+
+  async function handleRestore(revisionId: string) {
+    setRestoringId(revisionId)
+    try {
+      const response = await api.post<{ backupPath?: string }>(`/env/${params.pid}/restore`, { revisionId })
+      await loadEnv()
+      toast.success(response.backupPath ? `Env restored. Backup created at ${response.backupPath}` : 'Env restored')
+    } catch (error) {
+      const message = error instanceof ApiError ? error.message : 'Failed to restore env revision'
+      toast.error(message)
+    } finally {
+      setRestoringId(null)
     }
   }
 
@@ -76,21 +111,50 @@ export default function ProjectEnvPage() {
           Loading env file...
         </div>
       ) : path ? (
-        <EnvEditor
-          path={path}
-          original={original}
-          value={value}
-          loading={loading}
-          saving={saving}
-          onChange={setValue}
-          onRefresh={() => void loadEnv()}
-          onSave={() => void handleSave()}
-        />
+        <>
+          <EnvEditor
+            path={path}
+            original={original}
+            value={value}
+            loading={loading}
+            saving={saving}
+            onChange={setValue}
+            onRefresh={() => void loadEnv()}
+            onSave={() => setConfirmSaveOpen(true)}
+          />
+
+          <section className="grid gap-6 xl:grid-cols-[1.1fr_0.9fr]">
+            <div>
+              <h2 className="mb-3 text-lg font-semibold text-[var(--text)]">Version history</h2>
+              <FileRevisionList revisions={revisions} restoring={restoringId} onRestore={(revisionId) => void handleRestore(revisionId)} />
+            </div>
+            <FileSuggestions suggestions={suggestions} />
+          </section>
+        </>
       ) : (
         <div className="rounded-2xl border border-[var(--border)] bg-[var(--surface)] p-6 text-sm text-[var(--text-muted)]">
           No env path configured for this project yet.
         </div>
       )}
+
+      <ConfirmActionModal
+        open={confirmSaveOpen}
+        title="Save env file"
+        description="Launchpad will validate the env format, store the current version in local history, create a remote backup, and then overwrite the live file."
+        confirmLabel="Save env file"
+        tone="primary"
+        details={[
+          `Target: ${path}`,
+          `Changed lines: ${original === value ? 0 : 1}+`,
+          'Content stays in memory and the revision history only stores pre-save snapshots locally.',
+        ]}
+        loading={saving}
+        onClose={() => setConfirmSaveOpen(false)}
+        onConfirm={async () => {
+          await handleSave()
+          setConfirmSaveOpen(false)
+        }}
+      />
     </div>
   )
 }

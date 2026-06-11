@@ -11,6 +11,8 @@ import { envRoutes } from './routes/env'
 import { imageRoutes } from './routes/images'
 import { proxyRoutes } from './routes/proxy'
 import { notificationRoutes } from './routes/notifications'
+import { fileRoutes } from './routes/files'
+import { logRoutes } from './routes/logs'
 
 const PORT = process.env.PORT ? parseInt(process.env.PORT) : 3001
 const WEB_URL = process.env.WEB_URL ?? 'http://localhost:3000'
@@ -46,6 +48,8 @@ const app = new Elysia()
   .use(imageRoutes)
   .use(proxyRoutes)
   .use(notificationRoutes)
+  .use(fileRoutes)
+  .use(logRoutes)
 
   // Future routes — each will use requireAuth() at the top of their handlers:
 

@@ -188,3 +188,33 @@ export async function writeRemoteFile(ssh: NodeSSH, remotePath: string, content:
     await unlink(tempFile).catch(() => undefined)
   }
 }
+
+export async function writeRemoteTempFile(ssh: NodeSSH, remotePath: string, content: string): Promise<string> {
+  const tempFile = join(tmpdir(), `launchpad-remote-${randomUUID()}.tmp`)
+  const remoteTempPath = `${remotePath}.launchpad-${randomUUID()}.tmp`
+
+  try {
+    await writeFile(tempFile, content, 'utf8')
+
+    const remoteDir = posix.dirname(remotePath)
+    const mkdirResult = await execCommand(ssh, `mkdir -p ${shellEscape(remoteDir)}`)
+    if (mkdirResult.code !== 0) {
+      throw new Error(mkdirResult.stderr || `Failed to prepare ${remoteDir}`)
+    }
+
+    await ssh.putFile(tempFile, remoteTempPath)
+    return remoteTempPath
+  } finally {
+    await unlink(tempFile).catch(() => undefined)
+  }
+}
+
+export async function backupRemoteFile(ssh: NodeSSH, remotePath: string): Promise<string> {
+  const backupPath = `${remotePath}.launchpad-backup-${Date.now()}`
+  const result = await execCommand(ssh, `cp ${shellEscape(remotePath)} ${shellEscape(backupPath)}`)
+  if (result.code !== 0) {
+    throw new Error(result.stderr || result.stdout || `Failed to back up ${remotePath}`)
+  }
+
+  return backupPath
+}

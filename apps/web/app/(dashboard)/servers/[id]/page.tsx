@@ -81,11 +81,14 @@ export default function ServerDetailPage() {
 
   async function handleCreateProject(payload: {
     name: string
+    source: Project['source']
+    runtime: Project['runtime']
     repoImage: string
     deployCommands: string[]
     envPath?: string
     workingDir?: string
     proxyType: Project['proxyType']
+    healthCheck?: Project['healthCheck']
     webhookEnabled: boolean
     notifications: Project['notifications']
   }) {

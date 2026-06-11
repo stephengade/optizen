@@ -57,6 +57,24 @@ export function EnvEditor({
 }: EnvEditorProps) {
   const dirty = value !== original
   const diff = useMemo(() => summarizeDiff(original, value), [original, value])
+  const preview = useMemo(() => {
+    const before = original.split('\n')
+    const after = value.split('\n')
+    const rows: Array<{ type: 'added' | 'removed' | 'changed'; text: string }> = []
+
+    const max = Math.max(before.length, after.length)
+    for (let index = 0; index < max; index += 1) {
+      const previous = before[index]
+      const next = after[index]
+      if (previous === next) continue
+      if (previous === undefined && next !== undefined) rows.push({ type: 'added', text: `+ ${next}` })
+      else if (previous !== undefined && next === undefined) rows.push({ type: 'removed', text: `- ${previous}` })
+      else rows.push({ type: 'changed', text: `~ ${next ?? previous ?? ''}` })
+      if (rows.length >= 10) break
+    }
+
+    return rows
+  }, [original, value])
 
   return (
     <section className="rounded-2xl border border-[var(--border)] bg-[var(--surface)] p-6">
@@ -100,7 +118,32 @@ export function EnvEditor({
           </div>
 
           <div className="rounded-xl border border-[var(--border)] bg-[var(--surface-2)] p-4 text-sm text-[var(--text-muted)]">
-            Saving overwrites the remote file at <span className="font-mono text-[var(--text)]">{path}</span>.
+            Saving validates the env format, creates a remote backup, stores a local revision, and then overwrites
+            <span className="font-mono text-[var(--text)]"> {path}</span>.
+          </div>
+
+          <div className="rounded-xl border border-[var(--border)] bg-[var(--surface-2)] p-4">
+            <h3 className="text-sm font-medium text-[var(--text)]">Diff preview</h3>
+            <div className="mt-3 space-y-2 font-mono text-xs">
+              {preview.length > 0 ? (
+                preview.map((row, index) => (
+                  <div
+                    key={`${row.type}-${index}`}
+                    className={
+                      row.type === 'added'
+                        ? 'text-[var(--green)]'
+                        : row.type === 'removed'
+                          ? 'text-[var(--red)]'
+                          : 'text-[var(--yellow)]'
+                    }
+                  >
+                    {row.text}
+                  </div>
+                ))
+              ) : (
+                <div className="text-[var(--text-muted)]">No changes to preview.</div>
+              )}
+            </div>
           </div>
         </div>
       </div>

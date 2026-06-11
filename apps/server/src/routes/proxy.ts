@@ -2,7 +2,15 @@ import { Elysia, t } from 'elysia'
 import { recordActivity } from '../lib/activity'
 import { hasKey } from '../lib/crypto'
 import { getDb } from '../lib/db'
-import { execCommand, getConnection, readRemoteFile, writeRemoteFile } from '../lib/ssh'
+import { listFileRevisions, saveFileRevision } from '../lib/fileHistory'
+import {
+  backupRemoteFile,
+  execCommand,
+  getConnection,
+  readRemoteFile,
+  writeRemoteFile,
+  writeRemoteTempFile,
+} from '../lib/ssh'
 
 type ProxyKind = 'caddy' | 'nginx' | 'none'
 
@@ -153,7 +161,12 @@ export const proxyRoutes = new Elysia({ prefix: '/proxy' })
 
         try {
           const content = await readRemoteFile(ssh, path)
-          return { type: responseType, path, content, editable: true, error: '' }
+          const revisions = await listFileRevisions({
+            kind: 'proxy',
+            serverId: params.serverId,
+            path,
+          })
+          return { type: responseType, path, content, editable: true, error: '', revisions }
         } catch (error) {
           return {
             type: responseType,
@@ -161,6 +174,7 @@ export const proxyRoutes = new Elysia({ prefix: '/proxy' })
             content: '',
             editable: true,
             error: error instanceof Error ? error.message : 'Failed to read proxy config',
+            revisions: [],
           }
         }
       })
@@ -186,49 +200,79 @@ export const proxyRoutes = new Elysia({ prefix: '/proxy' })
             return { message: 'Provide a config path to edit when no host-level proxy is detected.' }
           }
 
-          await writeRemoteFile(ssh, path, body.content)
+          let remoteTempPath: string | null = null
+          try {
+            remoteTempPath = await writeRemoteTempFile(ssh, path, body.content)
 
-          if (detectedType === 'none') {
-            return {
-              success: true,
-              path,
-              reloaded: false,
-              validated: false,
-              message: 'Config file saved. No host-level proxy was detected, so validation and reload were skipped.',
+            if (detectedType !== 'none') {
+              const validation =
+                detectedType === 'caddy'
+                  ? await execCommand(ssh, `caddy validate --config ${shellEscape(remoteTempPath)}`)
+                  : await execCommand(ssh, `nginx -t -c ${shellEscape(remoteTempPath)}`)
+
+              if (validation.code !== 0) {
+                set.status = 400
+                return {
+                  message: validation.stderr || validation.stdout || 'Proxy config validation failed',
+                }
+              }
+            }
+
+            const previousContent = await readRemoteFile(ssh, path).catch(() => '')
+            if (previousContent) {
+              await saveFileRevision({
+                kind: 'proxy',
+                serverId: params.serverId,
+                path,
+                content: previousContent,
+                summary: 'Snapshot before proxy overwrite',
+              })
+            }
+            const backupPath = previousContent ? await backupRemoteFile(ssh, path) : undefined
+            await writeRemoteFile(ssh, path, body.content)
+
+            if (detectedType === 'none') {
+              await recordActivity({
+                serverId: params.serverId,
+                type: 'proxy_config_updated',
+                status: 'success',
+                title: 'Saved custom proxy config',
+                detail: backupPath ? `${path} backed up to ${backupPath}` : path,
+              })
+              return {
+                success: true,
+                path,
+                backupPath,
+                reloaded: false,
+                validated: false,
+                message: 'Config file saved. No host-level proxy was detected, so validation and reload were skipped.',
+              }
+            }
+
+            const reload =
+              detectedType === 'caddy'
+                ? await execCommand(ssh, `caddy reload --config ${shellEscape(path)}`)
+                : await execCommand(ssh, 'systemctl reload nginx')
+
+            if (reload.code !== 0) {
+              set.status = 500
+              return { message: reload.stderr || reload.stdout || 'Proxy reload failed' }
+            }
+
+            await recordActivity({
+              serverId: params.serverId,
+              type: 'proxy_config_updated',
+              status: 'success',
+              title: 'Saved proxy config',
+              detail: backupPath ? `${path} backed up to ${backupPath}` : path,
+            })
+
+            return { success: true, path, backupPath, reloaded: true, validated: true }
+          } finally {
+            if (remoteTempPath) {
+              await execCommand(ssh, `rm -f ${shellEscape(remoteTempPath)}`).catch(() => undefined)
             }
           }
-
-          const validation =
-            detectedType === 'caddy'
-              ? await execCommand(ssh, `caddy validate --config ${shellEscape(path)}`)
-              : await execCommand(ssh, `nginx -t -c ${shellEscape(path)}`)
-
-          if (validation.code !== 0) {
-            set.status = 400
-            return {
-              message: validation.stderr || validation.stdout || 'Proxy config validation failed',
-            }
-          }
-
-          const reload =
-            detectedType === 'caddy'
-              ? await execCommand(ssh, `caddy reload --config ${shellEscape(path)}`)
-              : await execCommand(ssh, 'systemctl reload nginx')
-
-          if (reload.code !== 0) {
-            set.status = 500
-            return { message: reload.stderr || reload.stdout || 'Proxy reload failed' }
-          }
-
-          await recordActivity({
-            serverId: params.serverId,
-            type: 'proxy_config_updated',
-            status: 'success',
-            title: 'Saved proxy config',
-            detail: path,
-          })
-
-          return { success: true, path, reloaded: true, validated: true }
         })
       } catch (error) {
         set.status = error instanceof Error && error.message === 'Server not found' ? 404 : 500
@@ -236,6 +280,59 @@ export const proxyRoutes = new Elysia({ prefix: '/proxy' })
       }
     },
     { body: t.Object({ content: t.String(), path: t.Optional(t.String()) }) }
+  )
+  .get('/:serverId/history', async (context: any) => {
+    const { requireAuth, params, query, set } = context
+    await requireAuth()
+    requireCryptoReady(set)
+
+    const path = typeof query.path === 'string' ? query.path.trim() : ''
+    if (!path) {
+      set.status = 400
+      return { message: 'A config path is required to load proxy history' }
+    }
+
+    return listFileRevisions({
+      kind: 'proxy',
+      serverId: params.serverId,
+      path,
+    })
+  })
+  .post(
+    '/:serverId/restore',
+    async (context: any) => {
+      const { requireAuth, params, body, set } = context
+      await requireAuth()
+      requireCryptoReady(set)
+
+      const db = await getDb()
+      const revision = db.data.fileHistory.find(
+        (item) => item.id === body.revisionId && item.kind === 'proxy' && item.serverId === params.serverId
+      )
+      if (!revision) {
+        set.status = 404
+        return { message: 'Proxy revision not found' }
+      }
+
+      try {
+        return await withSsh(params.serverId, async (ssh) => {
+          const backupPath = await backupRemoteFile(ssh, revision.path)
+          await writeRemoteFile(ssh, revision.path, revision.content)
+          await recordActivity({
+            serverId: params.serverId,
+            type: 'proxy_config_updated',
+            status: 'warning',
+            title: 'Restored proxy config revision',
+            detail: `Restored ${revision.path}. Backup: ${backupPath}`,
+          })
+          return { success: true, path: revision.path, backupPath }
+        })
+      } catch (error) {
+        set.status = error instanceof Error && error.message === 'Server not found' ? 404 : 500
+        return { message: error instanceof Error ? error.message : 'Failed to restore proxy config' }
+      }
+    },
+    { body: t.Object({ revisionId: t.String() }) }
   )
   .post('/:serverId/reload', async (context: any) => {
     const { requireAuth, params, set } = context

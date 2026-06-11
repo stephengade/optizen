@@ -3,11 +3,13 @@
 import { useEffect, useMemo, useState } from 'react'
 import Link from 'next/link'
 import { useParams } from 'next/navigation'
-import type { Project } from '@launchpad/shared'
+import type { FileRevision, Project } from '@launchpad/shared'
 import { toast } from 'sonner'
+import { FileRevisionList } from '@/components/dashboard/FileRevisionList'
 import { ProxyEditor } from '@/components/dashboard/ProxyEditor'
 import { SitesList } from '@/components/dashboard/SitesList'
 import { Button } from '@/components/ui/Button'
+import { ConfirmActionModal } from '@/components/ui/ConfirmActionModal'
 import { api, ApiError } from '@/lib/api'
 
 interface ProxyStatus {
@@ -23,6 +25,7 @@ interface ProxyConfig {
   content: string
   editable: boolean
   error: string
+  revisions?: FileRevision[]
 }
 
 interface NginxSites {
@@ -36,10 +39,13 @@ export default function ServerProxyPage() {
   const [config, setConfig] = useState<ProxyConfig | null>(null)
   const [projects, setProjects] = useState<Project[]>([])
   const [sites, setSites] = useState<Array<{ name: string; enabled: boolean }>>([])
+  const [revisions, setRevisions] = useState<FileRevision[]>([])
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
   const [reloading, setReloading] = useState(false)
   const [togglingSite, setTogglingSite] = useState<string | null>(null)
+  const [restoringId, setRestoringId] = useState<string | null>(null)
+  const [confirmSaveOpen, setConfirmSaveOpen] = useState(false)
 
   async function loadData(pathOverride?: string) {
     setLoading(true)
@@ -67,6 +73,7 @@ export default function ServerProxyPage() {
 
       if (configResult.status === 'fulfilled') {
         setConfig(configResult.value)
+        setRevisions(configResult.value.revisions ?? [])
       } else {
         const message = configResult.reason instanceof ApiError ? configResult.reason.message : 'Failed to load proxy config'
         toast.error(message)
@@ -123,17 +130,34 @@ export default function ServerProxyPage() {
     if (!config) return
     setSaving(true)
     try {
-      const result = await api.put<{ success: boolean; path: string; message?: string; reloaded?: boolean }>(
+      const result = await api.put<{ success: boolean; path: string; message?: string; reloaded?: boolean; backupPath?: string }>(
         `/proxy/${params.id}/config`,
         { content: config.content, path: config.path }
       )
-      toast.success(result.message ?? (result.reloaded ? 'Proxy config saved and reloaded' : 'Config file saved'))
+      toast.success(
+        result.message ??
+          (result.reloaded ? `Proxy config saved and reloaded${result.backupPath ? ` with backup at ${result.backupPath}` : ''}` : 'Config file saved')
+      )
       void loadData(config.path)
     } catch (error) {
       const message = error instanceof ApiError ? error.message : 'Failed to save proxy config'
       toast.error(message)
     } finally {
       setSaving(false)
+    }
+  }
+
+  async function handleRestore(revisionId: string) {
+    setRestoringId(revisionId)
+    try {
+      const result = await api.post<{ backupPath?: string; path: string }>(`/proxy/${params.id}/restore`, { revisionId })
+      toast.success(result.backupPath ? `Proxy config restored. Backup created at ${result.backupPath}` : 'Proxy config restored')
+      void loadData(result.path)
+    } catch (error) {
+      const message = error instanceof ApiError ? error.message : 'Failed to restore proxy revision'
+      toast.error(message)
+    } finally {
+      setRestoringId(null)
     }
   }
 
@@ -233,15 +257,43 @@ export default function ServerProxyPage() {
             onPathChange={(value) => setConfig((current) => (current ? { ...current, path: value } : current))}
             onLoadPath={() => void loadData(config?.path)}
             onChange={(value) => setConfig((current) => (current ? { ...current, content: value } : current))}
-            onSave={() => void handleSave()}
+            onSave={() => setConfirmSaveOpen(true)}
             onReload={() => void handleReload()}
           />
+
+          {config?.path ? (
+            <section className="rounded-2xl border border-[var(--border)] bg-[var(--surface)] p-6">
+              <h2 className="mb-3 text-lg font-semibold text-[var(--text)]">Config history</h2>
+              <FileRevisionList revisions={revisions} restoring={restoringId} onRestore={(revisionId) => void handleRestore(revisionId)} />
+            </section>
+          ) : null}
 
           {status?.type === 'nginx' ? (
             <SitesList sites={sites} togglingSite={togglingSite} onToggle={(site) => void handleToggle(site)} />
           ) : null}
         </>
       )}
+
+      <ConfirmActionModal
+        open={confirmSaveOpen}
+        title="Save proxy config"
+        description="Launchpad will validate the candidate config first when a host proxy is detected, then snapshot the current version, create a remote backup, overwrite the file, and reload the proxy."
+        confirmLabel="Save config"
+        tone="primary"
+        details={[
+          `Target: ${config?.path || 'No path selected'}`,
+          `Proxy type: ${config?.type || 'unknown'}`,
+          status?.type === 'none'
+            ? 'Validation and reload are skipped for custom non-host-managed proxy files.'
+            : 'Validation happens before the live file is replaced.',
+        ]}
+        loading={saving}
+        onClose={() => setConfirmSaveOpen(false)}
+        onConfirm={async () => {
+          await handleSave()
+          setConfirmSaveOpen(false)
+        }}
+      />
     </div>
   )
 }

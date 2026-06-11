@@ -10,6 +10,7 @@ import type {
   ActivityEvent,
   AuthConfig,
   AuthSession,
+  FileRevision,
   Server,
   Project,
   DeployRecord,
@@ -26,6 +27,7 @@ export interface DbSchema {
   deployHistory: DeployRecord[]
   notifications: NotificationSettings
   activity: ActivityEvent[]
+  fileHistory: FileRevision[]
 }
 
 const DB_PATH = process.env.DB_PATH ?? join(process.cwd(), 'launchpad.db.json')
@@ -42,6 +44,7 @@ const defaultData: DbSchema = {
     globalWebhooks: [],
   },
   activity: [],
+  fileHistory: [],
 }
 
 let _db: Low<DbSchema> | null = null

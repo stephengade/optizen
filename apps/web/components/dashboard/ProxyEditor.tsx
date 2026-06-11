@@ -1,5 +1,6 @@
 'use client'
 
+import { useMemo } from 'react'
 import { Button } from '@/components/ui/Button'
 
 interface ProxyEditorProps {
@@ -34,6 +35,13 @@ export function ProxyEditor({
   const hasPath = configPath.trim().length > 0
   const canSave = editable && hasPath
   const canReload = proxyType !== 'none'
+  const stats = useMemo(() => {
+    const lines = configValue.split('\n')
+    return {
+      lineCount: configValue ? lines.length : 0,
+      nonEmpty: lines.filter((line) => line.trim()).length,
+    }
+  }, [configValue])
 
   return (
     <section className="rounded-2xl border border-[var(--border)] bg-[var(--surface)] p-6">
@@ -84,13 +92,35 @@ export function ProxyEditor({
         </div>
       ) : null}
 
-      <textarea
-        value={configValue}
-        onChange={(event) => onChange(event.target.value)}
-        className="mt-5 min-h-[32rem] w-full rounded-xl border border-[var(--border)] bg-[#0b0b0d] px-4 py-3 font-mono text-sm text-[var(--text)] outline-none focus:border-[var(--green)]"
-        spellCheck={false}
-        disabled={!editable}
-      />
+      <div className="mt-5 grid gap-4 lg:grid-cols-[1fr_280px]">
+        <textarea
+          value={configValue}
+          onChange={(event) => onChange(event.target.value)}
+          className="min-h-[32rem] w-full rounded-xl border border-[var(--border)] bg-[#0b0b0d] px-4 py-3 font-mono text-sm text-[var(--text)] outline-none focus:border-[var(--green)]"
+          spellCheck={false}
+          disabled={!editable}
+        />
+
+        <div className="space-y-4">
+          <div className="rounded-xl border border-[var(--border)] bg-[var(--surface-2)] p-4">
+            <h3 className="text-sm font-medium text-[var(--text)]">Write safety</h3>
+            <div className="mt-3 space-y-2 text-sm text-[var(--text-muted)]">
+              <div>Temp validation: {proxyType === 'none' ? 'Skipped' : 'Before overwrite'}</div>
+              <div>Remote backup: Created before replace</div>
+              <div>Local revision: Saved in Launchpad history</div>
+            </div>
+          </div>
+
+          <div className="rounded-xl border border-[var(--border)] bg-[var(--surface-2)] p-4">
+            <h3 className="text-sm font-medium text-[var(--text)]">File stats</h3>
+            <div className="mt-3 space-y-2 text-sm text-[var(--text-muted)]">
+              <div>Lines: {stats.lineCount}</div>
+              <div>Non-empty lines: {stats.nonEmpty}</div>
+              <div>Reload path: {canReload ? 'Available' : 'Manual only'}</div>
+            </div>
+          </div>
+        </div>
+      </div>
     </section>
   )
 }

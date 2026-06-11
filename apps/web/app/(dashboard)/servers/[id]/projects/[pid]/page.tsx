@@ -3,13 +3,23 @@
 import { useEffect, useState } from 'react'
 import Link from 'next/link'
 import { useParams, useRouter } from 'next/navigation'
-import type { ActivityEvent, DeployLogEvent, DeployRecord, DeployStatus, Project, ProjectHealthState } from '@launchpad/shared'
+import type {
+  ActivityEvent,
+  DeployLogEvent,
+  DeployRecord,
+  DeployStatus,
+  Project,
+  ProjectFileSuggestion,
+  ProjectHealthState,
+} from '@launchpad/shared'
 import { toast } from 'sonner'
 import { ActivityTimeline } from '@/components/dashboard/ActivityTimeline'
 import { DeployButton } from '@/components/dashboard/DeployButton'
 import { DeployHistory } from '@/components/dashboard/DeployHistory'
+import { FileSuggestions } from '@/components/dashboard/FileSuggestions'
 import { HealthBadge } from '@/components/dashboard/HealthBadge'
 import { ImagePanel, type ImageStatus } from '@/components/dashboard/ImagePanel'
+import { ProjectLogsPanel } from '@/components/dashboard/ProjectLogsPanel'
 import { ProjectClassificationBadge } from '@/components/dashboard/ProjectClassificationBadge'
 import { DeployStatusBadge } from '@/components/dashboard/DeployStatusBadge'
 import { LogStream, type LogLine } from '@/components/dashboard/LogStream'
@@ -34,6 +44,7 @@ export default function ProjectDetailPage() {
   const [deploying, setDeploying] = useState(false)
   const [imageStatus, setImageStatus] = useState<ImageStatus | null>(null)
   const [activity, setActivity] = useState<ActivityEvent[]>([])
+  const [fileSuggestions, setFileSuggestions] = useState<ProjectFileSuggestion[]>([])
   const [imageTags, setImageTags] = useState<string[]>([])
   const [selectedPullTag, setSelectedPullTag] = useState('')
   const [selectedRollbackId, setSelectedRollbackId] = useState('')
@@ -45,6 +56,12 @@ export default function ProjectDetailPage() {
   const [rollbackConfirmOpen, setRollbackConfirmOpen] = useState(false)
   const [pruneConfirmOpen, setPruneConfirmOpen] = useState(false)
   const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false)
+  const [logSources, setLogSources] = useState<Array<{ id: string; label: string }>>([])
+  const [selectedLogSource, setSelectedLogSource] = useState('')
+  const [logSnapshot, setLogSnapshot] = useState<string[]>([])
+  const [logCheckedAt, setLogCheckedAt] = useState<string>()
+  const [logsLoading, setLogsLoading] = useState(false)
+  const [logsAutoRefresh, setLogsAutoRefresh] = useState(false)
 
   const webhookUrl = project?.webhookSecret
     ? `${process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:3001'}/webhooks/deploy/${params.pid}/${project.webhookSecret}`
@@ -115,6 +132,40 @@ export default function ProjectDetailPage() {
     }
   }
 
+  async function loadFileSuggestions() {
+    try {
+      const data = await api.get<ProjectFileSuggestion[]>(`/files/projects/${params.pid}/suggestions`)
+      setFileSuggestions(data)
+    } catch {
+      setFileSuggestions([])
+    }
+  }
+
+  async function loadLogSources() {
+    try {
+      const data = await api.get<Array<{ id: string; label: string }>>(`/logs/${params.pid}/sources`)
+      setLogSources(data)
+      setSelectedLogSource((current) => current || data[0]?.id || '')
+    } catch {
+      setLogSources([])
+    }
+  }
+
+  async function loadProjectLogs(source = selectedLogSource) {
+    if (!source) return
+    setLogsLoading(true)
+    try {
+      const data = await api.get<{ lines: string[]; checkedAt: string }>(`/logs/${params.pid}/snapshot?source=${encodeURIComponent(source)}`)
+      setLogSnapshot(data.lines)
+      setLogCheckedAt(data.checkedAt)
+    } catch (error) {
+      const message = error instanceof ApiError ? error.message : 'Failed to load project logs'
+      toast.error(message)
+    } finally {
+      setLogsLoading(false)
+    }
+  }
+
   async function selectDeploy(deployId: string) {
     try {
       const record = await api.get<DeployRecord>(`/deploy/${params.pid}/history/${deployId}`)
@@ -130,7 +181,22 @@ export default function ProjectDetailPage() {
     void loadHistory()
     void loadImageState()
     void loadActivity()
+    void loadFileSuggestions()
+    void loadLogSources()
   }, [params.pid])
+
+  useEffect(() => {
+    if (!selectedLogSource) return
+    void loadProjectLogs(selectedLogSource)
+  }, [selectedLogSource])
+
+  useEffect(() => {
+    if (!logsAutoRefresh || !selectedLogSource) return
+    const interval = setInterval(() => {
+      void loadProjectLogs(selectedLogSource)
+    }, 10_000)
+    return () => clearInterval(interval)
+  }, [logsAutoRefresh, selectedLogSource])
 
   useEffect(() => {
     const source = new EventSource(`/api/deploy/${params.pid}/stream`, { withCredentials: true })
@@ -179,11 +245,14 @@ export default function ProjectDetailPage() {
 
   async function handleUpdate(payload: {
     name: string
+    source: Project['source']
+    runtime: Project['runtime']
     repoImage: string
     deployCommands: string[]
     envPath?: string
     workingDir?: string
     proxyType: Project['proxyType']
+    healthCheck?: Project['healthCheck']
     webhookEnabled: boolean
     notifications: Project['notifications']
   }) {
@@ -367,6 +436,8 @@ export default function ProjectDetailPage() {
         </div>
       </section>
 
+      <FileSuggestions suggestions={fileSuggestions} />
+
       <section className="rounded-2xl border border-[var(--border)] bg-[var(--surface)] p-6">
         <div className="flex flex-wrap items-start justify-between gap-4">
           <div>
@@ -422,6 +493,18 @@ export default function ProjectDetailPage() {
         onPrune={() => setPruneConfirmOpen(true)}
         onRefresh={() => void loadImageState()}
         onRollback={() => setRollbackConfirmOpen(true)}
+      />
+
+      <ProjectLogsPanel
+        sources={logSources}
+        selectedSource={selectedLogSource}
+        lines={logSnapshot}
+        checkedAt={logCheckedAt}
+        loading={logsLoading}
+        autoRefresh={logsAutoRefresh}
+        onSourceChange={setSelectedLogSource}
+        onRefresh={() => void loadProjectLogs(selectedLogSource)}
+        onAutoRefreshToggle={() => setLogsAutoRefresh((current) => !current)}
       />
 
       <section className="grid gap-6 xl:grid-cols-[1.1fr_0.9fr]">
