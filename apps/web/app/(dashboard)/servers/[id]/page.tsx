@@ -23,6 +23,7 @@ export default function ServerDetailPage() {
   const [status, setStatus] = useState<ServerConnectionStatus | null>(null)
   const [loading, setLoading] = useState(true)
   const [testing, setTesting] = useState(false)
+  const [reclassifying, setReclassifying] = useState(false)
   const [editOpen, setEditOpen] = useState(false)
   const [addProjectOpen, setAddProjectOpen] = useState(false)
 
@@ -98,6 +99,20 @@ export default function ServerDetailPage() {
     }
   }
 
+  async function handleReclassifyProjects() {
+    setReclassifying(true)
+    try {
+      const result = await api.post<{ success: boolean; updated: number }>(`/servers/${params.id}/reclassify-projects`)
+      await loadData()
+      toast.success(result.updated > 0 ? `Updated ${result.updated} imported project types` : 'Project types were already up to date')
+    } catch (error) {
+      const message = error instanceof ApiError ? error.message : 'Failed to refresh project types'
+      toast.error(message)
+    } finally {
+      setReclassifying(false)
+    }
+  }
+
   if (loading) {
     return (
       <div className="px-6 py-8 text-sm text-[var(--text-muted)] lg:px-8">
@@ -122,6 +137,9 @@ export default function ServerDetailPage() {
           <p className="mt-2 max-w-2xl text-sm text-[var(--text-muted)]">
             Launchpad only shows projects that you add in this dashboard. A successful SSH test confirms access to the VPS, but it does not auto-import apps from the server.
           </p>
+          <p className="mt-2 max-w-2xl text-sm text-[var(--text-muted)]">
+            Imported projects from older scans may still carry a stale proxy badge. Refresh project types to reclassify them from their image, name, and working directory.
+          </p>
           <div className="mt-4">
             <div className="flex flex-wrap gap-3">
               <Button variant="ghost" size="sm" onClick={() => setEditOpen(true)}>
@@ -129,6 +147,9 @@ export default function ServerDetailPage() {
               </Button>
               <Button size="sm" onClick={() => setAddProjectOpen(true)}>
                 Add project
+              </Button>
+              <Button variant="ghost" size="sm" onClick={() => void handleReclassifyProjects()} loading={reclassifying}>
+                Refresh project types
               </Button>
               <Link
                 href={`/servers/${params.id}/proxy`}

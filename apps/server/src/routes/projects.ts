@@ -3,6 +3,7 @@ import { Elysia, t } from 'elysia'
 import type { Project } from '@launchpad/shared'
 import { decrypt, encrypt, hasKey } from '../lib/crypto'
 import { getDb, saveDb } from '../lib/db'
+import { inferAndApplyProjectProxyType } from '../lib/projectInference'
 
 const webhookBody = t.Object({
   onSuccess: t.Boolean(),
@@ -66,9 +67,27 @@ export const projectRoutes = new Elysia()
       return { message: 'Server not found' }
     }
 
-    return db.data.projects
+    let changed = false
+    const projects = db.data.projects
       .filter((project) => project.serverId === params.id)
-      .map(serializeProject)
+      .map((project) => {
+        if (project.proxyType === 'none') {
+          const inferred = inferAndApplyProjectProxyType(project)
+          if (inferred !== 'none') {
+            project.proxyType = inferred
+            project.updatedAt = new Date().toISOString()
+            changed = true
+          }
+        }
+
+        return project
+      })
+
+    if (changed) {
+      await saveDb()
+    }
+
+    return projects.map(serializeProject)
   })
   .post(
     '/servers/:id/projects',

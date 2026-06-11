@@ -38,6 +38,17 @@ function getConfigPath(type: ProxyKind) {
   return ''
 }
 
+function shellEscape(value: string) {
+  return `'${value.replace(/'/g, `'\"'\"'`)}'`
+}
+
+function inferProxyTypeFromPath(path: string): Exclude<ProxyKind, 'none'> | 'none' {
+  const normalized = path.toLowerCase()
+  if (normalized.includes('caddy')) return 'caddy'
+  if (normalized.includes('nginx')) return 'nginx'
+  return 'none'
+}
+
 async function detectProxy(ssh: Awaited<ReturnType<typeof getConnection>>): Promise<ProxyKind> {
   const caddy = await execCommand(ssh, 'command -v caddy >/dev/null 2>&1 && echo caddy')
   if (caddy.stdout.trim() === 'caddy') return 'caddy'
@@ -46,6 +57,25 @@ async function detectProxy(ssh: Awaited<ReturnType<typeof getConnection>>): Prom
   if (nginx.stdout.trim() === 'nginx') return 'nginx'
 
   return 'none'
+}
+
+async function resolveConfigPath(ssh: Awaited<ReturnType<typeof getConnection>>, type: ProxyKind) {
+  if (type === 'nginx') {
+    const result = await execCommand(ssh, "nginx -V 2>&1 | sed -n 's/.*--conf-path=\\([^ ]*\\).*/\\1/p' | head -n 1")
+    const path = result.stdout.trim()
+    if (path) return path
+  }
+
+  if (type === 'caddy') {
+    const result = await execCommand(
+      ssh,
+      "systemctl cat caddy 2>/dev/null | sed -n 's/^ExecStart=.*--config \\([^ ]*\\).*/\\1/p' | head -n 1"
+    )
+    const path = result.stdout.trim()
+    if (path) return path
+  }
+
+  return getConfigPath(type)
 }
 
 export const proxyRoutes = new Elysia({ prefix: '/proxy' })
@@ -75,6 +105,8 @@ export const proxyRoutes = new Elysia({ prefix: '/proxy' })
           return { type, running: false, version: '', configPath: '' }
         }
 
+        const configPath = await resolveConfigPath(ssh, type)
+
         const statusResult = await execCommand(ssh, `systemctl is-active ${type}`)
         const versionResult =
           type === 'caddy'
@@ -85,7 +117,7 @@ export const proxyRoutes = new Elysia({ prefix: '/proxy' })
           type,
           running: statusResult.stdout.trim() === 'active',
           version: (versionResult.stdout || versionResult.stderr).trim(),
-          configPath: getConfigPath(type),
+          configPath,
         }
       })
     } catch (error) {
@@ -94,20 +126,42 @@ export const proxyRoutes = new Elysia({ prefix: '/proxy' })
     }
   })
   .get('/:serverId/config', async (context: any) => {
-    const { requireAuth, params, set } = context
+    const { requireAuth, params, query, set } = context
     await requireAuth()
     requireCryptoReady(set)
 
     try {
       return await withSsh(params.serverId, async (ssh) => {
-        const type = await detectProxy(ssh)
-        if (type === 'none') {
-          return { type, path: '', content: '' }
+        const detectedType = await detectProxy(ssh)
+        const requestedPath = typeof query.path === 'string' && query.path.trim() ? query.path.trim() : ''
+
+        if (detectedType === 'none' && !requestedPath) {
+          return {
+            type: detectedType,
+            path: '',
+            content: '',
+            editable: false,
+            error: 'No host-level reverse proxy detected on this server. If your proxy runs in Docker, paste the config file path and click Load path.',
+          }
         }
 
-        const path = getConfigPath(type)
-        const content = await readRemoteFile(ssh, path)
-        return { type, path, content }
+        const defaultPath = detectedType === 'none' ? '' : await resolveConfigPath(ssh, detectedType)
+        const path = requestedPath || defaultPath
+        const inferredType = inferProxyTypeFromPath(path)
+        const responseType = detectedType === 'none' ? inferredType : detectedType
+
+        try {
+          const content = await readRemoteFile(ssh, path)
+          return { type: responseType, path, content, editable: true, error: '' }
+        } catch (error) {
+          return {
+            type: responseType,
+            path,
+            content: '',
+            editable: true,
+            error: error instanceof Error ? error.message : 'Failed to read proxy config',
+          }
+        }
       })
     } catch (error) {
       set.status = error instanceof Error && error.message === 'Server not found' ? 404 : 500
@@ -123,19 +177,30 @@ export const proxyRoutes = new Elysia({ prefix: '/proxy' })
 
       try {
         return await withSsh(params.serverId, async (ssh) => {
-          const type = await detectProxy(ssh)
-          if (type === 'none') {
+          const detectedType = await detectProxy(ssh)
+          const path = body.path?.trim() || (detectedType === 'none' ? '' : await resolveConfigPath(ssh, detectedType))
+
+          if (!path) {
             set.status = 400
-            return { message: 'No proxy detected on this server' }
+            return { message: 'Provide a config path to edit when no host-level proxy is detected.' }
           }
 
-          const path = getConfigPath(type)
           await writeRemoteFile(ssh, path, body.content)
 
+          if (detectedType === 'none') {
+            return {
+              success: true,
+              path,
+              reloaded: false,
+              validated: false,
+              message: 'Config file saved. No host-level proxy was detected, so validation and reload were skipped.',
+            }
+          }
+
           const validation =
-            type === 'caddy'
-              ? await execCommand(ssh, `caddy validate --config ${path}`)
-              : await execCommand(ssh, 'nginx -t')
+            detectedType === 'caddy'
+              ? await execCommand(ssh, `caddy validate --config ${shellEscape(path)}`)
+              : await execCommand(ssh, `nginx -t -c ${shellEscape(path)}`)
 
           if (validation.code !== 0) {
             set.status = 400
@@ -145,8 +210,8 @@ export const proxyRoutes = new Elysia({ prefix: '/proxy' })
           }
 
           const reload =
-            type === 'caddy'
-              ? await execCommand(ssh, `caddy reload --config ${path}`)
+            detectedType === 'caddy'
+              ? await execCommand(ssh, `caddy reload --config ${shellEscape(path)}`)
               : await execCommand(ssh, 'systemctl reload nginx')
 
           if (reload.code !== 0) {
@@ -154,14 +219,14 @@ export const proxyRoutes = new Elysia({ prefix: '/proxy' })
             return { message: reload.stderr || reload.stdout || 'Proxy reload failed' }
           }
 
-          return { success: true, path }
+          return { success: true, path, reloaded: true, validated: true }
         })
       } catch (error) {
         set.status = error instanceof Error && error.message === 'Server not found' ? 404 : 500
         return { message: error instanceof Error ? error.message : 'Failed to save proxy config' }
       }
     },
-    { body: t.Object({ content: t.String() }) }
+    { body: t.Object({ content: t.String(), path: t.Optional(t.String()) }) }
   )
   .post('/:serverId/reload', async (context: any) => {
     const { requireAuth, params, set } = context

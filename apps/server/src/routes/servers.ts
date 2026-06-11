@@ -3,6 +3,7 @@ import { Elysia, t } from 'elysia'
 import type { Server, ServerConnectionStatus } from '@launchpad/shared'
 import { encrypt, hasKey } from '../lib/crypto'
 import { getDb, saveDb } from '../lib/db'
+import { inferProxyTypeFromProject } from '../lib/projectInference'
 import { execCommand, getConnection, testConnection } from '../lib/ssh'
 
 const serverBody = t.Object({
@@ -184,6 +185,36 @@ export const serverRoutes = new Elysia({ prefix: '/servers' })
 
     return status
   })
+  .post('/:id/reclassify-projects', async (context: any) => {
+    const { requireAuth, params, set } = context
+    await requireAuth()
+    requireCryptoReady(set)
+
+    const db = await getDb()
+    const server = db.data.servers.find((item) => item.id === params.id)
+    if (!server) {
+      set.status = 404
+      return { message: 'Server not found' }
+    }
+
+    const projects = db.data.projects.filter((project) => project.serverId === params.id)
+    let updated = 0
+
+    for (const project of projects) {
+      const inferred = inferProxyTypeFromProject(project)
+      if (project.proxyType !== inferred && inferred !== 'none') {
+        project.proxyType = inferred
+        project.updatedAt = new Date().toISOString()
+        updated += 1
+      }
+    }
+
+    if (updated > 0) {
+      await saveDb()
+    }
+
+    return { success: true, updated }
+  })
   .get('/:id/discover', async (context: any) => {
     const { requireAuth, params, set } = context
     await requireAuth()
@@ -245,6 +276,14 @@ export const serverRoutes = new Elysia({ prefix: '/servers' })
             : Object.keys(container.NetworkSettings?.Ports ?? {})
           const envPath = workingDir ? `${workingDir.replace(/\/$/, '')}/.env` : undefined
           const importable = Boolean(composeService && workingDir)
+          const proxyType = inferProxyTypeFromProject({
+            name: composeService || composeProject || containerName,
+            repoImage: repository,
+            workingDir,
+            deployCommands: workingDir
+              ? ['docker compose pull', 'docker compose up -d']
+              : ['docker pull ' + image],
+          })
           const existingProject = db.data.projects.find(
             (project) =>
               project.serverId === server.id &&
@@ -284,7 +323,7 @@ export const serverRoutes = new Elysia({ prefix: '/servers' })
                 : ['docker pull ' + image],
               envPath: envExists ? envPath : undefined,
               workingDir,
-              proxyType: 'none',
+              proxyType,
               webhookEnabled: false,
               notifications: {
                 onSuccess: true,
