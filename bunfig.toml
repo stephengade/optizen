@@ -1,0 +1,6 @@
+[install]
+# Use workspace protocol for local packages
+auto = "force"
+
+[install.scopes]
+# Add any private registry scopes here if needed
