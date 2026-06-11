@@ -1,0 +1,9 @@
+.git
+.next
+dist
+node_modules
+data
+.env
+apps/*/.env
+apps/*/.env.local
+*.log

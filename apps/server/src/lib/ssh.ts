@@ -5,6 +5,10 @@
  */
 import { NodeSSH } from 'node-ssh'
 import { readFileSync } from 'fs'
+import { unlink, writeFile } from 'fs/promises'
+import { tmpdir } from 'os'
+import { join, posix } from 'path'
+import { randomUUID } from 'crypto'
 import type { Server } from '@launchpad/shared'
 import { decrypt } from './crypto'
 
@@ -18,6 +22,10 @@ export interface SshExecOptions {
   /** Stream stdout/stderr lines as they arrive */
   onLine?: (line: string) => void
   cwd?: string
+}
+
+function shellEscape(value: string): string {
+  return `'${value.replace(/'/g, `'\"'\"'`)}'`
 }
 
 /**
@@ -52,26 +60,53 @@ export async function execCommand(
   command: string,
   options: SshExecOptions = {}
 ): Promise<SshExecResult> {
-  const stdoutLines: string[] = []
-  const stderrLines: string[] = []
+  const stdoutChunks: string[] = []
+  const stderrChunks: string[] = []
+  let stdoutRemainder = ''
+  let stderrRemainder = ''
+
+  const flushLines = (buffer: string, emit: (line: string) => void) => {
+    const normalized = buffer.replace(/\r\n/g, '\n')
+    const parts = normalized.split('\n')
+    const complete = parts.slice(0, -1)
+    const remainder = parts.at(-1) ?? ''
+
+    for (const line of complete) {
+      emit(line)
+    }
+
+    return remainder
+  }
 
   const result = await ssh.execCommand(command, {
     cwd: options.cwd,
     onStdout: (chunk) => {
-      const line = chunk.toString().trimEnd()
-      stdoutLines.push(line)
-      options.onLine?.(line)
+      const text = chunk.toString()
+      stdoutChunks.push(text)
+      stdoutRemainder = flushLines(stdoutRemainder + text, (line) => {
+        options.onLine?.(line)
+      })
     },
     onStderr: (chunk) => {
-      const line = chunk.toString().trimEnd()
-      stderrLines.push(line)
-      options.onLine?.(`[stderr] ${line}`)
+      const text = chunk.toString()
+      stderrChunks.push(text)
+      stderrRemainder = flushLines(stderrRemainder + text, (line) => {
+        options.onLine?.(`[stderr] ${line}`)
+      })
     },
   })
 
+  if (stdoutRemainder.length > 0) {
+    options.onLine?.(stdoutRemainder)
+  }
+
+  if (stderrRemainder.length > 0) {
+    options.onLine?.(`[stderr] ${stderrRemainder}`)
+  }
+
   return {
-    stdout: stdoutLines.join('\n'),
-    stderr: stderrLines.join('\n'),
+    stdout: stdoutChunks.join(''),
+    stderr: stderrChunks.join(''),
     code: result.code,
   }
 }
@@ -123,5 +158,33 @@ export async function testConnection(server: Server): Promise<{ connected: boole
     }
   } finally {
     ssh?.dispose()
+  }
+}
+
+export async function readRemoteFile(ssh: NodeSSH, remotePath: string): Promise<string> {
+  const result = await execCommand(ssh, `cat ${shellEscape(remotePath)}`)
+
+  if (result.code !== 0) {
+    throw new Error(result.stderr || `Failed to read ${remotePath}`)
+  }
+
+  return result.stdout
+}
+
+export async function writeRemoteFile(ssh: NodeSSH, remotePath: string, content: string): Promise<void> {
+  const tempFile = join(tmpdir(), `launchpad-env-${randomUUID()}.tmp`)
+
+  try {
+    await writeFile(tempFile, content, 'utf8')
+
+    const remoteDir = posix.dirname(remotePath)
+    const mkdirResult = await execCommand(ssh, `mkdir -p ${shellEscape(remoteDir)}`)
+    if (mkdirResult.code !== 0) {
+      throw new Error(mkdirResult.stderr || `Failed to prepare ${remoteDir}`)
+    }
+
+    await ssh.putFile(tempFile, remotePath)
+  } finally {
+    await unlink(tempFile).catch(() => undefined)
   }
 }

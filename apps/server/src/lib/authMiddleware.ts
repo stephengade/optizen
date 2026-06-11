@@ -8,12 +8,12 @@ import { validateSession, SESSION_COOKIE } from './session'
 export const authMiddleware = new Elysia({ name: 'auth-middleware' })
   .derive({ as: 'global' }, ({ cookie, set, request }) => {
     return {
-      requireAuth: (): void => {
+      requireAuth: async (): Promise<void> => {
         const url = new URL(request.url)
         if (url.pathname.startsWith('/auth') || url.pathname === '/health') return
 
         const token = cookie[SESSION_COOKIE]?.value
-        if (typeof token !== 'string' || !validateSession(token)) {
+        if (typeof token !== 'string' || !(await validateSession(token))) {
           set.status = 401
           throw new Error('Unauthorized')
         }

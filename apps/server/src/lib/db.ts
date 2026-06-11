@@ -8,6 +8,7 @@ import { JSONFile } from 'lowdb/node'
 import { join } from 'path'
 import type {
   AuthConfig,
+  AuthSession,
   Server,
   Project,
   DeployRecord,
@@ -17,6 +18,7 @@ import type {
 
 export interface DbSchema {
   auth: AuthConfig | null
+  sessions: Record<string, AuthSession>
   rateLimit: RateLimitState
   servers: Server[]
   projects: Project[]
@@ -28,6 +30,7 @@ const DB_PATH = process.env.DB_PATH ?? join(process.cwd(), 'launchpad.db.json')
 
 const defaultData: DbSchema = {
   auth: null,
+  sessions: {},
   rateLimit: { attempts: 0 },
   servers: [],
   projects: [],

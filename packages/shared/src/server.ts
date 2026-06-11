@@ -6,6 +6,7 @@ export interface Server {
   user: string
   sshKeyPath: string
   sshPassphrase?: string // stored encrypted
+  lastConnectionStatus?: ServerConnectionStatus
   createdAt: string
   updatedAt: string
 }

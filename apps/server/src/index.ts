@@ -5,6 +5,12 @@ import { authMiddleware } from './lib/authMiddleware'
 import { purgeExpired } from './lib/session'
 import { serverRoutes } from './routes/servers'
 import { projectRoutes } from './routes/projects'
+import { deployRoutes } from './routes/deploy'
+import { webhookRoutes } from './routes/webhooks'
+import { envRoutes } from './routes/env'
+import { imageRoutes } from './routes/images'
+import { proxyRoutes } from './routes/proxy'
+import { notificationRoutes } from './routes/notifications'
 
 const PORT = process.env.PORT ? parseInt(process.env.PORT) : 3001
 const WEB_URL = process.env.WEB_URL ?? 'http://localhost:3000'
@@ -34,14 +40,14 @@ const app = new Elysia()
   .use(authRoutes)
   .use(serverRoutes)
   .use(projectRoutes)
+  .use(deployRoutes)
+  .use(webhookRoutes)
+  .use(envRoutes)
+  .use(imageRoutes)
+  .use(proxyRoutes)
+  .use(notificationRoutes)
 
   // Future routes — each will use requireAuth() at the top of their handlers:
-  // .use(deployRoutes)    — Phase 4
-  // .use(webhookRoutes)   — Phase 5
-  // .use(envRoutes)       — Phase 6
-  // .use(imageRoutes)     — Phase 7
-  // .use(proxyRoutes)     — Phase 8
-  // .use(notificationRoutes) — Phase 9
 
   .listen(PORT)
 

@@ -56,7 +56,7 @@ function serializeProject(project: Project) {
 export const projectRoutes = new Elysia()
   .get('/servers/:id/projects', async (context: any) => {
     const { requireAuth, params, set } = context
-    requireAuth()
+    await requireAuth()
     requireCryptoReady(set)
 
     const db = await getDb()
@@ -74,7 +74,7 @@ export const projectRoutes = new Elysia()
     '/servers/:id/projects',
     async (context: any) => {
       const { requireAuth, params, body, set } = context
-      requireAuth()
+      await requireAuth()
       requireCryptoReady(set)
 
       const db = await getDb()
@@ -121,7 +121,7 @@ export const projectRoutes = new Elysia()
   )
   .get('/projects/:id', async (context: any) => {
     const { requireAuth, params, set } = context
-    requireAuth()
+    await requireAuth()
     requireCryptoReady(set)
 
     const db = await getDb()
@@ -137,7 +137,7 @@ export const projectRoutes = new Elysia()
     '/projects/:id',
     async (context: any) => {
       const { requireAuth, params, body, set } = context
-      requireAuth()
+      await requireAuth()
       requireCryptoReady(set)
 
       const db = await getDb()
@@ -175,7 +175,7 @@ export const projectRoutes = new Elysia()
   )
   .delete('/projects/:id', async (context: any) => {
     const { requireAuth, params, set } = context
-    requireAuth()
+    await requireAuth()
     requireCryptoReady(set)
 
     const db = await getDb()
@@ -192,7 +192,7 @@ export const projectRoutes = new Elysia()
   })
   .post('/projects/:id/webhook-secret', async (context: any) => {
     const { requireAuth, params, set } = context
-    requireAuth()
+    await requireAuth()
     requireCryptoReady(set)
 
     const db = await getDb()

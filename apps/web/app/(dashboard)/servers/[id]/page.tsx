@@ -10,6 +10,7 @@ import { ProjectCard } from '@/components/dashboard/ProjectCard'
 import { ProjectForm } from '@/components/dashboard/ProjectForm'
 import { ServerForm } from '@/components/dashboard/ServerForm'
 import { Button } from '@/components/ui/Button'
+import { Modal } from '@/components/ui/Modal'
 import { api, ApiError } from '@/lib/api'
 
 type ServerSummary = Server & { projectCount?: number }
@@ -22,6 +23,8 @@ export default function ServerDetailPage() {
   const [status, setStatus] = useState<ServerConnectionStatus | null>(null)
   const [loading, setLoading] = useState(true)
   const [testing, setTesting] = useState(false)
+  const [editOpen, setEditOpen] = useState(false)
+  const [addProjectOpen, setAddProjectOpen] = useState(false)
 
   async function loadData() {
     try {
@@ -31,6 +34,7 @@ export default function ServerDetailPage() {
       ])
       setServer(serverData)
       setProjects(projectData)
+      setStatus(serverData.lastConnectionStatus ?? null)
     } catch (error) {
       const message = error instanceof ApiError ? error.message : 'Failed to load server'
       toast.error(message)
@@ -84,6 +88,7 @@ export default function ServerDetailPage() {
     try {
       const nextStatus = await api.post<ServerConnectionStatus>(`/servers/${params.id}/test`)
       setStatus(nextStatus)
+      setServer((current) => (current ? { ...current, lastConnectionStatus: nextStatus } : current))
       toast.success(nextStatus.connected ? 'SSH connection succeeded' : nextStatus.error ?? 'SSH connection failed')
     } catch (error) {
       const message = error instanceof ApiError ? error.message : 'Failed to test connection'
@@ -114,6 +119,25 @@ export default function ServerDetailPage() {
           <p className="mt-2 text-sm text-[var(--text-muted)]">
             {server.user}@{server.host}:{server.port}
           </p>
+          <p className="mt-2 max-w-2xl text-sm text-[var(--text-muted)]">
+            Launchpad only shows projects that you add in this dashboard. A successful SSH test confirms access to the VPS, but it does not auto-import apps from the server.
+          </p>
+          <div className="mt-4">
+            <div className="flex flex-wrap gap-3">
+              <Button variant="ghost" size="sm" onClick={() => setEditOpen(true)}>
+                Edit server
+              </Button>
+              <Button size="sm" onClick={() => setAddProjectOpen(true)}>
+                Add project
+              </Button>
+              <Link
+                href={`/servers/${params.id}/proxy`}
+                className="inline-flex h-8 items-center border border-[var(--border)] px-3 text-xs font-medium text-[var(--text)] transition-colors hover:bg-[var(--surface-2)]"
+              >
+                Open proxy manager
+              </Link>
+            </div>
+          </div>
         </div>
         <div className="flex items-center gap-3">
           <ConnectionBadge connected={status?.connected} latencyMs={status?.latencyMs} error={status?.error} />
@@ -123,23 +147,23 @@ export default function ServerDetailPage() {
         </div>
       </section>
 
-      <div className="grid gap-8 xl:grid-cols-[1fr_1fr]">
-        <ServerForm
-          title="Edit server"
-          description="Update connection details here. Deleting the server also deletes its associated projects."
-          submitLabel="Save changes"
-          initialValue={server}
-          onSubmit={handleUpdate}
-          onDelete={handleDelete}
-        />
-
-        <ProjectForm
-          title="Add project"
-          description="Define deploy commands, image source, proxy mode, and notification defaults for this server."
-          submitLabel="Create project"
-          onSubmit={handleCreateProject}
-        />
-      </div>
+      <section className="border border-[var(--border)] bg-[var(--surface)] p-6">
+        <div className="flex flex-wrap items-start justify-between gap-4">
+          <div>
+            <p className="text-xs uppercase tracking-[0.24em] text-[var(--green)]">Discovery</p>
+            <h2 className="mt-2 text-lg font-semibold text-[var(--text)]">Import running apps</h2>
+            <p className="mt-1 max-w-3xl text-sm text-[var(--text-muted)]">
+              Discovery now lives in the top-level scan workspace so you can scan every server from one place and import with a server-select modal.
+            </p>
+          </div>
+          <Link
+            href="/scan"
+            className="inline-flex h-10 items-center border border-[var(--border)] px-4 text-sm text-[var(--text)] transition-colors hover:bg-[var(--surface-2)]"
+          >
+            Open scan workspace
+          </Link>
+        </div>
+      </section>
 
       <section className="space-y-4">
         <div>
@@ -157,10 +181,51 @@ export default function ServerDetailPage() {
           </div>
         ) : (
           <div className="rounded-2xl border border-dashed border-[var(--border)] bg-[var(--surface)] p-6 text-sm text-[var(--text-muted)]">
-            No projects yet for this server.
+            No projects configured for this server yet. Use the form above to add one manually.
           </div>
         )}
       </section>
+
+      <Modal
+        open={editOpen}
+        title="Edit server"
+        description="Update connection details here. Deleting the server also deletes its associated projects."
+        onClose={() => setEditOpen(false)}
+      >
+        <ServerForm
+          title="Edit server"
+          description="Update connection details here. Deleting the server also deletes its associated projects."
+          submitLabel="Save changes"
+          initialValue={server}
+          inModal
+          onSubmit={async (payload) => {
+            await handleUpdate(payload)
+            setEditOpen(false)
+          }}
+          onDelete={async () => {
+            await handleDelete()
+            setEditOpen(false)
+          }}
+        />
+      </Modal>
+
+      <Modal
+        open={addProjectOpen}
+        title="Add project"
+        description="Define deploy commands, image source, proxy mode, and notification defaults for this server."
+        onClose={() => setAddProjectOpen(false)}
+      >
+        <ProjectForm
+          title="Add project"
+          description="Define deploy commands, image source, proxy mode, and notification defaults for this server."
+          submitLabel="Create project"
+          inModal
+          onSubmit={async (payload) => {
+            await handleCreateProject(payload)
+            setAddProjectOpen(false)
+          }}
+        />
+      </Modal>
     </div>
   )
 }

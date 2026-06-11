@@ -49,6 +49,11 @@ export default function ServersPage() {
     try {
       const status = await api.post<ServerConnectionStatus>(`/servers/${serverId}/test`)
       setStatuses((current) => ({ ...current, [serverId]: status }))
+      setServers((current) =>
+        current.map((server) =>
+          server.id === serverId ? { ...server, lastConnectionStatus: status } : server
+        )
+      )
       toast.success(status.connected ? 'SSH connection succeeded' : status.error ?? 'SSH connection failed')
     } catch (error) {
       const message = error instanceof ApiError ? error.message : 'Failed to test connection'
@@ -66,6 +71,9 @@ export default function ServersPage() {
         <p className="max-w-2xl text-sm text-[var(--text-muted)]">
           Add your VPS hosts, keep SSH credentials encrypted at rest, and drill into each server&apos;s project inventory.
         </p>
+        <p className="max-w-2xl text-sm text-[var(--text-muted)]">
+          Project counts reflect projects configured inside Launchpad. They are not auto-discovered from the VPS yet.
+        </p>
       </section>
 
       <div className="grid gap-8 xl:grid-cols-[1.2fr_0.8fr]">
@@ -79,7 +87,7 @@ export default function ServersPage() {
               <ServerCard
                 key={server.id}
                 server={server}
-                status={statuses[server.id]}
+                status={statuses[server.id] ?? server.lastConnectionStatus}
                 onTest={() => void handleTest(server.id)}
                 testing={testingId === server.id}
               />

@@ -1,23 +1,15 @@
 /**
  * Launchpad Session Layer
  * Signed session tokens stored in httpOnly cookies.
- * Sessions are kept in-memory (Map) — no DB round-trip on every request.
- * On server restart sessions are invalidated (user must re-login).
+ * Sessions are persisted in the DB so restarts do not immediately sign users out.
  */
 import { randomBytes, createHmac, timingSafeEqual } from 'crypto'
+import { getDb, saveDb } from './db'
+import type { AuthSession } from '@launchpad/shared'
 
 const SESSION_TTL_MS = 8 * 60 * 60 * 1000 // 8 hours
 const SESSION_COOKIE = 'lp_session'
 const SIGNING_SECRET = process.env.SESSION_SECRET ?? randomBytes(32).toString('hex')
-
-interface Session {
-  id: string
-  createdAt: number
-  expiresAt: number
-}
-
-// In-memory session store
-const _sessions = new Map<string, Session>()
 
 // ─── Token helpers ────────────────────────────────────────────────────────────
 
@@ -39,34 +31,62 @@ function verify(token: string): string | null {
 
 // ─── Public API ───────────────────────────────────────────────────────────────
 
-export function createSession(): string {
+export async function createSession(): Promise<string> {
   const id = randomBytes(32).toString('hex')
-  const now = Date.now()
-  _sessions.set(id, { id, createdAt: now, expiresAt: now + SESSION_TTL_MS })
+  const now = new Date()
+  const session: AuthSession = {
+    id,
+    userId: 'launchpad-user',
+    createdAt: now.toISOString(),
+    expiresAt: new Date(now.getTime() + SESSION_TTL_MS).toISOString(),
+  }
+
+  const db = await getDb()
+  db.data.sessions[id] = session
+  await saveDb()
+
   return sign(id)
 }
 
-export function validateSession(token: string): boolean {
+export async function validateSession(token: string): Promise<boolean> {
   const id = verify(token)
   if (!id) return false
-  const session = _sessions.get(id)
+  const db = await getDb()
+  const session = db.data.sessions[id]
   if (!session) return false
-  if (Date.now() > session.expiresAt) {
-    _sessions.delete(id)
+
+  if (Date.now() > new Date(session.expiresAt).getTime()) {
+    delete db.data.sessions[id]
+    await saveDb()
     return false
   }
+
   return true
 }
 
-export function destroySession(token: string): void {
+export async function destroySession(token: string): Promise<void> {
   const id = verify(token)
-  if (id) _sessions.delete(id)
+  if (!id) return
+
+  const db = await getDb()
+  delete db.data.sessions[id]
+  await saveDb()
 }
 
-export function purgeExpired(): void {
+export async function purgeExpired(): Promise<void> {
   const now = Date.now()
-  for (const [id, session] of _sessions) {
-    if (now > session.expiresAt) _sessions.delete(id)
+  const db = await getDb()
+  let changed = false
+
+  for (const [id, session] of Object.entries(db.data.sessions)) {
+    if (now > new Date(session.expiresAt).getTime()) {
+      delete db.data.sessions[id]
+      changed = true
+    }
+  }
+
+  if (changed) {
+    await saveDb()
   }
 }
 

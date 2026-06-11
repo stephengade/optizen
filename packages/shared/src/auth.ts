@@ -8,6 +8,7 @@ export interface AuthConfig {
 }
 
 export interface AuthSession {
+  id: string
   userId: string
   createdAt: string
   expiresAt: string

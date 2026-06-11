@@ -5,11 +5,14 @@ import type { Project, ProxyType } from '@launchpad/shared'
 import { Button } from '@/components/ui/Button'
 import { Input } from '@/components/ui/Input'
 
+type ProjectPreset = 'compose_existing' | 'ghcr_existing' | 'github_bootstrap' | 'custom'
+
 interface ProjectFormProps {
   title: string
   description: string
   submitLabel: string
   initialValue?: Partial<Project>
+  inModal?: boolean
   onSubmit: (payload: {
     name: string
     repoImage: string
@@ -22,6 +25,33 @@ interface ProjectFormProps {
   }) => Promise<void>
   onDelete?: () => Promise<void>
 }
+
+const PRESETS: Array<{
+  id: ProjectPreset
+  label: string
+  description: string
+}> = [
+  {
+    id: 'compose_existing',
+    label: 'Existing Compose App',
+    description: 'For apps already on the VPS with a docker-compose or compose.yaml file.',
+  },
+  {
+    id: 'ghcr_existing',
+    label: 'Existing GHCR Image',
+    description: 'For apps deployed from a registry image like ghcr.io/gadeos/app.',
+  },
+  {
+    id: 'github_bootstrap',
+    label: 'New App From GitHub',
+    description: 'For apps that still need to be cloned or bootstrapped on the VPS first.',
+  },
+  {
+    id: 'custom',
+    label: 'Custom',
+    description: 'Start from scratch and define your own commands.',
+  },
+]
 
 function getInitialValue(initialValue?: Partial<Project>) {
   return {
@@ -37,21 +67,76 @@ function getInitialValue(initialValue?: Partial<Project>) {
   }
 }
 
+function getPresetDefaults(preset: ProjectPreset, current: ReturnType<typeof getInitialValue>) {
+  if (preset === 'compose_existing') {
+    return {
+      ...current,
+      workingDir: current.workingDir || '/var/www/app',
+      envPath: current.envPath || '/var/www/app/.env',
+      deployCommands: 'docker compose pull\ndocker compose up -d',
+    }
+  }
+
+  if (preset === 'ghcr_existing') {
+    return {
+      ...current,
+      workingDir: current.workingDir || '/var/www/app',
+      envPath: current.envPath || '/var/www/app/.env',
+      deployCommands: `docker pull ${current.repoImage || 'ghcr.io/owner/app'}:latest\ndocker compose up -d`,
+    }
+  }
+
+  if (preset === 'github_bootstrap') {
+    return {
+      ...current,
+      workingDir: current.workingDir || '/var/www/app',
+      envPath: current.envPath || '/var/www/app/.env',
+      deployCommands:
+        'git pull origin main\n' +
+        'docker compose build\n' +
+        'docker compose up -d',
+    }
+  }
+
+  return current
+}
+
+function getPresetHint(preset: ProjectPreset) {
+  if (preset === 'compose_existing') {
+    return 'Best when the app is already on the VPS and you normally run docker compose commands in a project directory.'
+  }
+  if (preset === 'ghcr_existing') {
+    return 'Best when your app is driven by a published container image and the VPS already has the compose or runtime setup around it.'
+  }
+  if (preset === 'github_bootstrap') {
+    return 'Best when deploys start from git on the server instead of only pulling a ready-made image.'
+  }
+  return 'Use this when your deploy flow does not match the common presets.'
+}
+
 export function ProjectForm({
   title,
   description,
   submitLabel,
   initialValue,
+  inModal = false,
   onSubmit,
   onDelete,
 }: ProjectFormProps) {
   const [values, setValues] = useState(getInitialValue(initialValue))
+  const [preset, setPreset] = useState<ProjectPreset>('compose_existing')
   const [loading, setLoading] = useState(false)
   const [deleting, setDeleting] = useState(false)
 
   useEffect(() => {
     setValues(getInitialValue(initialValue))
+    setPreset(initialValue?.id ? 'custom' : 'compose_existing')
   }, [initialValue])
+
+  function applyPreset(nextPreset: ProjectPreset) {
+    setPreset(nextPreset)
+    setValues((current) => getPresetDefaults(nextPreset, current))
+  }
 
   async function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault()
@@ -94,13 +179,42 @@ export function ProjectForm({
   }
 
   return (
-    <section className="rounded-2xl border border-[var(--border)] bg-[var(--surface)] p-6">
+    <section className={inModal ? '' : 'border border-[var(--border)] bg-[var(--surface)] p-6'}>
       <div className="mb-6">
         <h2 className="text-lg font-semibold text-[var(--text)]">{title}</h2>
         <p className="mt-1 text-sm text-[var(--text-muted)]">{description}</p>
       </div>
 
       <form className="space-y-4" onSubmit={handleSubmit}>
+        <div className="space-y-3">
+          <div>
+            <h3 className="text-xs font-medium uppercase tracking-wider text-[var(--text-muted)]">Project preset</h3>
+            <p className="mt-1 text-sm text-[var(--text-muted)]">
+              Pick the closest setup type and Launchpad will prefill the project with sensible defaults.
+            </p>
+          </div>
+          <div className="grid gap-3 md:grid-cols-2">
+            {PRESETS.map((option) => (
+              <button
+                key={option.id}
+                type="button"
+                onClick={() => applyPreset(option.id)}
+                className={`border px-4 py-4 text-left transition-colors ${
+                  preset === option.id
+                    ? 'border-[var(--green)] bg-[var(--green-dim)]'
+                    : 'border-[var(--border)] bg-[var(--surface-2)] hover:bg-[var(--surface)]'
+                }`}
+              >
+                <div className="text-sm font-medium text-[var(--text)]">{option.label}</div>
+                <div className="mt-1 text-xs text-[var(--text-muted)]">{option.description}</div>
+              </button>
+            ))}
+          </div>
+          <div className="border border-[var(--border)] bg-[var(--surface-2)] px-4 py-3 text-sm text-[var(--text-muted)]">
+            {getPresetHint(preset)}
+          </div>
+        </div>
+
         <Input
           label="Project name"
           value={values.name}
@@ -111,7 +225,19 @@ export function ProjectForm({
         <Input
           label="Container image"
           value={values.repoImage}
-          onChange={(event) => setValues((current) => ({ ...current, repoImage: event.target.value }))}
+          onChange={(event) =>
+            setValues((current) => {
+              const repoImage = event.target.value
+              if (preset === 'ghcr_existing') {
+                return {
+                  ...current,
+                  repoImage,
+                  deployCommands: `docker pull ${repoImage || 'ghcr.io/owner/app'}:latest\ndocker compose up -d`,
+                }
+              }
+              return { ...current, repoImage }
+            })
+          }
           placeholder="ghcr.io/acme/marketing-site"
           required
         />
@@ -167,6 +293,9 @@ export function ProjectForm({
             placeholder={'docker pull ghcr.io/acme/app:latest\ndocker compose up -d'}
             required
           />
+          <p className="text-xs text-[var(--text-muted)]">
+            These are the exact commands Launchpad will run on the VPS during deploys.
+          </p>
         </label>
 
         <div className="grid gap-3 md:grid-cols-2">

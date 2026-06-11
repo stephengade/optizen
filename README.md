@@ -57,6 +57,37 @@ cp apps/server/.env.example apps/server/.env
 cp apps/web/.env.example apps/web/.env.local
 ```
 
+### Production deployment
+
+Phase 10 now includes first-pass self-host deployment artifacts:
+
+- [apps/server/Dockerfile](C:\Users\gade0x\Documents\xpx\peak\launchpad\apps\server\Dockerfile)
+- [apps/web/Dockerfile](C:\Users\gade0x\Documents\xpx\peak\launchpad\apps\web\Dockerfile)
+- [docker-compose.yml](C:\Users\gade0x\Documents\xpx\peak\launchpad\docker-compose.yml)
+- [Caddyfile](C:\Users\gade0x\Documents\xpx\peak\launchpad\Caddyfile)
+
+Create a root `.env` file for Docker Compose with:
+
+```bash
+DOMAIN=launchpad.example.com
+ACME_EMAIL=ops@example.com
+SESSION_SECRET=replace-with-a-long-random-secret
+```
+
+Then build and run:
+
+```bash
+docker compose build
+docker compose up -d
+```
+
+Notes:
+
+- Caddy terminates HTTPS and proxies public traffic to the Next.js app.
+- The Next.js app rewrites `/api/*` to the internal Elysia service.
+- Launchpad data persists in `./data/launchpad.db.json`.
+- SSH key paths referenced in Launchpad still need to exist inside the running server container or be mounted in.
+
 ### Type checking
 
 ```bash
@@ -68,15 +99,15 @@ bun run type-check
 | Phase | Status | Description |
 |---|---|---|
 | 1 | ✅ Done | Project foundation, monorepo, shared types |
-| 2 | ⏳ Next | Auth — master password, AES-256, sessions |
-| 3 | — | Encrypted config store, server/project CRUD |
-| 4 | — | Deploy engine — SSH, SSE log streaming |
-| 5 | — | Inbound webhooks (GitHub Actions trigger) |
-| 6 | — | Env file manager |
-| 7 | — | Docker image manager |
-| 8 | — | Reverse proxy manager (Caddy + Nginx) |
-| 9 | — | Notifications (email + outbound webhooks) |
-| 10 | — | Security hardening + self-host deployment |
+| 2 | ✅ Done | Auth — master password, AES-256, sessions |
+| 3 | ✅ Done | Encrypted config store, server/project CRUD |
+| 4 | ✅ Done | Deploy engine — SSH, SSE log streaming |
+| 5 | ✅ Done | Inbound webhooks (GitHub Actions trigger) |
+| 6 | ✅ Done | Env file manager |
+| 7 | ✅ Done | Docker image manager |
+| 8 | ✅ Done | Reverse proxy manager (Caddy + Nginx) |
+| 9 | ✅ Done | Notifications (email + outbound webhooks) |
+| 10 | ⏳ In Progress | Security hardening + self-host deployment |
 | 11 | — | AI security scanner |
 
 ## Security

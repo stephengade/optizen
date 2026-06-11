@@ -13,7 +13,7 @@
   --red-dim:   #FF47571A;
   --yellow:    #FFB83F;
   --blue:      #4E9EFF;
-  --radius:    6px;
+  --radius:    0px;
 }
 
 @layer base {
@@ -46,5 +46,9 @@
 
   button, a {
     cursor: pointer;
+  }
+
+  [class*="rounded"] {
+    border-radius: 0 !important;
   }
 }

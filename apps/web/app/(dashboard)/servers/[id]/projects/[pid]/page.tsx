@@ -3,18 +3,50 @@
 import { useEffect, useState } from 'react'
 import Link from 'next/link'
 import { useParams, useRouter } from 'next/navigation'
-import type { Project } from '@launchpad/shared'
+import type { DeployLogEvent, DeployRecord, DeployStatus, Project } from '@launchpad/shared'
 import { toast } from 'sonner'
+import { DeployButton } from '@/components/dashboard/DeployButton'
+import { DeployHistory } from '@/components/dashboard/DeployHistory'
+import { ImagePanel, type ImageStatus } from '@/components/dashboard/ImagePanel'
+import { DeployStatusBadge } from '@/components/dashboard/DeployStatusBadge'
+import { LogStream, type LogLine } from '@/components/dashboard/LogStream'
 import { ProjectForm } from '@/components/dashboard/ProjectForm'
 import { Button } from '@/components/ui/Button'
 import { api, ApiError } from '@/lib/api'
+import { formatDuration } from '@/lib/utils'
 
 export default function ProjectDetailPage() {
   const params = useParams<{ id: string; pid: string }>()
   const router = useRouter()
   const [project, setProject] = useState<Project | null>(null)
+  const [history, setHistory] = useState<DeployRecord[]>([])
+  const [selectedDeploy, setSelectedDeploy] = useState<DeployRecord | null>(null)
+  const [status, setStatus] = useState<DeployStatus>('idle')
+  const [imageTag, setImageTag] = useState('')
+  const [logs, setLogs] = useState<LogLine[]>([])
   const [loading, setLoading] = useState(true)
   const [regenerating, setRegenerating] = useState(false)
+  const [deploying, setDeploying] = useState(false)
+  const [imageStatus, setImageStatus] = useState<ImageStatus | null>(null)
+  const [imageTags, setImageTags] = useState<string[]>([])
+  const [selectedPullTag, setSelectedPullTag] = useState('')
+  const [selectedRollbackId, setSelectedRollbackId] = useState('')
+  const [pullingImage, setPullingImage] = useState(false)
+  const [pruningImages, setPruningImages] = useState(false)
+  const [rollingBack, setRollingBack] = useState(false)
+
+  const webhookUrl = project?.webhookSecret
+    ? `${process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:3001'}/webhooks/deploy/${params.pid}/${project.webhookSecret}`
+    : ''
+  const workflowSnippet = webhookUrl
+    ? [
+        '- name: Deploy via Launchpad',
+        '  run: |',
+        `    curl -X POST "${webhookUrl}" \\`,
+        '      -H "Content-Type: application/json" \\',
+        '      -d \'{"imageTag":"${{ github.sha }}","ref":"${{ github.ref }}","workflow":"${{ github.workflow }}"}\'',
+      ].join('\n')
+    : ''
 
   async function loadProject() {
     try {
@@ -29,8 +61,96 @@ export default function ProjectDetailPage() {
     }
   }
 
+  async function loadImageState() {
+    try {
+      const [statusData, tagsData] = await Promise.all([
+        api.get<ImageStatus>(`/images/${params.pid}/status`),
+        api.get<{ tags: string[] }>(`/images/${params.pid}/tags`),
+      ])
+      setImageStatus(statusData)
+      setImageTags(tagsData.tags)
+      if (!selectedPullTag && tagsData.tags.length > 0) {
+        setSelectedPullTag(tagsData.tags[0])
+      }
+    } catch (error) {
+      const message = error instanceof ApiError ? error.message : 'Failed to load image status'
+      toast.error(message)
+    }
+  }
+
+  async function loadHistory() {
+    try {
+      const records = await api.get<DeployRecord[]>(`/deploy/${params.pid}/history`)
+      setHistory(records)
+      if (records.length > 0) {
+        setStatus(records[0].status)
+        if (!selectedDeploy) {
+          setSelectedDeploy(records[0])
+        }
+      }
+    } catch (error) {
+      const message = error instanceof ApiError ? error.message : 'Failed to load deploy history'
+      toast.error(message)
+    }
+  }
+
+  async function selectDeploy(deployId: string) {
+    try {
+      const record = await api.get<DeployRecord>(`/deploy/${params.pid}/history/${deployId}`)
+      setSelectedDeploy(record)
+    } catch (error) {
+      const message = error instanceof ApiError ? error.message : 'Failed to load deploy details'
+      toast.error(message)
+    }
+  }
+
   useEffect(() => {
     void loadProject()
+    void loadHistory()
+    void loadImageState()
+  }, [params.pid])
+
+  useEffect(() => {
+    const source = new EventSource(`/api/deploy/${params.pid}/stream`, { withCredentials: true })
+
+    source.onmessage = (event) => {
+      const payload = JSON.parse(event.data) as DeployLogEvent
+
+      if (payload.type === 'status' && payload.status) {
+        setStatus(payload.status)
+        setDeploying(payload.status === 'deploying')
+      }
+
+      if (payload.type === 'log' && payload.line) {
+        setLogs((current) => [
+          ...current,
+          {
+            id: `${Date.now()}-${current.length}`,
+            text: payload.line!,
+            timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' }),
+          },
+        ])
+      }
+
+      if (payload.type === 'error' && payload.error) {
+        setStatus('failed')
+        setDeploying(false)
+        toast.error(payload.error)
+      }
+
+      if (payload.type === 'done' && payload.status) {
+        setStatus(payload.status)
+        setDeploying(false)
+        void loadHistory()
+        void loadImageState()
+      }
+    }
+
+    source.onerror = () => {
+      // EventSource will retry automatically; no toast needed for transient reconnects.
+    }
+
+    return () => source.close()
   }, [params.pid])
 
   async function handleUpdate(payload: {
@@ -68,6 +188,81 @@ export default function ProjectDetailPage() {
     }
   }
 
+  async function handleCopy(value: string, label: string) {
+    try {
+      await navigator.clipboard.writeText(value)
+      toast.success(`${label} copied`)
+    } catch {
+      toast.error(`Failed to copy ${label.toLowerCase()}`)
+    }
+  }
+
+  async function handleDeploy() {
+    setDeploying(true)
+    setStatus('deploying')
+    setLogs([])
+
+    try {
+      await api.post(`/deploy/${params.pid}`, {
+        projectId: params.pid,
+        imageTag: imageTag.trim() || undefined,
+        trigger: 'ui',
+      })
+      toast.success('Deploy started')
+    } catch (error) {
+      setDeploying(false)
+      setStatus(history[0]?.status ?? 'idle')
+      const message = error instanceof ApiError ? error.message : 'Failed to start deploy'
+      toast.error(message)
+    }
+  }
+
+  async function handlePullImage() {
+    setPullingImage(true)
+    try {
+      await api.post(`/images/${params.pid}/pull`, { tag: selectedPullTag || undefined })
+      toast.success(`Pulled ${project?.repoImage}:${selectedPullTag || 'latest'}`)
+      void loadImageState()
+    } catch (error) {
+      const message = error instanceof ApiError ? error.message : 'Failed to pull image'
+      toast.error(message)
+    } finally {
+      setPullingImage(false)
+    }
+  }
+
+  async function handlePruneImages() {
+    setPruningImages(true)
+    try {
+      const data = await api.post<{ output: string }>(`/images/${params.pid}/prune`)
+      toast.success(data.output || 'Image prune completed')
+      void loadImageState()
+    } catch (error) {
+      const message = error instanceof ApiError ? error.message : 'Failed to prune images'
+      toast.error(message)
+    } finally {
+      setPruningImages(false)
+    }
+  }
+
+  async function handleRollback() {
+    if (!selectedRollbackId) return
+    setRollingBack(true)
+    try {
+      const data = await api.post<{ imageTag: string }>(`/images/${params.pid}/rollback`, {
+        deployId: selectedRollbackId,
+      })
+      toast.success(`Rollback started for tag ${data.imageTag}`)
+      setDeploying(true)
+      setStatus('deploying')
+    } catch (error) {
+      const message = error instanceof ApiError ? error.message : 'Failed to start rollback'
+      toast.error(message)
+    } finally {
+      setRollingBack(false)
+    }
+  }
+
   if (loading) {
     return (
       <div className="px-6 py-8 text-sm text-[var(--text-muted)] lg:px-8">
@@ -86,28 +281,188 @@ export default function ProjectDetailPage() {
         </Link>
         <h1 className="mt-2 text-3xl font-semibold text-[var(--text)]">{project.name}</h1>
         <p className="mt-2 text-sm text-[var(--text-muted)]">{project.repoImage}</p>
+        <div className="mt-4 flex flex-wrap gap-3">
+          <Link
+            href={`/servers/${params.id}/projects/${params.pid}/env`}
+            className="inline-flex h-9 items-center rounded border border-[var(--border)] px-3 text-sm text-[var(--text)] transition-colors hover:bg-[var(--surface-2)]"
+          >
+            Open env editor
+          </Link>
+        </div>
+      </section>
+
+      <section className="rounded-2xl border border-[var(--border)] bg-[var(--surface)] p-6">
+        <div className="flex flex-wrap items-start justify-between gap-4">
+          <div>
+            <p className="text-xs uppercase tracking-[0.24em] text-[var(--green)]">Phase 4</p>
+            <h2 className="mt-2 text-lg font-semibold text-[var(--text)]">Deploy engine</h2>
+            <p className="mt-1 text-sm text-[var(--text-muted)]">
+              Trigger commands over SSH and watch output stream into the dashboard in real time.
+            </p>
+          </div>
+          <DeployStatusBadge status={status} />
+        </div>
+
+        <div className="mt-5 flex flex-wrap items-end gap-3">
+          <label className="flex min-w-64 flex-col gap-1.5">
+            <span className="text-xs font-medium uppercase tracking-wider text-[var(--text-muted)]">
+              Image tag
+            </span>
+            <input
+              value={imageTag}
+              onChange={(event) => setImageTag(event.target.value)}
+              placeholder="latest or git sha"
+              className="h-10 rounded border border-[var(--border)] bg-[var(--surface-2)] px-3 text-sm text-[var(--text)] outline-none focus:border-[var(--green)]"
+            />
+          </label>
+          <DeployButton status={deploying ? 'deploying' : status} onDeploy={() => void handleDeploy()} />
+        </div>
+
+        <div className="mt-5">
+          <LogStream lines={logs} />
+        </div>
+      </section>
+
+      <ImagePanel
+        repoImage={project.repoImage}
+        status={imageStatus}
+        tags={imageTags}
+        selectedTag={selectedPullTag}
+        pulling={pullingImage}
+        pruning={pruningImages}
+        rollingBack={rollingBack}
+        rollbackCandidates={history.filter((record) => record.status === 'success' && Boolean(record.imageTag))}
+        selectedRollbackId={selectedRollbackId}
+        onTagChange={setSelectedPullTag}
+        onRollbackChange={setSelectedRollbackId}
+        onPull={() => void handlePullImage()}
+        onPrune={() => void handlePruneImages()}
+        onRefresh={() => void loadImageState()}
+        onRollback={() => void handleRollback()}
+      />
+
+      <section className="grid gap-6 xl:grid-cols-[1.1fr_0.9fr]">
+        <div>
+          <h2 className="mb-3 text-lg font-semibold text-[var(--text)]">Deploy history</h2>
+          <DeployHistory
+            records={history}
+            selectedId={selectedDeploy?.id}
+            onSelect={(deployId) => void selectDeploy(deployId)}
+          />
+        </div>
+
+        <div className="rounded-2xl border border-[var(--border)] bg-[var(--surface)] p-6">
+          <h2 className="text-lg font-semibold text-[var(--text)]">Selected deploy</h2>
+          {selectedDeploy ? (
+            <div className="mt-4 space-y-4">
+              <div className="flex flex-wrap items-center gap-3">
+                <DeployStatusBadge status={selectedDeploy.status} />
+                <span className="text-sm text-[var(--text-muted)]">{selectedDeploy.trigger}</span>
+                <span className="text-sm text-[var(--text-muted)]">
+                  {selectedDeploy.durationMs ? formatDuration(selectedDeploy.durationMs) : 'Pending'}
+                </span>
+              </div>
+              {selectedDeploy.imageTag ? (
+                <div className="text-sm text-[var(--text-muted)]">Image tag: {selectedDeploy.imageTag}</div>
+              ) : null}
+              {selectedDeploy.error ? (
+                <div className="rounded-lg border border-[var(--red)] bg-[var(--red-dim)] px-3 py-2 text-sm text-[var(--red)]">
+                  {selectedDeploy.error}
+                </div>
+              ) : null}
+              <div className="rounded-xl border border-[var(--border)] bg-[#0b0b0d] px-4 py-3 font-mono text-xs text-[var(--text)]">
+                <div className="space-y-2">
+                  {selectedDeploy.logSnapshot.length > 0 ? (
+                    selectedDeploy.logSnapshot.map((line, index) => <div key={`${selectedDeploy.id}-${index}`}>{line}</div>)
+                  ) : (
+                    <div className="text-[var(--text-muted)]">No log snapshot captured.</div>
+                  )}
+                </div>
+              </div>
+            </div>
+          ) : (
+            <p className="mt-4 text-sm text-[var(--text-muted)]">Select a deploy to inspect its log snapshot.</p>
+          )}
+        </div>
       </section>
 
       <div className="rounded-2xl border border-[var(--border)] bg-[var(--surface)] p-6">
         <div className="flex flex-wrap items-center justify-between gap-4">
           <div>
-            <h2 className="text-lg font-semibold text-[var(--text)]">Webhook secret</h2>
+            <p className="text-xs uppercase tracking-[0.24em] text-[var(--green)]">Phase 5</p>
+            <h2 className="mt-2 text-lg font-semibold text-[var(--text)]">Inbound webhook</h2>
             <p className="mt-1 text-sm text-[var(--text-muted)]">
-              This will be used by the inbound deploy webhook in the next phase.
+              Use this endpoint from GitHub Actions or another CI system to trigger deploys after a build succeeds.
             </p>
           </div>
-          <Button variant="ghost" size="sm" onClick={() => void handleRegenerate()} loading={regenerating}>
-            Regenerate
-          </Button>
+          <div className="flex flex-wrap gap-3">
+            <DeployStatusBadge status={project.webhookEnabled ? 'success' : 'idle'} />
+            <Button variant="ghost" size="sm" onClick={() => void handleRegenerate()} loading={regenerating}>
+              Regenerate secret
+            </Button>
+          </div>
         </div>
-        <pre className="mt-4 overflow-x-auto rounded-lg border border-[var(--border)] bg-[var(--surface-2)] px-4 py-3 font-mono text-xs text-[var(--text)]">
-          {project.webhookSecret || 'No secret generated yet'}
-        </pre>
+
+        <div className="mt-5 grid gap-4">
+          <div className="rounded-lg border border-[var(--border)] bg-[var(--surface-2)] px-4 py-3">
+            <div className="flex flex-wrap items-center justify-between gap-3">
+              <div>
+                <h3 className="text-sm font-medium text-[var(--text)]">Webhook status</h3>
+                <p className="mt-1 text-xs text-[var(--text-muted)]">
+                  {project.webhookEnabled
+                    ? 'Public endpoint is active and secret-gated.'
+                    : 'Webhook is disabled. Requests will return 404 until you enable it in project settings.'}
+                </p>
+              </div>
+              <span className="text-xs uppercase tracking-[0.18em] text-[var(--text-muted)]">
+                {project.webhookEnabled ? 'Enabled' : 'Disabled'}
+              </span>
+            </div>
+          </div>
+
+          <div>
+            <div className="mb-2 flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
+              <h3 className="text-sm font-medium text-[var(--text)]">Webhook URL</h3>
+              <div className="self-start md:self-auto">
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => void handleCopy(webhookUrl, 'Webhook URL')}
+                  disabled={!webhookUrl}
+                >
+                  Copy URL
+                </Button>
+              </div>
+            </div>
+            <pre className="overflow-x-auto whitespace-pre-wrap break-all rounded-lg border border-[var(--border)] bg-[var(--surface-2)] px-4 py-3 font-mono text-xs text-[var(--text)]">
+              {webhookUrl || 'No webhook URL available'}
+            </pre>
+          </div>
+
+          <div>
+            <div className="mb-2 flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
+              <h3 className="text-sm font-medium text-[var(--text)]">GitHub Actions snippet</h3>
+              <div className="self-start md:self-auto">
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => void handleCopy(workflowSnippet, 'Workflow snippet')}
+                  disabled={!workflowSnippet}
+                >
+                  Copy snippet
+                </Button>
+              </div>
+            </div>
+            <pre className="overflow-x-auto whitespace-pre-wrap break-all rounded-lg border border-[var(--border)] bg-[#0b0b0d] px-4 py-3 font-mono text-xs text-[var(--text)]">
+              {workflowSnippet || 'Enable the project webhook to generate a CI snippet.'}
+            </pre>
+          </div>
+        </div>
       </div>
 
       <ProjectForm
         title="Edit project"
-        description="Fine-tune deploy metadata now so the deploy engine, webhook trigger, and env tooling have the shape they need later."
+        description="Fine-tune deploy metadata, webhook enablement, and notification defaults so CI and manual deploys share the same project contract."
         submitLabel="Save changes"
         initialValue={project}
         onSubmit={handleUpdate}

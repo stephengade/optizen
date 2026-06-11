@@ -28,7 +28,7 @@ export const authRoutes = new Elysia({ prefix: '/auth' })
     if (!isSetup) return { isSetup: false, authenticated: false }
 
     const token = cookie[SESSION_COOKIE]?.value
-    const authenticated = typeof token === 'string' ? validateSession(token) && hasKey() : false
+    const authenticated = typeof token === 'string' ? (await validateSession(token)) && hasKey() : false
     return { isSetup, authenticated }
   })
 
@@ -62,7 +62,7 @@ export const authRoutes = new Elysia({ prefix: '/auth' })
       }
       await saveDb()
 
-      const token = createSession()
+      const token = await createSession()
       const sessionCookie = cookie[SESSION_COOKIE]
       sessionCookie.value = token
       sessionCookie.httpOnly = true
@@ -116,7 +116,7 @@ export const authRoutes = new Elysia({ prefix: '/auth' })
       setKey(deriveKey(password, cryptoSalt))
       await resetRateLimit()
 
-      const token = createSession()
+      const token = await createSession()
       const sessionCookie = cookie[SESSION_COOKIE]
       sessionCookie.value = token
       sessionCookie.httpOnly = true
@@ -131,9 +131,9 @@ export const authRoutes = new Elysia({ prefix: '/auth' })
   )
 
   // ── POST /auth/logout ─────────────────────────────────────────────────────
-  .post('/logout', ({ cookie, set }) => {
+  .post('/logout', async ({ cookie, set }) => {
     const token = cookie[SESSION_COOKIE]?.value
-    if (typeof token === 'string') destroySession(token)
+    if (typeof token === 'string') await destroySession(token)
     clearKey()
     cookie[SESSION_COOKIE].value = ''
     cookie[SESSION_COOKIE].maxAge = 0
