@@ -2,8 +2,11 @@
 
 import Link from 'next/link'
 import type { Project } from '@launchpad/shared'
-import { ArrowRight, Bell, Globe, Terminal } from 'lucide-react'
+import { ArrowRight, Bell, Globe, HeartPulse, Terminal } from 'lucide-react'
 import { SensitiveText } from '@/components/ui/SensitiveText'
+import { formatRelative } from '@/lib/utils'
+import { HealthBadge } from './HealthBadge'
+import { ProjectClassificationBadge } from './ProjectClassificationBadge'
 
 interface ProjectCardProps {
   project: Project
@@ -19,8 +22,13 @@ export function ProjectCard({ project }: ProjectCardProps) {
             <SensitiveText value={project.repoImage} />
           </p>
         </div>
+        <HealthBadge status={project.healthStatus?.status} />
+      </div>
+
+      <div className="mt-3 flex flex-wrap gap-2">
+        <ProjectClassificationBadge source={project.source} runtime={project.runtime} />
         <span className="rounded-full border border-[var(--border)] px-2 py-1 text-[10px] uppercase tracking-[0.18em] text-[var(--text-muted)]">
-          {project.proxyType}
+          {project.proxyType === 'none' ? 'No proxy' : project.proxyType}
         </span>
       </div>
 
@@ -37,6 +45,16 @@ export function ProjectCard({ project }: ProjectCardProps) {
           <Bell size={13} />
           {project.notifications.onSuccess || project.notifications.onFailure ? 'Notifications on' : 'Notifications off'}
         </span>
+        <span className="inline-flex items-center gap-2">
+          <HeartPulse size={13} />
+          {project.healthStatus?.lastSuccessfulAt ? `Heartbeat ${formatRelative(project.healthStatus.lastSuccessfulAt)}` : 'No heartbeat yet'}
+        </span>
+      </div>
+
+      <div className="mt-4 rounded-lg border border-[var(--border)] bg-[var(--surface-2)] px-3 py-2 text-xs text-[var(--text-muted)]">
+        {project.lastDeploy
+          ? `Last deploy ${project.lastDeploy.status} ${formatRelative(project.lastDeploy.triggeredAt)}`
+          : 'No deploy has finished for this project yet.'}
       </div>
 
       <Link

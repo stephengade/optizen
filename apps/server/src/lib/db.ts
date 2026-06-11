@@ -7,6 +7,7 @@ import { Low } from 'lowdb'
 import { JSONFile } from 'lowdb/node'
 import { join } from 'path'
 import type {
+  ActivityEvent,
   AuthConfig,
   AuthSession,
   Server,
@@ -24,6 +25,7 @@ export interface DbSchema {
   projects: Project[]
   deployHistory: DeployRecord[]
   notifications: NotificationSettings
+  activity: ActivityEvent[]
 }
 
 const DB_PATH = process.env.DB_PATH ?? join(process.cwd(), 'launchpad.db.json')
@@ -39,6 +41,7 @@ const defaultData: DbSchema = {
     email: null,
     globalWebhooks: [],
   },
+  activity: [],
 }
 
 let _db: Low<DbSchema> | null = null

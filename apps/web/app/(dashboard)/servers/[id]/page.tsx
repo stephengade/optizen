@@ -3,19 +3,22 @@
 import { useEffect, useState } from 'react'
 import Link from 'next/link'
 import { useParams, useRouter } from 'next/navigation'
-import type { Project, Server, ServerConnectionStatus, ServerResourceStatus } from '@launchpad/shared'
+import type { ActivityEvent, DeployRecord, Project, Server, ServerConnectionStatus, ServerResourceStatus } from '@launchpad/shared'
 import { toast } from 'sonner'
+import { ActivityTimeline } from '@/components/dashboard/ActivityTimeline'
 import { ConnectionBadge } from '@/components/dashboard/ConnectionBadge'
 import { ProjectCard } from '@/components/dashboard/ProjectCard'
 import { ProjectForm } from '@/components/dashboard/ProjectForm'
 import { ServerForm } from '@/components/dashboard/ServerForm'
+import { ConfirmActionModal } from '@/components/ui/ConfirmActionModal'
 import { SensitiveText } from '@/components/ui/SensitiveText'
 import { Button } from '@/components/ui/Button'
 import { Modal } from '@/components/ui/Modal'
 import { api, ApiError } from '@/lib/api'
-import { formatBytes } from '@/lib/format'
+import { formatBytes, formatPercent, formatUptime } from '@/lib/format'
+import { formatRelative } from '@/lib/utils'
 
-type ServerSummary = Server & { projectCount?: number }
+type ServerSummary = Server & { projectCount?: number; recentDeployOutcomes?: DeployRecord[] }
 
 export default function ServerDetailPage() {
   const params = useParams<{ id: string }>()
@@ -24,20 +27,24 @@ export default function ServerDetailPage() {
   const [projects, setProjects] = useState<Project[]>([])
   const [status, setStatus] = useState<ServerConnectionStatus | null>(null)
   const [resources, setResources] = useState<ServerResourceStatus | null>(null)
+  const [activity, setActivity] = useState<ActivityEvent[]>([])
   const [loading, setLoading] = useState(true)
   const [testing, setTesting] = useState(false)
   const [reclassifying, setReclassifying] = useState(false)
   const [editOpen, setEditOpen] = useState(false)
   const [addProjectOpen, setAddProjectOpen] = useState(false)
+  const [confirmDeleteOpen, setConfirmDeleteOpen] = useState(false)
 
   async function loadData() {
     try {
-      const [serverData, projectData] = await Promise.all([
+      const [serverData, projectData, activityData] = await Promise.all([
         api.get<ServerSummary>(`/servers/${params.id}`),
         api.get<Project[]>(`/servers/${params.id}/projects`),
+        api.get<ActivityEvent[]>(`/servers/${params.id}/activity`),
       ])
       setServer(serverData)
       setProjects(projectData)
+      setActivity(activityData)
       setStatus(serverData.lastConnectionStatus ?? null)
       setResources(serverData.lastResourceStatus ?? null)
     } catch (error) {
@@ -146,16 +153,10 @@ export default function ServerDetailPage() {
             <SensitiveText value={`${server.user}@${server.host}:${server.port}`} />
           </p>
           <p className="mt-2 text-sm text-[var(--text-muted)]">
-            Memory usage: {resources ? `${formatBytes(resources.memoryUsedBytes)} / ${formatBytes(resources.memoryTotalBytes)} used` : 'not available yet'}
-          </p>
-          <p className="mt-2 text-sm text-[var(--text-muted)]">
-            Disk usage: {resources ? `${formatBytes(resources.diskUsedBytes)} / ${formatBytes(resources.diskTotalBytes)} used` : 'not available yet'}
+            Launchpad now keeps servers, projects, deploys, and infra edits separate so you can reason about impact before you act.
           </p>
           <p className="mt-2 max-w-2xl text-sm text-[var(--text-muted)]">
-            Launchpad only shows projects that you add in this dashboard. A successful SSH test confirms access to the VPS, but it does not auto-import apps from the server.
-          </p>
-          <p className="mt-2 max-w-2xl text-sm text-[var(--text-muted)]">
-            Imported projects from older scans may still carry a stale proxy badge. Refresh project types to reclassify them from their image, name, and working directory.
+            Imported projects from older scans may still carry stale labels. Refresh project types to reclassify them from image, name, working directory, and proxy hints.
           </p>
           <div className="mt-4">
             <div className="flex flex-wrap gap-3">
@@ -185,6 +186,45 @@ export default function ServerDetailPage() {
         </div>
       </section>
 
+      <section className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
+        <div className="rounded-2xl border border-[var(--border)] bg-[var(--surface)] p-5">
+          <div className="text-xs uppercase tracking-[0.18em] text-[var(--text-muted)]">CPU + Load</div>
+          <div className="mt-2 text-lg font-semibold text-[var(--text)]">
+            {resources ? formatPercent(resources.cpuUsagePercent, 1) : 'n/a'}
+          </div>
+          <div className="mt-1 text-sm text-[var(--text-muted)]">
+            {resources ? resources.loadAverage.map((value) => value.toFixed(2)).join(' / ') : 'Run Test SSH to refresh'}
+          </div>
+        </div>
+        <div className="rounded-2xl border border-[var(--border)] bg-[var(--surface)] p-5">
+          <div className="text-xs uppercase tracking-[0.18em] text-[var(--text-muted)]">Memory + Disk</div>
+          <div className="mt-2 text-lg font-semibold text-[var(--text)]">
+            {resources ? `${formatBytes(resources.memoryUsedBytes)} / ${formatBytes(resources.memoryTotalBytes)}` : 'n/a'}
+          </div>
+          <div className="mt-1 text-sm text-[var(--text-muted)]">
+            {resources ? `${formatBytes(resources.diskUsedBytes)} / ${formatBytes(resources.diskTotalBytes)} disk` : 'Run Test SSH to refresh'}
+          </div>
+        </div>
+        <div className="rounded-2xl border border-[var(--border)] bg-[var(--surface)] p-5">
+          <div className="text-xs uppercase tracking-[0.18em] text-[var(--text-muted)]">Uptime + Inodes</div>
+          <div className="mt-2 text-lg font-semibold text-[var(--text)]">
+            {resources ? formatUptime(resources.uptimeSeconds) : 'n/a'}
+          </div>
+          <div className="mt-1 text-sm text-[var(--text-muted)]">
+            {resources ? `${formatPercent(resources.diskInodesUsedPercent)} inode use` : 'Run Test SSH to refresh'}
+          </div>
+        </div>
+        <div className="rounded-2xl border border-[var(--border)] bg-[var(--surface)] p-5">
+          <div className="text-xs uppercase tracking-[0.18em] text-[var(--text-muted)]">Containers</div>
+          <div className="mt-2 text-lg font-semibold text-[var(--text)]">
+            {resources ? resources.runningContainers : 'n/a'}
+          </div>
+          <div className="mt-1 text-sm text-[var(--text-muted)]">
+            {resources ? `${resources.exitedContainers} exited` : 'Run Test SSH to refresh'}
+          </div>
+        </div>
+      </section>
+
       <section className="border border-[var(--border)] bg-[var(--surface)] p-6">
         <div className="flex flex-wrap items-start justify-between gap-4">
           <div>
@@ -200,6 +240,38 @@ export default function ServerDetailPage() {
           >
             Open scan workspace
           </Link>
+        </div>
+      </section>
+
+      <section className="grid gap-6 xl:grid-cols-[1.1fr_0.9fr]">
+        <div className="rounded-2xl border border-[var(--border)] bg-[var(--surface)] p-6">
+          <h2 className="text-lg font-semibold text-[var(--text)]">Recent deploy outcomes</h2>
+          <div className="mt-4 space-y-3">
+            {server.recentDeployOutcomes?.length ? (
+              server.recentDeployOutcomes.map((record) => (
+                <div key={record.id} className="rounded-xl border border-[var(--border)] bg-[var(--surface-2)] px-4 py-3">
+                  <div className="flex flex-wrap items-center justify-between gap-3">
+                    <div className="text-sm font-medium text-[var(--text)]">{record.status}</div>
+                    <div className="text-xs uppercase tracking-[0.18em] text-[var(--text-muted)]">
+                      {formatRelative(record.triggeredAt)}
+                    </div>
+                  </div>
+                  <div className="mt-1 text-sm text-[var(--text-muted)]">
+                    Triggered via {record.trigger}{record.imageTag ? ` using ${record.imageTag}` : ''}.
+                  </div>
+                </div>
+              ))
+            ) : (
+              <div className="rounded-xl border border-dashed border-[var(--border)] bg-[var(--surface-2)] p-4 text-sm text-[var(--text-muted)]">
+                No deploys have run on this server yet.
+              </div>
+            )}
+          </div>
+        </div>
+
+        <div>
+          <h2 className="mb-3 text-lg font-semibold text-[var(--text)]">Activity timeline</h2>
+          <ActivityTimeline events={activity} emptyLabel="No tracked activity yet. Deploys, imports, proxy edits, env saves, and rollbacks will show up here." />
         </div>
       </section>
 
@@ -219,7 +291,7 @@ export default function ServerDetailPage() {
           </div>
         ) : (
           <div className="rounded-2xl border border-dashed border-[var(--border)] bg-[var(--surface)] p-6 text-sm text-[var(--text-muted)]">
-            No projects configured for this server yet. Use the form above to add one manually.
+            No projects are attached to this server yet. Add one manually or import a running app from the scan workspace.
           </div>
         )}
       </section>
@@ -241,8 +313,8 @@ export default function ServerDetailPage() {
             setEditOpen(false)
           }}
           onDelete={async () => {
-            await handleDelete()
             setEditOpen(false)
+            setConfirmDeleteOpen(true)
           }}
         />
       </Modal>
@@ -264,6 +336,24 @@ export default function ServerDetailPage() {
           }}
         />
       </Modal>
+
+      <ConfirmActionModal
+        open={confirmDeleteOpen}
+        title="Delete server"
+        description="This removes the saved server record and every Launchpad project attached to it. It does not stop containers on the VPS, but it does remove your local control surface."
+        confirmLabel="Delete server"
+        confirmKeyword={server.name}
+        details={[
+          `Server: ${server.name}`,
+          `Projects removed from Launchpad: ${projects.length}`,
+          'Remote containers and files stay on the server.',
+        ]}
+        onClose={() => setConfirmDeleteOpen(false)}
+        onConfirm={async () => {
+          await handleDelete()
+          setConfirmDeleteOpen(false)
+        }}
+      />
     </div>
   )
 }

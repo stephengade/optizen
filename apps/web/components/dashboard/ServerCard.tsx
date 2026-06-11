@@ -3,10 +3,10 @@
 import { useState } from 'react'
 import Link from 'next/link'
 import type { Server, ServerResourceStatus } from '@launchpad/shared'
-import { Activity, ArrowRight, Eye, EyeOff, FolderGit2, HardDrive, PlugZap } from 'lucide-react'
+import { Activity, ArrowRight, Cpu, Eye, EyeOff, FolderGit2, HardDrive, PlugZap, TimerReset } from 'lucide-react'
 import { Button } from '@/components/ui/Button'
 import { SensitiveText } from '@/components/ui/SensitiveText'
-import { formatBytes } from '@/lib/format'
+import { formatBytes, formatPercent, formatUptime } from '@/lib/format'
 import { ConnectionBadge } from './ConnectionBadge'
 
 interface ServerCardProps {
@@ -32,7 +32,7 @@ export function ServerCard({ server, status, resources, onTest, testing }: Serve
         <ConnectionBadge {...status} />
       </div>
 
-      <div className="mt-5 grid gap-3 md:grid-cols-2 xl:grid-cols-[minmax(0,0.9fr)_minmax(0,1.4fr)_minmax(0,1fr)_minmax(0,1fr)]">
+      <div className="mt-5 grid gap-3 md:grid-cols-2 xl:grid-cols-3">
         <div className="border border-[var(--border)] bg-[var(--surface-2)] px-3 py-3">
           <div className="flex items-center gap-2 text-xs uppercase tracking-[0.18em] text-[var(--text-muted)]">
             <FolderGit2 size={13} />
@@ -65,6 +65,16 @@ export function ServerCard({ server, status, resources, onTest, testing }: Serve
 
         <div className="border border-[var(--border)] bg-[var(--surface-2)] px-3 py-3">
           <div className="flex items-center gap-2 text-xs uppercase tracking-[0.18em] text-[var(--text-muted)]">
+            <Cpu size={13} />
+            CPU
+          </div>
+          <div className="mt-2 text-sm text-[var(--text)]">
+            {resources ? formatPercent(resources.cpuUsagePercent, 1) : 'n/a'}
+          </div>
+        </div>
+
+        <div className="border border-[var(--border)] bg-[var(--surface-2)] px-3 py-3">
+          <div className="flex items-center gap-2 text-xs uppercase tracking-[0.18em] text-[var(--text-muted)]">
             <Activity size={13} />
             RAM
           </div>
@@ -80,6 +90,32 @@ export function ServerCard({ server, status, resources, onTest, testing }: Serve
           </div>
           <div className="mt-2 text-sm text-[var(--text)]">
             {resources ? `${formatBytes(resources.diskUsedBytes)} / ${formatBytes(resources.diskTotalBytes)}` : 'n/a'}
+          </div>
+        </div>
+
+        <div className="border border-[var(--border)] bg-[var(--surface-2)] px-3 py-3">
+          <div className="flex items-center gap-2 text-xs uppercase tracking-[0.18em] text-[var(--text-muted)]">
+            <TimerReset size={13} />
+            Uptime
+          </div>
+          <div className="mt-2 text-sm text-[var(--text)]">
+            {resources ? formatUptime(resources.uptimeSeconds) : 'n/a'}
+          </div>
+        </div>
+
+        <div className="border border-[var(--border)] bg-[var(--surface-2)] px-3 py-3">
+          <div className="text-xs uppercase tracking-[0.18em] text-[var(--text-muted)]">Load Avg</div>
+          <div className="mt-2 text-sm text-[var(--text)]">
+            {resources ? resources.loadAverage.map((value) => value.toFixed(2)).join(' / ') : 'n/a'}
+          </div>
+        </div>
+
+        <div className="border border-[var(--border)] bg-[var(--surface-2)] px-3 py-3">
+          <div className="text-xs uppercase tracking-[0.18em] text-[var(--text-muted)]">Inodes + Containers</div>
+          <div className="mt-2 text-sm text-[var(--text)]">
+            {resources
+              ? `${formatPercent(resources.diskInodesUsedPercent)} inode use, ${resources.runningContainers} up`
+              : 'n/a'}
           </div>
         </div>
       </div>

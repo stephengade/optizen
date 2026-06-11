@@ -1,7 +1,7 @@
 'use client'
 
 import { useEffect, useState } from 'react'
-import type { Project, ProxyType } from '@launchpad/shared'
+import type { Project, ProjectRuntime, ProjectSource, ProxyType } from '@launchpad/shared'
 import { Button } from '@/components/ui/Button'
 import { Input } from '@/components/ui/Input'
 
@@ -15,11 +15,14 @@ interface ProjectFormProps {
   inModal?: boolean
   onSubmit: (payload: {
     name: string
+    source: ProjectSource
+    runtime: ProjectRuntime
     repoImage: string
     deployCommands: string[]
     envPath?: string
     workingDir?: string
     proxyType: ProxyType
+    healthCheck?: Project['healthCheck']
     webhookEnabled: boolean
     notifications: Project['notifications']
   }) => Promise<void>
@@ -56,11 +59,15 @@ const PRESETS: Array<{
 function getInitialValue(initialValue?: Partial<Project>) {
   return {
     name: initialValue?.name ?? '',
+    source: initialValue?.source ?? 'manual',
+    runtime: initialValue?.runtime ?? 'compose',
     repoImage: initialValue?.repoImage ?? '',
     deployCommands: initialValue?.deployCommands?.join('\n') ?? '',
     envPath: initialValue?.envPath ?? '',
     workingDir: initialValue?.workingDir ?? '',
     proxyType: initialValue?.proxyType ?? 'none',
+    healthPath: initialValue?.healthCheck?.path ?? '',
+    healthPort: initialValue?.healthCheck?.port ? String(initialValue.healthCheck.port) : '',
     webhookEnabled: initialValue?.webhookEnabled ?? false,
     onSuccess: initialValue?.notifications?.onSuccess ?? true,
     onFailure: initialValue?.notifications?.onFailure ?? true,
@@ -71,6 +78,7 @@ function getPresetDefaults(preset: ProjectPreset, current: ReturnType<typeof get
   if (preset === 'compose_existing') {
     return {
       ...current,
+      runtime: 'compose' as ProjectRuntime,
       workingDir: current.workingDir || '/var/www/app',
       envPath: current.envPath || '/var/www/app/.env',
       deployCommands: 'docker compose pull\ndocker compose up -d',
@@ -80,6 +88,7 @@ function getPresetDefaults(preset: ProjectPreset, current: ReturnType<typeof get
   if (preset === 'ghcr_existing') {
     return {
       ...current,
+      runtime: 'image' as ProjectRuntime,
       workingDir: current.workingDir || '/var/www/app',
       envPath: current.envPath || '/var/www/app/.env',
       deployCommands: `docker pull ${current.repoImage || 'ghcr.io/owner/app'}:latest\ndocker compose up -d`,
@@ -89,6 +98,7 @@ function getPresetDefaults(preset: ProjectPreset, current: ReturnType<typeof get
   if (preset === 'github_bootstrap') {
     return {
       ...current,
+      runtime: 'custom' as ProjectRuntime,
       workingDir: current.workingDir || '/var/www/app',
       envPath: current.envPath || '/var/www/app/.env',
       deployCommands:
@@ -145,6 +155,8 @@ export function ProjectForm({
     try {
       await onSubmit({
         name: values.name,
+        source: values.source,
+        runtime: values.runtime,
         repoImage: values.repoImage,
         deployCommands: values.deployCommands
           .split('\n')
@@ -153,6 +165,13 @@ export function ProjectForm({
         envPath: values.envPath || undefined,
         workingDir: values.workingDir || undefined,
         proxyType: values.proxyType,
+        healthCheck:
+          values.healthPath || values.healthPort
+            ? {
+                path: values.healthPath || undefined,
+                port: values.healthPort ? Number(values.healthPort) : undefined,
+              }
+            : undefined,
         webhookEnabled: values.webhookEnabled,
         notifications: {
           onSuccess: values.onSuccess,
@@ -215,6 +234,33 @@ export function ProjectForm({
           </div>
         </div>
 
+        <div className="grid gap-4 md:grid-cols-2">
+          <label className="flex flex-col gap-1.5">
+            <span className="text-xs font-medium uppercase tracking-wider text-[var(--text-muted)]">Source</span>
+            <select
+              value={values.source}
+              onChange={(event) => setValues((current) => ({ ...current, source: event.target.value as ProjectSource }))}
+              className="h-10 rounded border border-[var(--border)] bg-[var(--surface-2)] px-3 text-sm text-[var(--text)] outline-none focus:border-[var(--green)]"
+            >
+              <option value="manual">Manual</option>
+              <option value="imported">Imported</option>
+            </select>
+          </label>
+          <label className="flex flex-col gap-1.5">
+            <span className="text-xs font-medium uppercase tracking-wider text-[var(--text-muted)]">Runtime</span>
+            <select
+              value={values.runtime}
+              onChange={(event) => setValues((current) => ({ ...current, runtime: event.target.value as ProjectRuntime }))}
+              className="h-10 rounded border border-[var(--border)] bg-[var(--surface-2)] px-3 text-sm text-[var(--text)] outline-none focus:border-[var(--green)]"
+            >
+              <option value="compose">Compose app</option>
+              <option value="image">Image app</option>
+              <option value="proxy">Proxy app</option>
+              <option value="custom">Custom app</option>
+            </select>
+          </label>
+        </div>
+
         <Input
           label="Project name"
           value={values.name}
@@ -253,6 +299,24 @@ export function ProjectForm({
             value={values.envPath}
             onChange={(event) => setValues((current) => ({ ...current, envPath: event.target.value }))}
             placeholder="/var/www/app/.env"
+          />
+        </div>
+
+        <div className="grid gap-4 md:grid-cols-2">
+          <Input
+            label="Health endpoint"
+            value={values.healthPath}
+            onChange={(event) => setValues((current) => ({ ...current, healthPath: event.target.value }))}
+            placeholder="/health"
+            hint="Optional. Launchpad will curl this path on 127.0.0.1 after deploys and when you run a heartbeat check."
+          />
+          <Input
+            label="Health port"
+            value={values.healthPort}
+            onChange={(event) => setValues((current) => ({ ...current, healthPort: event.target.value }))}
+            placeholder="3000"
+            inputMode="numeric"
+            hint="Optional fallback when an HTTP path is not available yet."
           />
         </div>
 

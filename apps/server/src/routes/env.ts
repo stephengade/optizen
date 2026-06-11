@@ -1,4 +1,5 @@
 import { Elysia, t } from 'elysia'
+import { recordActivity } from '../lib/activity'
 import { hasKey } from '../lib/crypto'
 import { getDb } from '../lib/db'
 import { getConnection, readRemoteFile, writeRemoteFile } from '../lib/ssh'
@@ -81,6 +82,14 @@ export const envRoutes = new Elysia({ prefix: '/env' })
       try {
         ssh = await getConnection(server)
         await writeRemoteFile(ssh, project.envPath, body.content)
+        await recordActivity({
+          serverId: project.serverId,
+          projectId: project.id,
+          type: 'env_updated',
+          status: 'info',
+          title: `Updated env for ${project.name}`,
+          detail: project.envPath,
+        })
         return {
           success: true,
           path: project.envPath,

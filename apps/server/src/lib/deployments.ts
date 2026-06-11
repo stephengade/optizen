@@ -1,7 +1,9 @@
 import { randomUUID } from 'crypto'
 import type { DeployLogEvent, DeployRecord, DeployStatus, DeployTrigger, Project, Server } from '@launchpad/shared'
 import { getDb, saveDb } from './db'
+import { recordActivity } from './activity'
 import { sendDeployNotifications } from './notifications'
+import { runProjectHealthCheck } from './projectHealth'
 import { execCommands, getConnection } from './ssh'
 
 type DeployListener = (event: DeployLogEvent) => void
@@ -29,6 +31,19 @@ async function saveDeployRecord(record: DeployRecord) {
   const db = await getDb()
   db.data.deployHistory.unshift(record)
   db.data.deployHistory = db.data.deployHistory.slice(0, 200)
+
+  const project = db.data.projects.find((item) => item.id === record.projectId)
+  if (project) {
+    project.lastDeploy = {
+      id: record.id,
+      status: record.status === 'idle' ? 'failed' : record.status,
+      triggeredAt: record.triggeredAt,
+      completedAt: record.completedAt,
+      imageTag: record.imageTag,
+    }
+    project.updatedAt = new Date().toISOString()
+  }
+
   await saveDb()
 }
 
@@ -75,6 +90,14 @@ export async function runDeploy(options: {
   emit(project.id, { type: 'status', status: 'deploying' })
   addLog(logs, `Deploy triggered via ${trigger}`)
   emit(project.id, { type: 'log', line: `Deploy triggered via ${trigger}` })
+  await recordActivity({
+    serverId: server.id,
+    projectId: project.id,
+    type: imageTag ? 'rollback_started' : 'deploy_started',
+    status: 'info',
+    title: imageTag ? `Rollback queued for ${project.name}` : `Deploy queued for ${project.name}`,
+    detail: imageTag ? `Target image tag: ${imageTag}` : `Trigger: ${trigger}`,
+  })
 
   if (imageTag) {
     addLog(logs, `Requested image tag: ${imageTag}`)
@@ -126,6 +149,31 @@ export async function runDeploy(options: {
 
     await saveDeployRecord(record)
     emit(project.id, { type: 'done', status: finalStatus, durationMs })
+
+    if (finalStatus === 'success') {
+      const db = await getDb()
+      const storedProject = db.data.projects.find((item) => item.id === project.id)
+      if (storedProject) {
+        const storedServer = db.data.servers.find((item) => item.id === server.id)
+        if (storedServer) {
+          storedProject.healthStatus = await runProjectHealthCheck(storedProject, storedServer)
+          storedProject.updatedAt = new Date().toISOString()
+          await saveDb()
+        }
+      }
+    }
+
+    await recordActivity({
+      serverId: server.id,
+      projectId: project.id,
+      type: finalStatus === 'success' ? 'deploy_succeeded' : 'deploy_failed',
+      status: finalStatus === 'success' ? 'success' : 'error',
+      title:
+        finalStatus === 'success'
+          ? `Deploy succeeded for ${project.name}`
+          : `Deploy failed for ${project.name}`,
+      detail: error ?? `Completed in ${durationMs}ms via ${trigger}.`,
+    })
 
     await sendDeployNotifications({ project, server, record })
 

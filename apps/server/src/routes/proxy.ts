@@ -1,4 +1,5 @@
 import { Elysia, t } from 'elysia'
+import { recordActivity } from '../lib/activity'
 import { hasKey } from '../lib/crypto'
 import { getDb } from '../lib/db'
 import { execCommand, getConnection, readRemoteFile, writeRemoteFile } from '../lib/ssh'
@@ -219,6 +220,14 @@ export const proxyRoutes = new Elysia({ prefix: '/proxy' })
             return { message: reload.stderr || reload.stdout || 'Proxy reload failed' }
           }
 
+          await recordActivity({
+            serverId: params.serverId,
+            type: 'proxy_config_updated',
+            status: 'success',
+            title: 'Saved proxy config',
+            detail: path,
+          })
+
           return { success: true, path, reloaded: true, validated: true }
         })
       } catch (error) {
@@ -250,6 +259,14 @@ export const proxyRoutes = new Elysia({ prefix: '/proxy' })
           set.status = 500
           return { message: result.stderr || result.stdout || 'Failed to reload proxy' }
         }
+
+        await recordActivity({
+          serverId: params.serverId,
+          type: 'proxy_reloaded',
+          status: 'success',
+          title: `Reloaded ${type}`,
+          detail: 'Manual reload from Launchpad.',
+        })
 
         return { success: true, type }
       })
@@ -328,6 +345,14 @@ export const proxyRoutes = new Elysia({ prefix: '/proxy' })
             set.status = 500
             return { message: reload.stderr || reload.stdout || 'Failed to reload nginx' }
           }
+
+          await recordActivity({
+            serverId: params.serverId,
+            type: 'nginx_site_toggled',
+            status: 'success',
+            title: `${body.enabled ? 'Enabled' : 'Disabled'} nginx site ${site}`,
+            detail: '/etc/nginx/sites-enabled',
+          })
 
           return { success: true, enabled: body.enabled }
         })

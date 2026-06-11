@@ -1,9 +1,10 @@
 import { randomUUID } from 'crypto'
 import { Elysia, t } from 'elysia'
 import type { Server, ServerConnectionStatus } from '@launchpad/shared'
+import { recordActivity } from '../lib/activity'
 import { encrypt, hasKey } from '../lib/crypto'
 import { getDb, saveDb } from '../lib/db'
-import { inferProxyTypeFromProject } from '../lib/projectInference'
+import { inferProjectRuntime, inferProjectSource, inferProxyTypeFromProject } from '../lib/projectInference'
 import { fetchServerResources } from '../lib/resources'
 import { execCommand, getConnection, testConnection } from '../lib/ssh'
 
@@ -60,6 +61,7 @@ export const serverRoutes = new Elysia({ prefix: '/servers' })
     return db.data.servers.map((server) => ({
       ...serializeServer(server),
       projectCount: db.data.projects.filter((project) => project.serverId === server.id).length,
+      recentDeployOutcomes: db.data.deployHistory.filter((record) => record.serverId === server.id).slice(0, 5),
     }))
   })
   .post(
@@ -108,6 +110,7 @@ export const serverRoutes = new Elysia({ prefix: '/servers' })
     return {
       ...serializeServer(server),
       projectCount: db.data.projects.filter((project) => project.serverId === server.id).length,
+      recentDeployOutcomes: db.data.deployHistory.filter((record) => record.serverId === server.id).slice(0, 5),
     }
   })
   .patch(
@@ -136,6 +139,13 @@ export const serverRoutes = new Elysia({ prefix: '/servers' })
       server.updatedAt = new Date().toISOString()
 
       await saveDb()
+      await recordActivity({
+        serverId: server.id,
+        type: 'project_updated',
+        status: 'info',
+        title: `Updated server ${server.name}`,
+        detail: 'Connection settings were updated.',
+      })
 
       return serializeServer(server)
     },
@@ -152,10 +162,18 @@ export const serverRoutes = new Elysia({ prefix: '/servers' })
       set.status = 404
       return { message: 'Server not found' }
     }
+    const server = db.data.servers[serverIndex]
 
     db.data.servers.splice(serverIndex, 1)
     db.data.projects = db.data.projects.filter((project) => project.serverId !== params.id)
     await saveDb()
+    await recordActivity({
+      serverId: server.id,
+      type: 'project_deleted',
+      status: 'warning',
+      title: `Deleted server ${server.name}`,
+      detail: 'Associated Launchpad projects were removed from the registry.',
+    })
 
     return { success: true }
   })
@@ -233,8 +251,16 @@ export const serverRoutes = new Elysia({ prefix: '/servers' })
 
     for (const project of projects) {
       const inferred = inferProxyTypeFromProject(project)
-      if (project.proxyType !== inferred && inferred !== 'none') {
+      const runtime = inferProjectRuntime({ ...project, proxyType: inferred })
+      const source = project.source ?? inferProjectSource({ imported: true })
+      if (
+        (project.proxyType !== inferred && inferred !== 'none') ||
+        project.runtime !== runtime ||
+        project.source !== source
+      ) {
         project.proxyType = inferred
+        project.runtime = runtime
+        project.source = source
         project.updatedAt = new Date().toISOString()
         updated += 1
       }
@@ -245,6 +271,23 @@ export const serverRoutes = new Elysia({ prefix: '/servers' })
     }
 
     return { success: true, updated }
+  })
+  .get('/:id/activity', async (context: any) => {
+    const { requireAuth, params, set } = context
+    await requireAuth()
+    requireCryptoReady(set)
+
+    const db = await getDb()
+    const server = db.data.servers.find((item) => item.id === params.id)
+    if (!server) {
+      set.status = 404
+      return { message: 'Server not found' }
+    }
+
+    return db.data.activity
+      .filter((event) => event.serverId === params.id)
+      .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
+      .slice(0, 50)
   })
   .get('/:id/discover', async (context: any) => {
     const { requireAuth, params, set } = context
@@ -348,6 +391,16 @@ export const serverRoutes = new Elysia({ prefix: '/servers' })
               : 'Automatic import currently works best for Docker Compose-managed apps with a detected working directory.',
             suggestedProject: {
               name: composeService || composeProject || containerName,
+              source: inferProjectSource({ imported: true }),
+              runtime: inferProjectRuntime({
+                name: composeService || composeProject || containerName,
+                repoImage: repository,
+                workingDir,
+                deployCommands: workingDir
+                  ? ['docker compose pull', 'docker compose up -d']
+                  : ['docker pull ' + image],
+                proxyType,
+              }),
               repoImage: repository,
               deployCommands: workingDir
                 ? ['docker compose pull', 'docker compose up -d']

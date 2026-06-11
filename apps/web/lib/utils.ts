@@ -20,3 +20,14 @@ export function formatRelative(iso: string): string {
   if (diff < 86_400_000) return `${Math.floor(diff / 3_600_000)}h ago`
   return `${Math.floor(diff / 86_400_000)}d ago`
 }
+
+export function formatDateTime(iso?: string): string {
+  if (!iso) return 'n/a'
+  return new Date(iso).toLocaleString([], {
+    year: 'numeric',
+    month: 'short',
+    day: 'numeric',
+    hour: '2-digit',
+    minute: '2-digit',
+  })
+}

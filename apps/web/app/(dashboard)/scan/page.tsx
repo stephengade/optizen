@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useState } from 'react'
 import type { Project, Server } from '@launchpad/shared'
 import { toast } from 'sonner'
+import { ProjectClassificationBadge } from '@/components/dashboard/ProjectClassificationBadge'
 import { Button } from '@/components/ui/Button'
 import { SensitiveText } from '@/components/ui/SensitiveText'
 import { api, ApiError } from '@/lib/api'
@@ -24,10 +25,12 @@ interface DiscoveredApp {
   alreadyImported: boolean
   importable: boolean
   importReason?: string
-  suggestedProject: {
-    name: string
-    repoImage: string
-    deployCommands: string[]
+    suggestedProject: {
+      name: string
+      source: Project['source']
+      runtime: Project['runtime']
+      repoImage: string
+      deployCommands: string[]
     envPath?: string
     workingDir?: string
     proxyType: Project['proxyType']
@@ -191,6 +194,12 @@ export default function ScanPage() {
                       <div>
                         <h3 className="text-sm font-semibold text-[var(--text)]">{app.suggestedProject.name}</h3>
                         <p className="mt-1 text-xs text-[var(--text-muted)]"><SensitiveText value={app.image} /></p>
+                        <div className="mt-2">
+                          <ProjectClassificationBadge
+                            source={app.suggestedProject.source}
+                            runtime={app.suggestedProject.runtime}
+                          />
+                        </div>
                       </div>
                       <div className="flex flex-wrap gap-2 text-[10px] uppercase tracking-[0.18em] text-[var(--text-muted)]">
                         <span className="border border-[var(--border)] px-2 py-1">{app.status}</span>
@@ -273,6 +282,12 @@ export default function ScanPage() {
 
               <div className="border border-[var(--border)] bg-[var(--surface-2)] p-4 text-sm text-[var(--text-muted)]">
                 <div>Image: <SensitiveText value={selected.suggestedProject.repoImage} className="text-[var(--text)]" /></div>
+                <div className="mt-2">
+                  <ProjectClassificationBadge
+                    source={selected.suggestedProject.source}
+                    runtime={selected.suggestedProject.runtime}
+                  />
+                </div>
                 <div className="mt-2">Working dir: <SensitiveText value={selected.suggestedProject.workingDir || 'not detected'} className="font-mono text-[var(--text)]" /></div>
                 <div className="mt-2">Env path: <SensitiveText value={selected.suggestedProject.envPath || 'not detected'} className="font-mono text-[var(--text)]" /></div>
               </div>

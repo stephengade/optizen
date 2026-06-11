@@ -3,18 +3,22 @@
 import { useEffect, useState } from 'react'
 import Link from 'next/link'
 import { useParams, useRouter } from 'next/navigation'
-import type { DeployLogEvent, DeployRecord, DeployStatus, Project } from '@launchpad/shared'
+import type { ActivityEvent, DeployLogEvent, DeployRecord, DeployStatus, Project, ProjectHealthState } from '@launchpad/shared'
 import { toast } from 'sonner'
+import { ActivityTimeline } from '@/components/dashboard/ActivityTimeline'
 import { DeployButton } from '@/components/dashboard/DeployButton'
 import { DeployHistory } from '@/components/dashboard/DeployHistory'
+import { HealthBadge } from '@/components/dashboard/HealthBadge'
 import { ImagePanel, type ImageStatus } from '@/components/dashboard/ImagePanel'
+import { ProjectClassificationBadge } from '@/components/dashboard/ProjectClassificationBadge'
 import { DeployStatusBadge } from '@/components/dashboard/DeployStatusBadge'
 import { LogStream, type LogLine } from '@/components/dashboard/LogStream'
 import { ProjectForm } from '@/components/dashboard/ProjectForm'
 import { Button } from '@/components/ui/Button'
+import { ConfirmActionModal } from '@/components/ui/ConfirmActionModal'
 import { SensitiveText } from '@/components/ui/SensitiveText'
 import { api, ApiError } from '@/lib/api'
-import { formatDuration } from '@/lib/utils'
+import { formatDateTime, formatDuration, formatRelative } from '@/lib/utils'
 
 export default function ProjectDetailPage() {
   const params = useParams<{ id: string; pid: string }>()
@@ -29,12 +33,18 @@ export default function ProjectDetailPage() {
   const [regenerating, setRegenerating] = useState(false)
   const [deploying, setDeploying] = useState(false)
   const [imageStatus, setImageStatus] = useState<ImageStatus | null>(null)
+  const [activity, setActivity] = useState<ActivityEvent[]>([])
   const [imageTags, setImageTags] = useState<string[]>([])
   const [selectedPullTag, setSelectedPullTag] = useState('')
   const [selectedRollbackId, setSelectedRollbackId] = useState('')
   const [pullingImage, setPullingImage] = useState(false)
   const [pruningImages, setPruningImages] = useState(false)
   const [rollingBack, setRollingBack] = useState(false)
+  const [checkingHealth, setCheckingHealth] = useState(false)
+  const [deployConfirmOpen, setDeployConfirmOpen] = useState(false)
+  const [rollbackConfirmOpen, setRollbackConfirmOpen] = useState(false)
+  const [pruneConfirmOpen, setPruneConfirmOpen] = useState(false)
+  const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false)
 
   const webhookUrl = project?.webhookSecret
     ? `${process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:3001'}/webhooks/deploy/${params.pid}/${project.webhookSecret}`
@@ -95,6 +105,16 @@ export default function ProjectDetailPage() {
     }
   }
 
+  async function loadActivity() {
+    try {
+      const records = await api.get<ActivityEvent[]>(`/projects/${params.pid}/activity`)
+      setActivity(records)
+    } catch (error) {
+      const message = error instanceof ApiError ? error.message : 'Failed to load activity timeline'
+      toast.error(message)
+    }
+  }
+
   async function selectDeploy(deployId: string) {
     try {
       const record = await api.get<DeployRecord>(`/deploy/${params.pid}/history/${deployId}`)
@@ -109,6 +129,7 @@ export default function ProjectDetailPage() {
     void loadProject()
     void loadHistory()
     void loadImageState()
+    void loadActivity()
   }, [params.pid])
 
   useEffect(() => {
@@ -144,6 +165,8 @@ export default function ProjectDetailPage() {
         setDeploying(false)
         void loadHistory()
         void loadImageState()
+        void loadProject()
+        void loadActivity()
       }
     }
 
@@ -218,6 +241,21 @@ export default function ProjectDetailPage() {
     }
   }
 
+  async function handleHealthCheck() {
+    setCheckingHealth(true)
+    try {
+      const data = await api.post<ProjectHealthState>(`/projects/${params.pid}/health`)
+      setProject((current) => (current ? { ...current, healthStatus: data } : current))
+      toast.success(data.status === 'healthy' ? 'Health check passed' : data.message ?? 'Health check completed')
+      void loadActivity()
+    } catch (error) {
+      const message = error instanceof ApiError ? error.message : 'Failed to run health check'
+      toast.error(message)
+    } finally {
+      setCheckingHealth(false)
+    }
+  }
+
   async function handlePullImage() {
     setPullingImage(true)
     try {
@@ -284,6 +322,10 @@ export default function ProjectDetailPage() {
         <p className="mt-2 text-sm text-[var(--text-muted)]">
           <SensitiveText value={project.repoImage} />
         </p>
+        <div className="mt-3 flex flex-wrap gap-2">
+          <ProjectClassificationBadge source={project.source} runtime={project.runtime} />
+          <HealthBadge status={project.healthStatus?.status} />
+        </div>
         <div className="mt-4 flex flex-wrap gap-3">
           <Link
             href={`/servers/${params.id}/projects/${params.pid}/env`}
@@ -291,6 +333,37 @@ export default function ProjectDetailPage() {
           >
             Open env editor
           </Link>
+          <Button variant="ghost" size="sm" onClick={() => void handleHealthCheck()} loading={checkingHealth}>
+            Run heartbeat
+          </Button>
+        </div>
+      </section>
+
+      <section className="grid gap-4 md:grid-cols-3">
+        <div className="rounded-2xl border border-[var(--border)] bg-[var(--surface)] p-5">
+          <div className="text-xs uppercase tracking-[0.18em] text-[var(--text-muted)]">Health</div>
+          <div className="mt-2 text-lg font-semibold text-[var(--text)]">{project.healthStatus?.status ?? 'unknown'}</div>
+          <div className="mt-1 text-sm text-[var(--text-muted)]">
+            {project.healthStatus?.message ?? 'Configure a path or port to start heartbeat tracking.'}
+          </div>
+        </div>
+        <div className="rounded-2xl border border-[var(--border)] bg-[var(--surface)] p-5">
+          <div className="text-xs uppercase tracking-[0.18em] text-[var(--text-muted)]">Last successful heartbeat</div>
+          <div className="mt-2 text-lg font-semibold text-[var(--text)]">
+            {project.healthStatus?.lastSuccessfulAt ? formatRelative(project.healthStatus.lastSuccessfulAt) : 'Never'}
+          </div>
+          <div className="mt-1 text-sm text-[var(--text-muted)]">
+            {project.healthStatus?.lastSuccessfulAt ? formatDateTime(project.healthStatus.lastSuccessfulAt) : 'Run a health check after configuring it.'}
+          </div>
+        </div>
+        <div className="rounded-2xl border border-[var(--border)] bg-[var(--surface)] p-5">
+          <div className="text-xs uppercase tracking-[0.18em] text-[var(--text-muted)]">Health target</div>
+          <div className="mt-2 text-lg font-semibold text-[var(--text)]">
+            {project.healthCheck?.path || (project.healthCheck?.port ? `:${project.healthCheck.port}` : 'Not set')}
+          </div>
+          <div className="mt-1 text-sm text-[var(--text-muted)]">
+            {project.healthCheck?.path ? 'HTTP endpoint on 127.0.0.1' : project.healthCheck?.port ? 'TCP port check on 127.0.0.1' : 'Add one in project settings.'}
+          </div>
         </div>
       </section>
 
@@ -318,7 +391,14 @@ export default function ProjectDetailPage() {
               className="h-10 rounded border border-[var(--border)] bg-[var(--surface-2)] px-3 text-sm text-[var(--text)] outline-none focus:border-[var(--green)]"
             />
           </label>
-          <DeployButton status={deploying ? 'deploying' : status} onDeploy={() => void handleDeploy()} />
+          <DeployButton status={deploying ? 'deploying' : status} onDeploy={() => setDeployConfirmOpen(true)} />
+        </div>
+
+        <div className="mt-4 rounded-xl border border-[var(--border)] bg-[var(--surface-2)] px-4 py-3 text-sm text-[var(--text-muted)]">
+          Launchpad will run these commands in {project.workingDir || 'the remote default directory'}:
+          <pre data-sensitive="true" className="mt-2 whitespace-pre-wrap font-mono text-xs text-[var(--text)]">
+            {project.deployCommands.join('\n')}
+          </pre>
         </div>
 
         <div className="mt-5">
@@ -339,9 +419,9 @@ export default function ProjectDetailPage() {
         onTagChange={setSelectedPullTag}
         onRollbackChange={setSelectedRollbackId}
         onPull={() => void handlePullImage()}
-        onPrune={() => void handlePruneImages()}
+        onPrune={() => setPruneConfirmOpen(true)}
         onRefresh={() => void loadImageState()}
-        onRollback={() => void handleRollback()}
+        onRollback={() => setRollbackConfirmOpen(true)}
       />
 
       <section className="grid gap-6 xl:grid-cols-[1.1fr_0.9fr]">
@@ -387,6 +467,11 @@ export default function ProjectDetailPage() {
             <p className="mt-4 text-sm text-[var(--text-muted)]">Select a deploy to inspect its log snapshot.</p>
           )}
         </div>
+      </section>
+
+      <section>
+        <h2 className="mb-3 text-lg font-semibold text-[var(--text)]">Activity timeline</h2>
+        <ActivityTimeline events={activity} emptyLabel="No project activity yet. Deploys, imports, env edits, proxy edits, and health checks will appear here." />
       </section>
 
       <div className="rounded-2xl border border-[var(--border)] bg-[var(--surface)] p-6">
@@ -469,7 +554,82 @@ export default function ProjectDetailPage() {
         submitLabel="Save changes"
         initialValue={project}
         onSubmit={handleUpdate}
-        onDelete={handleDelete}
+        onDelete={async () => {
+          setDeleteConfirmOpen(true)
+        }}
+      />
+
+      <ConfirmActionModal
+        open={deployConfirmOpen}
+        title="Review deploy"
+        description="Check the commands and target tag before Launchpad starts this deploy."
+        confirmLabel="Start deploy"
+        tone="primary"
+        details={[
+          `Working directory: ${project.workingDir || 'remote default'}`,
+          `Image tag override: ${imageTag.trim() || 'latest/default behavior'}`,
+          ...project.deployCommands.map((command) => `$ ${command}`),
+        ]}
+        onClose={() => setDeployConfirmOpen(false)}
+        onConfirm={async () => {
+          await handleDeploy()
+          setDeployConfirmOpen(false)
+        }}
+      />
+
+      <ConfirmActionModal
+        open={rollbackConfirmOpen}
+        title="Review rollback"
+        description="Rollback re-runs the deploy flow using the selected successful image tag."
+        confirmLabel="Start rollback"
+        tone="primary"
+        details={[
+          `Selected deploy: ${selectedRollbackId || 'none selected'}`,
+          `Target tag: ${history.find((record) => record.id === selectedRollbackId)?.imageTag || 'not available'}`,
+          `Last successful deploys available: ${history.filter((record) => record.status === 'success' && record.imageTag).length}`,
+        ]}
+        loading={rollingBack}
+        onClose={() => setRollbackConfirmOpen(false)}
+        onConfirm={async () => {
+          await handleRollback()
+          setRollbackConfirmOpen(false)
+        }}
+      />
+
+      <ConfirmActionModal
+        open={pruneConfirmOpen}
+        title="Prune unused images"
+        description="This removes dangling images on the server. It is useful for cleanup, but it is still a destructive operation."
+        confirmLabel="Prune images"
+        details={[
+          `Repository: ${project.repoImage}`,
+          'Only unused images are removed.',
+          'Refresh image status after prune to verify the new state.',
+        ]}
+        loading={pruningImages}
+        onClose={() => setPruneConfirmOpen(false)}
+        onConfirm={async () => {
+          await handlePruneImages()
+          setPruneConfirmOpen(false)
+        }}
+      />
+
+      <ConfirmActionModal
+        open={deleteConfirmOpen}
+        title="Delete project"
+        description="This removes the Launchpad project record, deploy history context, and health configuration from the dashboard. It does not delete the remote app by itself."
+        confirmLabel="Delete project"
+        confirmKeyword={project.name}
+        details={[
+          `Project: ${project.name}`,
+          `Runtime: ${project.runtime}`,
+          `Last deploy: ${project.lastDeploy?.status ?? 'none yet'}`,
+        ]}
+        onClose={() => setDeleteConfirmOpen(false)}
+        onConfirm={async () => {
+          await handleDelete()
+          setDeleteConfirmOpen(false)
+        }}
       />
     </div>
   )
