@@ -1,6 +1,7 @@
 import type { Metadata } from 'next'
 import { Inter } from 'next/font/google'
 import { AuthProvider } from '@/lib/auth-context'
+import { DemoPrivacyProvider } from '@/lib/demo-privacy-context'
 import { AuthGate } from '@/components/ui/AuthGate'
 import { Toaster } from 'sonner'
 import './globals.css'
@@ -20,9 +21,11 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
     <html lang="en" className={inter.variable}>
       <body>
         <AuthProvider>
-          <AuthGate>
-            {children}
-          </AuthGate>
+          <DemoPrivacyProvider>
+            <AuthGate>
+              {children}
+            </AuthGate>
+          </DemoPrivacyProvider>
         </AuthProvider>
         <Toaster
           theme="dark"

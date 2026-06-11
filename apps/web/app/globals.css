@@ -51,4 +51,9 @@
   [class*="rounded"] {
     border-radius: 0 !important;
   }
+
+  html[data-demo-privacy="on"] [data-sensitive="true"] {
+    filter: blur(6px);
+    user-select: none;
+  }
 }

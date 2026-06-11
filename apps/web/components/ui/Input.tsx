@@ -6,9 +6,10 @@ interface InputProps extends React.InputHTMLAttributes<HTMLInputElement> {
   label?: string
   error?: string
   hint?: string
+  sensitive?: boolean
 }
 
-export function Input({ label, error, hint, className, id, ...props }: InputProps) {
+export function Input({ label, error, hint, className, id, sensitive = false, ...props }: InputProps) {
   const inputId = id ?? label?.toLowerCase().replace(/\s+/g, '-')
 
   return (
@@ -20,6 +21,7 @@ export function Input({ label, error, hint, className, id, ...props }: InputProp
       )}
       <input
         id={inputId}
+        data-sensitive={sensitive ? 'true' : undefined}
         className={cn(
           'h-10 w-full rounded border border-[var(--border)] bg-[var(--surface-2)] px-3 text-sm text-[var(--text)] placeholder:text-[var(--text-muted)] transition-colors',
           'focus:outline-none focus:border-[var(--green)]',

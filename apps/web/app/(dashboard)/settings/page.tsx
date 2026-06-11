@@ -6,6 +6,7 @@ import { toast } from 'sonner'
 import { Button } from '@/components/ui/Button'
 import { Input } from '@/components/ui/Input'
 import { api, ApiError } from '@/lib/api'
+import { useDemoPrivacy } from '@/lib/demo-privacy-context'
 
 interface NotificationSettingsResponse {
   email: SmtpConfig | null
@@ -36,6 +37,7 @@ function createWebhook(): GlobalWebhook {
 }
 
 export default function SettingsPage() {
+  const { enabled: demoPrivacy, setEnabled: setDemoPrivacy } = useDemoPrivacy()
   const [smtp, setSmtp] = useState<SmtpConfig>(createEmptySmtp())
   const [smtpEnabled, setSmtpEnabled] = useState(false)
   const [toValue, setToValue] = useState('')
@@ -145,6 +147,26 @@ export default function SettingsPage() {
       <section className="rounded-2xl border border-[var(--border)] bg-[var(--surface)] p-6">
         <div className="flex flex-wrap items-center justify-between gap-4">
           <div>
+            <h2 className="text-lg font-semibold text-[var(--text)]">Demo privacy</h2>
+            <p className="mt-1 text-sm text-[var(--text-muted)]">
+              Hide sensitive values across Launchpad when screen-sharing or recording demos.
+            </p>
+          </div>
+          <label className="flex items-center gap-3 text-sm text-[var(--text)]">
+            <input
+              type="checkbox"
+              checked={demoPrivacy}
+              onChange={(event) => setDemoPrivacy(event.target.checked)}
+              className="h-4 w-4 accent-[var(--green)]"
+            />
+            Hide sensitive data
+          </label>
+        </div>
+      </section>
+
+      <section className="rounded-2xl border border-[var(--border)] bg-[var(--surface)] p-6">
+        <div className="flex flex-wrap items-center justify-between gap-4">
+          <div>
             <h2 className="text-lg font-semibold text-[var(--text)]">SMTP</h2>
             <p className="mt-1 text-sm text-[var(--text-muted)]">Used for deploy success and failure emails.</p>
           </div>
@@ -160,12 +182,12 @@ export default function SettingsPage() {
         </div>
 
         <div className="mt-5 grid gap-4 md:grid-cols-2">
-          <Input label="Host" value={smtp.host} onChange={(event) => setSmtp((c) => ({ ...c, host: event.target.value }))} />
+          <Input label="Host" sensitive value={smtp.host} onChange={(event) => setSmtp((c) => ({ ...c, host: event.target.value }))} />
           <Input label="Port" value={String(smtp.port)} onChange={(event) => setSmtp((c) => ({ ...c, port: Number(event.target.value || 0) }))} />
-          <Input label="User" value={smtp.user} onChange={(event) => setSmtp((c) => ({ ...c, user: event.target.value }))} />
-          <Input label="Password" type="password" value={smtp.password} onChange={(event) => setSmtp((c) => ({ ...c, password: event.target.value }))} />
-          <Input label="From" value={smtp.from} onChange={(event) => setSmtp((c) => ({ ...c, from: event.target.value }))} />
-          <Input label="To" value={toValue} onChange={(event) => setToValue(event.target.value)} hint="Comma-separated recipient emails" />
+          <Input label="User" sensitive value={smtp.user} onChange={(event) => setSmtp((c) => ({ ...c, user: event.target.value }))} />
+          <Input label="Password" sensitive type="password" value={smtp.password} onChange={(event) => setSmtp((c) => ({ ...c, password: event.target.value }))} />
+          <Input label="From" sensitive value={smtp.from} onChange={(event) => setSmtp((c) => ({ ...c, from: event.target.value }))} />
+          <Input label="To" sensitive value={toValue} onChange={(event) => setToValue(event.target.value)} hint="Comma-separated recipient emails" />
         </div>
 
         <div className="mt-4">
@@ -217,6 +239,7 @@ export default function SettingsPage() {
                   />
                   <Input
                     label="URL"
+                    sensitive
                     value={webhook.url}
                     onChange={(event) =>
                       setWebhooks((current) =>
@@ -226,6 +249,7 @@ export default function SettingsPage() {
                   />
                   <Input
                     label="Secret"
+                    sensitive
                     type="password"
                     value={webhook.secret ?? ''}
                     onChange={(event) =>

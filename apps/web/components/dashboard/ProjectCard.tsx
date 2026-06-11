@@ -3,6 +3,7 @@
 import Link from 'next/link'
 import type { Project } from '@launchpad/shared'
 import { ArrowRight, Bell, Globe, Terminal } from 'lucide-react'
+import { SensitiveText } from '@/components/ui/SensitiveText'
 
 interface ProjectCardProps {
   project: Project
@@ -14,7 +15,9 @@ export function ProjectCard({ project }: ProjectCardProps) {
       <div className="flex items-start justify-between gap-4">
         <div>
           <h3 className="text-sm font-semibold text-[var(--text)]">{project.name}</h3>
-          <p className="mt-1 text-xs text-[var(--text-muted)]">{project.repoImage}</p>
+          <p className="mt-1 text-xs text-[var(--text-muted)]">
+            <SensitiveText value={project.repoImage} />
+          </p>
         </div>
         <span className="rounded-full border border-[var(--border)] px-2 py-1 text-[10px] uppercase tracking-[0.18em] text-[var(--text-muted)]">
           {project.proxyType}

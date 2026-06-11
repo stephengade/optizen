@@ -4,6 +4,7 @@ import { useEffect, useMemo, useState } from 'react'
 import type { Project, Server } from '@launchpad/shared'
 import { toast } from 'sonner'
 import { Button } from '@/components/ui/Button'
+import { SensitiveText } from '@/components/ui/SensitiveText'
 import { api, ApiError } from '@/lib/api'
 
 type ServerSummary = Server & { projectCount?: number }
@@ -174,7 +175,7 @@ export default function ScanPage() {
               <div>
                 <h2 className="text-lg font-semibold text-[var(--text)]">{server.name}</h2>
                 <p className="mt-1 text-sm text-[var(--text-muted)]">
-                  {server.user}@{server.host}:{server.port}
+                  <SensitiveText value={`${server.user}@${server.host}:${server.port}`} />
                 </p>
               </div>
               <div className="text-xs uppercase tracking-[0.18em] text-[var(--text-muted)]">
@@ -189,7 +190,7 @@ export default function ScanPage() {
                     <div className="flex flex-wrap items-start justify-between gap-4">
                       <div>
                         <h3 className="text-sm font-semibold text-[var(--text)]">{app.suggestedProject.name}</h3>
-                        <p className="mt-1 text-xs text-[var(--text-muted)]">{app.image}</p>
+                        <p className="mt-1 text-xs text-[var(--text-muted)]"><SensitiveText value={app.image} /></p>
                       </div>
                       <div className="flex flex-wrap gap-2 text-[10px] uppercase tracking-[0.18em] text-[var(--text-muted)]">
                         <span className="border border-[var(--border)] px-2 py-1">{app.status}</span>
@@ -199,15 +200,15 @@ export default function ScanPage() {
                     </div>
 
                     <div className="mt-4 grid gap-2 text-sm text-[var(--text-muted)] md:grid-cols-2">
-                      <div>Container: <span className="font-mono text-[var(--text)]">{app.containerName}</span></div>
+                      <div>Container: <SensitiveText value={app.containerName} className="font-mono text-[var(--text)]" /></div>
                       <div>Image tag: <span className="text-[var(--text)]">{app.imageTag}</span></div>
-                      <div>Working dir: <span className="font-mono text-[var(--text)]">{app.workingDir || 'not detected'}</span></div>
-                      <div>Env path: <span className="font-mono text-[var(--text)]">{app.envPath || 'not detected'}</span></div>
+                      <div>Working dir: <SensitiveText value={app.workingDir || 'not detected'} className="font-mono text-[var(--text)]" /></div>
+                      <div>Env path: <SensitiveText value={app.envPath || 'not detected'} className="font-mono text-[var(--text)]" /></div>
                     </div>
 
                     <div className="mt-4 border border-[var(--border)] bg-[var(--surface)] px-3 py-2 text-xs text-[var(--text-muted)]">
                       Suggested deploy commands:
-                      <pre className="mt-2 whitespace-pre-wrap font-mono text-[var(--text)]">
+                      <pre data-sensitive="true" className="mt-2 whitespace-pre-wrap font-mono text-[var(--text)]">
                         {app.suggestedProject.deployCommands.join('\n')}
                       </pre>
                     </div>
@@ -271,9 +272,9 @@ export default function ScanPage() {
               </label>
 
               <div className="border border-[var(--border)] bg-[var(--surface-2)] p-4 text-sm text-[var(--text-muted)]">
-                <div>Image: <span className="text-[var(--text)]">{selected.suggestedProject.repoImage}</span></div>
-                <div className="mt-2">Working dir: <span className="font-mono text-[var(--text)]">{selected.suggestedProject.workingDir || 'not detected'}</span></div>
-                <div className="mt-2">Env path: <span className="font-mono text-[var(--text)]">{selected.suggestedProject.envPath || 'not detected'}</span></div>
+                <div>Image: <SensitiveText value={selected.suggestedProject.repoImage} className="text-[var(--text)]" /></div>
+                <div className="mt-2">Working dir: <SensitiveText value={selected.suggestedProject.workingDir || 'not detected'} className="font-mono text-[var(--text)]" /></div>
+                <div className="mt-2">Env path: <SensitiveText value={selected.suggestedProject.envPath || 'not detected'} className="font-mono text-[var(--text)]" /></div>
               </div>
 
               <div className="flex flex-wrap gap-3">

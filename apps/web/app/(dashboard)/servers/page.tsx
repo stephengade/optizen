@@ -1,7 +1,7 @@
 'use client'
 
 import { useEffect, useState } from 'react'
-import type { Server, ServerConnectionStatus } from '@launchpad/shared'
+import type { Server, ServerConnectionStatus, ServerResourceStatus } from '@launchpad/shared'
 import { toast } from 'sonner'
 import { ServerCard } from '@/components/dashboard/ServerCard'
 import { ServerForm } from '@/components/dashboard/ServerForm'
@@ -12,6 +12,7 @@ type ServerSummary = Server & { projectCount?: number }
 export default function ServersPage() {
   const [servers, setServers] = useState<ServerSummary[]>([])
   const [statuses, setStatuses] = useState<Record<string, ServerConnectionStatus>>({})
+  const [resources, setResources] = useState<Record<string, ServerResourceStatus>>({})
   const [loading, setLoading] = useState(true)
   const [testingId, setTestingId] = useState<string | null>(null)
 
@@ -19,6 +20,30 @@ export default function ServersPage() {
     try {
       const data = await api.get<ServerSummary[]>('/servers')
       setServers(data)
+      setResources(
+        Object.fromEntries(
+          data
+            .filter((server) => server.lastResourceStatus)
+            .map((server) => [server.id, server.lastResourceStatus!])
+        )
+      )
+
+      const snapshots = await Promise.allSettled(
+        data.map(async (server) => {
+          const resource = await api.get<ServerResourceStatus>(`/servers/${server.id}/resources`)
+          return [server.id, resource] as const
+        })
+      )
+
+      setResources((current) => {
+        const next = { ...current }
+        for (const snapshot of snapshots) {
+          if (snapshot.status === 'fulfilled') {
+            next[snapshot.value[0]] = snapshot.value[1]
+          }
+        }
+        return next
+      })
     } catch (error) {
       const message = error instanceof ApiError ? error.message : 'Failed to load servers'
       toast.error(message)
@@ -54,6 +79,12 @@ export default function ServersPage() {
           server.id === serverId ? { ...server, lastConnectionStatus: status } : server
         )
       )
+      try {
+        const resource = await api.get<ServerResourceStatus>(`/servers/${serverId}/resources`)
+        setResources((current) => ({ ...current, [serverId]: resource }))
+      } catch {
+        // Leave the previous memory snapshot in place if refresh fails.
+      }
       toast.success(status.connected ? 'SSH connection succeeded' : status.error ?? 'SSH connection failed')
     } catch (error) {
       const message = error instanceof ApiError ? error.message : 'Failed to test connection'
@@ -88,6 +119,7 @@ export default function ServersPage() {
                 key={server.id}
                 server={server}
                 status={statuses[server.id] ?? server.lastConnectionStatus}
+                resources={resources[server.id] ?? server.lastResourceStatus}
                 onTest={() => void handleTest(server.id)}
                 testing={testingId === server.id}
               />

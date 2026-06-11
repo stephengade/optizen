@@ -1,40 +1,87 @@
 'use client'
 
+import { useState } from 'react'
 import Link from 'next/link'
-import type { Server } from '@launchpad/shared'
-import { ArrowRight, FolderGit2, PlugZap } from 'lucide-react'
+import type { Server, ServerResourceStatus } from '@launchpad/shared'
+import { Activity, ArrowRight, Eye, EyeOff, FolderGit2, HardDrive, PlugZap } from 'lucide-react'
 import { Button } from '@/components/ui/Button'
+import { SensitiveText } from '@/components/ui/SensitiveText'
+import { formatBytes } from '@/lib/format'
 import { ConnectionBadge } from './ConnectionBadge'
 
 interface ServerCardProps {
   server: Server & { projectCount?: number }
   status?: { connected?: boolean; latencyMs?: number; error?: string }
+  resources?: ServerResourceStatus
   onTest: () => void
   testing?: boolean
 }
 
-export function ServerCard({ server, status, onTest, testing }: ServerCardProps) {
+export function ServerCard({ server, status, resources, onTest, testing }: ServerCardProps) {
+  const [showSshKey, setShowSshKey] = useState(false)
+
   return (
     <article className="rounded-xl border border-[var(--border)] bg-[var(--surface)] p-5">
       <div className="flex items-start justify-between gap-4">
         <div>
           <h2 className="text-base font-semibold text-[var(--text)]">{server.name}</h2>
           <p className="mt-1 text-sm text-[var(--text-muted)]">
-            {server.user}@{server.host}:{server.port}
+            <SensitiveText value={`${server.user}@${server.host}:${server.port}`} />
           </p>
         </div>
         <ConnectionBadge {...status} />
       </div>
 
-      <div className="mt-5 flex items-center gap-4 text-sm text-[var(--text-muted)]">
-        <span className="inline-flex items-center gap-2">
-          <FolderGit2 size={14} />
-          {server.projectCount ?? 0} project{server.projectCount === 1 ? '' : 's'}
-        </span>
-        <span className="inline-flex items-center gap-2 truncate">
-          <PlugZap size={14} />
-          {server.sshKeyPath}
-        </span>
+      <div className="mt-5 grid gap-3 md:grid-cols-2 xl:grid-cols-[minmax(0,0.9fr)_minmax(0,1.4fr)_minmax(0,1fr)_minmax(0,1fr)]">
+        <div className="border border-[var(--border)] bg-[var(--surface-2)] px-3 py-3">
+          <div className="flex items-center gap-2 text-xs uppercase tracking-[0.18em] text-[var(--text-muted)]">
+            <FolderGit2 size={13} />
+            Projects
+          </div>
+          <div className="mt-2 text-sm text-[var(--text)]">
+            {server.projectCount ?? 0} project{server.projectCount === 1 ? '' : 's'}
+          </div>
+        </div>
+
+        <div className="border border-[var(--border)] bg-[var(--surface-2)] px-3 py-3">
+          <div className="flex items-center justify-between gap-3">
+            <div className="flex items-center gap-2 text-xs uppercase tracking-[0.18em] text-[var(--text-muted)]">
+              <PlugZap size={13} />
+              SSH Key
+            </div>
+            <button
+              type="button"
+              onClick={() => setShowSshKey((current) => !current)}
+              className="inline-flex items-center gap-1 text-[10px] uppercase tracking-[0.18em] text-[var(--text-muted)] transition-colors hover:text-[var(--text)]"
+            >
+              {showSshKey ? <EyeOff size={12} /> : <Eye size={12} />}
+              {showSshKey ? 'Hide' : 'Show'}
+            </button>
+          </div>
+          <div className="mt-2 break-all text-sm text-[var(--text)]">
+            {showSshKey ? <SensitiveText value={server.sshKeyPath} /> : '*****'}
+          </div>
+        </div>
+
+        <div className="border border-[var(--border)] bg-[var(--surface-2)] px-3 py-3">
+          <div className="flex items-center gap-2 text-xs uppercase tracking-[0.18em] text-[var(--text-muted)]">
+            <Activity size={13} />
+            RAM
+          </div>
+          <div className="mt-2 text-sm text-[var(--text)]">
+            {resources ? `${formatBytes(resources.memoryUsedBytes)} / ${formatBytes(resources.memoryTotalBytes)}` : 'n/a'}
+          </div>
+        </div>
+
+        <div className="border border-[var(--border)] bg-[var(--surface-2)] px-3 py-3">
+          <div className="flex items-center gap-2 text-xs uppercase tracking-[0.18em] text-[var(--text-muted)]">
+            <HardDrive size={13} />
+            Disk
+          </div>
+          <div className="mt-2 text-sm text-[var(--text)]">
+            {resources ? `${formatBytes(resources.diskUsedBytes)} / ${formatBytes(resources.diskTotalBytes)}` : 'n/a'}
+          </div>
+        </div>
       </div>
 
       <div className="mt-5 flex flex-wrap gap-3">

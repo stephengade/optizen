@@ -3,15 +3,17 @@
 import { useEffect, useState } from 'react'
 import Link from 'next/link'
 import { useParams, useRouter } from 'next/navigation'
-import type { Project, Server, ServerConnectionStatus } from '@launchpad/shared'
+import type { Project, Server, ServerConnectionStatus, ServerResourceStatus } from '@launchpad/shared'
 import { toast } from 'sonner'
 import { ConnectionBadge } from '@/components/dashboard/ConnectionBadge'
 import { ProjectCard } from '@/components/dashboard/ProjectCard'
 import { ProjectForm } from '@/components/dashboard/ProjectForm'
 import { ServerForm } from '@/components/dashboard/ServerForm'
+import { SensitiveText } from '@/components/ui/SensitiveText'
 import { Button } from '@/components/ui/Button'
 import { Modal } from '@/components/ui/Modal'
 import { api, ApiError } from '@/lib/api'
+import { formatBytes } from '@/lib/format'
 
 type ServerSummary = Server & { projectCount?: number }
 
@@ -21,6 +23,7 @@ export default function ServerDetailPage() {
   const [server, setServer] = useState<ServerSummary | null>(null)
   const [projects, setProjects] = useState<Project[]>([])
   const [status, setStatus] = useState<ServerConnectionStatus | null>(null)
+  const [resources, setResources] = useState<ServerResourceStatus | null>(null)
   const [loading, setLoading] = useState(true)
   const [testing, setTesting] = useState(false)
   const [reclassifying, setReclassifying] = useState(false)
@@ -36,6 +39,7 @@ export default function ServerDetailPage() {
       setServer(serverData)
       setProjects(projectData)
       setStatus(serverData.lastConnectionStatus ?? null)
+      setResources(serverData.lastResourceStatus ?? null)
     } catch (error) {
       const message = error instanceof ApiError ? error.message : 'Failed to load server'
       toast.error(message)
@@ -90,6 +94,13 @@ export default function ServerDetailPage() {
       const nextStatus = await api.post<ServerConnectionStatus>(`/servers/${params.id}/test`)
       setStatus(nextStatus)
       setServer((current) => (current ? { ...current, lastConnectionStatus: nextStatus } : current))
+      try {
+        const resource = await api.get<ServerResourceStatus>(`/servers/${params.id}/resources`)
+        setResources(resource)
+        setServer((current) => (current ? { ...current, lastResourceStatus: resource } : current))
+      } catch {
+        // Keep existing memory snapshot if resource refresh fails.
+      }
       toast.success(nextStatus.connected ? 'SSH connection succeeded' : nextStatus.error ?? 'SSH connection failed')
     } catch (error) {
       const message = error instanceof ApiError ? error.message : 'Failed to test connection'
@@ -132,7 +143,13 @@ export default function ServerDetailPage() {
           </Link>
           <h1 className="mt-2 text-3xl font-semibold text-[var(--text)]">{server.name}</h1>
           <p className="mt-2 text-sm text-[var(--text-muted)]">
-            {server.user}@{server.host}:{server.port}
+            <SensitiveText value={`${server.user}@${server.host}:${server.port}`} />
+          </p>
+          <p className="mt-2 text-sm text-[var(--text-muted)]">
+            Memory usage: {resources ? `${formatBytes(resources.memoryUsedBytes)} / ${formatBytes(resources.memoryTotalBytes)} used` : 'not available yet'}
+          </p>
+          <p className="mt-2 text-sm text-[var(--text-muted)]">
+            Disk usage: {resources ? `${formatBytes(resources.diskUsedBytes)} / ${formatBytes(resources.diskTotalBytes)} used` : 'not available yet'}
           </p>
           <p className="mt-2 max-w-2xl text-sm text-[var(--text-muted)]">
             Launchpad only shows projects that you add in this dashboard. A successful SSH test confirms access to the VPS, but it does not auto-import apps from the server.

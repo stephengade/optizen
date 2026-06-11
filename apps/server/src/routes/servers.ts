@@ -4,6 +4,7 @@ import type { Server, ServerConnectionStatus } from '@launchpad/shared'
 import { encrypt, hasKey } from '../lib/crypto'
 import { getDb, saveDb } from '../lib/db'
 import { inferProxyTypeFromProject } from '../lib/projectInference'
+import { fetchServerResources } from '../lib/resources'
 import { execCommand, getConnection, testConnection } from '../lib/ssh'
 
 const serverBody = t.Object({
@@ -180,10 +181,40 @@ export const serverRoutes = new Elysia({ prefix: '/servers' })
     }
 
     server.lastConnectionStatus = status
+    if (result.connected) {
+      try {
+        server.lastResourceStatus = await fetchServerResources(server)
+      } catch {
+        // Ignore telemetry failures during SSH test; connection result remains useful.
+      }
+    }
     server.updatedAt = new Date().toISOString()
     await saveDb()
 
     return status
+  })
+  .get('/:id/resources', async (context: any) => {
+    const { requireAuth, params, set } = context
+    await requireAuth()
+    requireCryptoReady(set)
+
+    const db = await getDb()
+    const server = db.data.servers.find((item) => item.id === params.id)
+    if (!server) {
+      set.status = 404
+      return { message: 'Server not found' }
+    }
+
+    try {
+      const resources = await fetchServerResources(server)
+      server.lastResourceStatus = resources
+      server.updatedAt = new Date().toISOString()
+      await saveDb()
+      return resources
+    } catch (error) {
+      set.status = 500
+      return { message: error instanceof Error ? error.message : 'Failed to load server resources' }
+    }
   })
   .post('/:id/reclassify-projects', async (context: any) => {
     const { requireAuth, params, set } = context

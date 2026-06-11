@@ -2,6 +2,7 @@
 
 import type { DeployRecord } from '@launchpad/shared'
 import { Button } from '@/components/ui/Button'
+import { SensitiveText } from '@/components/ui/SensitiveText'
 
 export interface ImageStatus {
   containerId: string
@@ -69,12 +70,12 @@ export function ImagePanel({
           <h3 className="text-sm font-medium text-[var(--text)]">Container status</h3>
           {status ? (
             <div className="mt-3 grid gap-2 text-sm text-[var(--text-muted)]">
-              <div>Image: <span className="text-[var(--text)]">{status.image || repoImage}</span></div>
+              <div>Image: <SensitiveText value={status.image || repoImage} className="text-[var(--text)]" /></div>
               <div>Tag: <span className="text-[var(--text)]">{status.tag}</span></div>
               <div>Status: <span className="text-[var(--text)]">{status.status || 'unknown'}</span></div>
-              <div>Container: <span className="font-mono text-[var(--text)]">{status.name || 'not running'}</span></div>
+              <div>Container: <SensitiveText value={status.name || 'not running'} className="font-mono text-[var(--text)]" /></div>
               <div>Uptime: <span className="text-[var(--text)]">{status.uptime || 'n/a'}</span></div>
-              <div>Ports: <span className="text-[var(--text)]">{status.ports.length > 0 ? status.ports.join(', ') : 'n/a'}</span></div>
+              <div>Ports: <SensitiveText value={status.ports.length > 0 ? status.ports.join(', ') : 'n/a'} className="text-[var(--text)]" /></div>
             </div>
           ) : (
             <p className="mt-3 text-sm text-[var(--text-muted)]">No status loaded yet.</p>

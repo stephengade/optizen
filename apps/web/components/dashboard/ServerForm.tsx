@@ -110,6 +110,7 @@ export function ServerForm({
         <div className="grid gap-4 md:grid-cols-2">
           <Input
             label="Host"
+            sensitive
             value={values.host}
             onChange={(event) => setValues((current) => ({ ...current, host: event.target.value }))}
             placeholder="203.0.113.10"
@@ -127,6 +128,7 @@ export function ServerForm({
         <div className="grid gap-4 md:grid-cols-2">
           <Input
             label="SSH user"
+            sensitive
             value={values.user}
             onChange={(event) => setValues((current) => ({ ...current, user: event.target.value }))}
             placeholder="deploy"
@@ -134,6 +136,7 @@ export function ServerForm({
           />
           <Input
             label="SSH key path"
+            sensitive
             value={values.sshKeyPath}
             onChange={(event) => setValues((current) => ({ ...current, sshKeyPath: event.target.value }))}
             placeholder="C:\\Users\\you\\.ssh\\id_ed25519"
@@ -142,6 +145,7 @@ export function ServerForm({
         </div>
         <Input
           label="Passphrase"
+          sensitive
           value={values.sshPassphrase}
           onChange={(event) => setValues((current) => ({ ...current, sshPassphrase: event.target.value }))}
           placeholder={initialValue?.id ? 'Leave blank to keep or clear' : 'Optional'}

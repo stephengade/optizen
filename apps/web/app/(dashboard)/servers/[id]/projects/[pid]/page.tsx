@@ -12,6 +12,7 @@ import { DeployStatusBadge } from '@/components/dashboard/DeployStatusBadge'
 import { LogStream, type LogLine } from '@/components/dashboard/LogStream'
 import { ProjectForm } from '@/components/dashboard/ProjectForm'
 import { Button } from '@/components/ui/Button'
+import { SensitiveText } from '@/components/ui/SensitiveText'
 import { api, ApiError } from '@/lib/api'
 import { formatDuration } from '@/lib/utils'
 
@@ -280,7 +281,9 @@ export default function ProjectDetailPage() {
           Back to server
         </Link>
         <h1 className="mt-2 text-3xl font-semibold text-[var(--text)]">{project.name}</h1>
-        <p className="mt-2 text-sm text-[var(--text-muted)]">{project.repoImage}</p>
+        <p className="mt-2 text-sm text-[var(--text-muted)]">
+          <SensitiveText value={project.repoImage} />
+        </p>
         <div className="mt-4 flex flex-wrap gap-3">
           <Link
             href={`/servers/${params.id}/projects/${params.pid}/env`}
@@ -434,7 +437,7 @@ export default function ProjectDetailPage() {
                 </Button>
               </div>
             </div>
-            <pre className="overflow-x-auto whitespace-pre-wrap break-all rounded-lg border border-[var(--border)] bg-[var(--surface-2)] px-4 py-3 font-mono text-xs text-[var(--text)]">
+            <pre data-sensitive="true" className="overflow-x-auto whitespace-pre-wrap break-all rounded-lg border border-[var(--border)] bg-[var(--surface-2)] px-4 py-3 font-mono text-xs text-[var(--text)]">
               {webhookUrl || 'No webhook URL available'}
             </pre>
           </div>
@@ -453,7 +456,7 @@ export default function ProjectDetailPage() {
                 </Button>
               </div>
             </div>
-            <pre className="overflow-x-auto whitespace-pre-wrap break-all rounded-lg border border-[var(--border)] bg-[#0b0b0d] px-4 py-3 font-mono text-xs text-[var(--text)]">
+            <pre data-sensitive="true" className="overflow-x-auto whitespace-pre-wrap break-all rounded-lg border border-[var(--border)] bg-[#0b0b0d] px-4 py-3 font-mono text-xs text-[var(--text)]">
               {workflowSnippet || 'Enable the project webhook to generate a CI snippet.'}
             </pre>
           </div>

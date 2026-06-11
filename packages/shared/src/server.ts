@@ -7,6 +7,7 @@ export interface Server {
   sshKeyPath: string
   sshPassphrase?: string // stored encrypted
   lastConnectionStatus?: ServerConnectionStatus
+  lastResourceStatus?: ServerResourceStatus
   createdAt: string
   updatedAt: string
 }
@@ -19,5 +20,14 @@ export interface ServerConnectionStatus {
   connected: boolean
   latencyMs?: number
   error?: string
+  checkedAt: string
+}
+
+export interface ServerResourceStatus {
+  serverId: string
+  memoryTotalBytes: number
+  memoryUsedBytes: number
+  diskTotalBytes: number
+  diskUsedBytes: number
   checkedAt: string
 }
