@@ -3,6 +3,7 @@
 import { useState } from 'react'
 import { Copy, Eye, EyeOff } from 'lucide-react'
 import { toast } from 'sonner'
+import { api } from '@/lib/api'
 import { useDemoPrivacy } from '@/lib/demo-privacy-context'
 
 interface SensitivePanelProps {
@@ -10,9 +11,18 @@ interface SensitivePanelProps {
   value: string
   emptyLabel?: string
   code?: boolean
+  serverId?: string
+  projectId?: string
 }
 
-export function SensitivePanel({ label, value, emptyLabel = 'Not available', code = false }: SensitivePanelProps) {
+export function SensitivePanel({
+  label,
+  value,
+  emptyLabel = 'Not available',
+  code = false,
+  serverId,
+  projectId,
+}: SensitivePanelProps) {
   const { enabled, mask } = useDemoPrivacy()
   const [revealed, setRevealed] = useState(false)
   const hasValue = Boolean(value)
@@ -22,6 +32,12 @@ export function SensitivePanel({ label, value, emptyLabel = 'Not available', cod
     if (!hasValue) return
     try {
       await navigator.clipboard.writeText(value)
+      void api.post('/auth/audit/reveal', {
+        label,
+        detail: 'Sensitive value copied from the UI.',
+        serverId,
+        projectId,
+      }).catch(() => undefined)
       toast.success(`${label} copied`)
     } catch {
       toast.error(`Failed to copy ${label.toLowerCase()}`)
@@ -39,7 +55,18 @@ export function SensitivePanel({ label, value, emptyLabel = 'Not available', cod
         <div className="flex gap-2">
           <button
             type="button"
-            onClick={() => setRevealed((current) => !current)}
+            onClick={() => {
+              const next = !revealed
+              setRevealed(next)
+              if (next && hasValue) {
+                void api.post('/auth/audit/reveal', {
+                  label,
+                  detail: 'Sensitive value revealed in the UI.',
+                  serverId,
+                  projectId,
+                }).catch(() => undefined)
+              }
+            }}
             className="inline-flex items-center gap-1 rounded-[12px] border border-[var(--border)] px-2 py-1 text-xs text-[var(--text-muted)] transition-colors hover:bg-[var(--surface-3)] hover:text-[var(--text)]"
           >
             {revealed ? <EyeOff size={12} /> : <Eye size={12} />}

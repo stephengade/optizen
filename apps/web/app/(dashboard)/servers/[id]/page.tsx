@@ -11,10 +11,11 @@ import { ProjectCard } from '@/components/dashboard/ProjectCard'
 import { ProjectForm } from '@/components/dashboard/ProjectForm'
 import { ServerForm } from '@/components/dashboard/ServerForm'
 import { ConfirmActionModal } from '@/components/ui/ConfirmActionModal'
+import { ReauthModal } from '@/components/ui/ReauthModal'
 import { SensitiveText } from '@/components/ui/SensitiveText'
 import { Button } from '@/components/ui/Button'
 import { Modal } from '@/components/ui/Modal'
-import { api, ApiError } from '@/lib/api'
+import { api, ApiError, isReauthRequiredError } from '@/lib/api'
 import {
   demoServers,
   getDemoActivityForServer,
@@ -43,6 +44,7 @@ export default function ServerDetailPage() {
   const [editOpen, setEditOpen] = useState(false)
   const [addProjectOpen, setAddProjectOpen] = useState(false)
   const [confirmDeleteOpen, setConfirmDeleteOpen] = useState(false)
+  const [reauthOpen, setReauthOpen] = useState(false)
 
   async function loadData() {
     if (demoMode && isDemoId(params.id)) {
@@ -107,9 +109,20 @@ export default function ServerDetailPage() {
       toast.success('Demo mode is active. Seeded server data stays read-only.')
       return
     }
-    await api.delete(`/servers/${params.id}`)
-    toast.success('Server deleted')
-    router.push('/servers')
+    try {
+      await api.delete(`/servers/${params.id}`)
+      toast.success('Server deleted')
+      router.push('/servers')
+    } catch (error) {
+      if (isReauthRequiredError(error)) {
+        setReauthOpen(true)
+        toast.error('Verify your session to delete this server.')
+        return
+      }
+      const message = error instanceof ApiError ? error.message : 'Failed to delete server'
+      toast.error(message)
+      throw error
+    }
   }
 
   async function handleCreateProject(payload: {
@@ -402,6 +415,8 @@ export default function ServerDetailPage() {
           setConfirmDeleteOpen(false)
         }}
       />
+
+      <ReauthModal open={reauthOpen} onClose={() => setReauthOpen(false)} />
     </div>
   )
 }

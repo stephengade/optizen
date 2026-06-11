@@ -51,7 +51,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
               </div>
               <div>
                 <div className="text-sm font-semibold text-[var(--text)]">Launchpad</div>
-                <div className="text-xs uppercase tracking-[0.24em] text-[var(--text-muted)]">Phase C</div>
+                <div className="text-xs uppercase tracking-[0.24em] text-[var(--text-muted)]">Phase D</div>
               </div>
             </div>
             <Sparkles size={16} className="text-[var(--yellow)]" />

@@ -27,8 +27,9 @@ import { ProjectForm } from '@/components/dashboard/ProjectForm'
 import { Button } from '@/components/ui/Button'
 import { ConfirmActionModal } from '@/components/ui/ConfirmActionModal'
 import { SensitivePanel } from '@/components/ui/SensitivePanel'
+import { ReauthModal } from '@/components/ui/ReauthModal'
 import { SensitiveText } from '@/components/ui/SensitiveText'
-import { api, ApiError } from '@/lib/api'
+import { api, ApiError, isReauthRequiredError } from '@/lib/api'
 import {
   demoImageStatus,
   demoImageTags,
@@ -75,6 +76,7 @@ export default function ProjectDetailPage() {
   const [logCheckedAt, setLogCheckedAt] = useState<string>()
   const [logsLoading, setLogsLoading] = useState(false)
   const [logsAutoRefresh, setLogsAutoRefresh] = useState(false)
+  const [reauthOpen, setReauthOpen] = useState(false)
 
   const webhookUrl = project?.webhookSecret
     ? `${process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:3001'}/webhooks/deploy/${params.pid}/${project.webhookSecret}`
@@ -88,6 +90,18 @@ export default function ProjectDetailPage() {
         '      -d \'{"imageTag":"${{ github.sha }}","ref":"${{ github.ref }}","workflow":"${{ github.workflow }}"}\'',
       ].join('\n')
     : ''
+
+  function handleDangerousActionError(error: unknown, fallbackMessage: string) {
+    if (isReauthRequiredError(error)) {
+      setReauthOpen(true)
+      toast.error('Verify your session to continue this action.')
+      return true
+    }
+
+    const message = error instanceof ApiError ? error.message : fallbackMessage
+    toast.error(message)
+    return false
+  }
 
   async function loadProject() {
     if (demoMode && isDemoId(params.pid)) {
@@ -340,9 +354,16 @@ export default function ProjectDetailPage() {
       toast.success('Demo mode is active. Seeded project data stays read-only.')
       return
     }
-    await api.delete(`/projects/${params.pid}`)
-    toast.success('Project deleted')
-    router.push(`/servers/${params.id}`)
+    try {
+      await api.delete(`/projects/${params.pid}`)
+      toast.success('Project deleted')
+      router.push(`/servers/${params.id}`)
+    } catch (error) {
+      if (handleDangerousActionError(error, 'Failed to delete project')) {
+        return
+      }
+      throw error
+    }
   }
 
   async function handleRegenerate() {
@@ -382,8 +403,7 @@ export default function ProjectDetailPage() {
     } catch (error) {
       setDeploying(false)
       setStatus(history[0]?.status ?? 'idle')
-      const message = error instanceof ApiError ? error.message : 'Failed to start deploy'
-      toast.error(message)
+      handleDangerousActionError(error, 'Failed to start deploy')
     }
   }
 
@@ -417,8 +437,7 @@ export default function ProjectDetailPage() {
       toast.success(`Pulled ${project?.repoImage}:${selectedPullTag || 'latest'}`)
       void loadImageState()
     } catch (error) {
-      const message = error instanceof ApiError ? error.message : 'Failed to pull image'
-      toast.error(message)
+      handleDangerousActionError(error, 'Failed to pull image')
     } finally {
       setPullingImage(false)
     }
@@ -435,8 +454,7 @@ export default function ProjectDetailPage() {
       toast.success(data.output || 'Image prune completed')
       void loadImageState()
     } catch (error) {
-      const message = error instanceof ApiError ? error.message : 'Failed to prune images'
-      toast.error(message)
+      handleDangerousActionError(error, 'Failed to prune images')
     } finally {
       setPruningImages(false)
     }
@@ -457,8 +475,7 @@ export default function ProjectDetailPage() {
       setDeploying(true)
       setStatus('deploying')
     } catch (error) {
-      const message = error instanceof ApiError ? error.message : 'Failed to start rollback'
-      toast.error(message)
+      handleDangerousActionError(error, 'Failed to start rollback')
     } finally {
       setRollingBack(false)
     }
@@ -772,6 +789,8 @@ export default function ProjectDetailPage() {
           setDeleteConfirmOpen(false)
         }}
       />
+
+      <ReauthModal open={reauthOpen} onClose={() => setReauthOpen(false)} />
     </div>
   )
 }

@@ -2,7 +2,9 @@ import { Elysia, t } from 'elysia'
 import { listFileRevisions, saveFileRevision } from '../lib/fileHistory'
 import { recordActivity } from '../lib/activity'
 import { hasKey } from '../lib/crypto'
+import { requireDangerousActionAuth } from '../lib/dangerousAction'
 import { getDb } from '../lib/db'
+import { validateEnvContent } from '../lib/envValidation'
 import { backupRemoteFile, getConnection, readRemoteFile, writeRemoteFile } from '../lib/ssh'
 
 const updateBody = t.Object({
@@ -17,19 +19,6 @@ function requireCryptoReady(set: { status?: number | string }) {
   if (!hasKey()) {
     set.status = 401
     throw new Error('Encryption key not loaded. Please log in again.')
-  }
-}
-
-function validateEnvContent(content: string) {
-  const lines = content.split('\n')
-
-  for (let index = 0; index < lines.length; index += 1) {
-    const line = lines[index].trim()
-    if (!line || line.startsWith('#')) continue
-    if (line.startsWith('export ')) continue
-    if (!line.includes('=')) {
-      throw new Error(`Env validation failed on line ${index + 1}: expected KEY=value format.`)
-    }
   }
 }
 
@@ -82,6 +71,8 @@ export const envRoutes = new Elysia({ prefix: '/env' })
       const { requireAuth, params, body, set } = context
       await requireAuth()
       requireCryptoReady(set)
+      const denied = await requireDangerousActionAuth(context)
+      if (denied) return denied
 
       const db = await getDb()
       const project = db.data.projects.find((item) => item.id === params.projectId)
@@ -174,6 +165,8 @@ export const envRoutes = new Elysia({ prefix: '/env' })
       const { requireAuth, params, body, set } = context
       await requireAuth()
       requireCryptoReady(set)
+      const denied = await requireDangerousActionAuth(context)
+      if (denied) return denied
 
       const db = await getDb()
       const project = db.data.projects.find((item) => item.id === params.projectId)

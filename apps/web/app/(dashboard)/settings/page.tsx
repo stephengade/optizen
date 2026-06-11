@@ -2,12 +2,14 @@
 
 import { useEffect, useState } from 'react'
 import Link from 'next/link'
-import type { GlobalWebhook, NotificationEvent, SmtpConfig } from '@launchpad/shared'
+import type { ActivityEvent, AuthSecuritySettings, GlobalWebhook, NotificationEvent, SmtpConfig } from '@launchpad/shared'
 import { ArrowRight, BookOpen } from 'lucide-react'
 import { toast } from 'sonner'
+import { ActivityTimeline } from '@/components/dashboard/ActivityTimeline'
 import { Button } from '@/components/ui/Button'
 import { Input } from '@/components/ui/Input'
-import { api, ApiError } from '@/lib/api'
+import { ReauthModal } from '@/components/ui/ReauthModal'
+import { api, ApiError, isReauthRequiredError } from '@/lib/api'
 import { useDemoPrivacy } from '@/lib/demo-privacy-context'
 
 interface NotificationSettingsResponse {
@@ -44,13 +46,24 @@ export default function SettingsPage() {
   const [smtpEnabled, setSmtpEnabled] = useState(false)
   const [toValue, setToValue] = useState('')
   const [webhooks, setWebhooks] = useState<GlobalWebhook[]>([])
+  const [security, setSecurity] = useState<AuthSecuritySettings>({
+    sessionDurationHours: 8,
+    requireReauthForDangerousActions: false,
+    reauthWindowMinutes: 15,
+  })
+  const [audit, setAudit] = useState<ActivityEvent[]>([])
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
   const [testing, setTesting] = useState(false)
+  const [reauthOpen, setReauthOpen] = useState(false)
 
   async function loadSettings() {
     try {
-      const data = await api.get<NotificationSettingsResponse>('/notifications/settings')
+      const [data, securityData, auditData] = await Promise.all([
+        api.get<NotificationSettingsResponse>('/notifications/settings'),
+        api.get<AuthSecuritySettings>('/auth/settings'),
+        api.get<ActivityEvent[]>('/auth/audit'),
+      ])
       if (data.email) {
         setSmtpEnabled(true)
         setSmtp(data.email)
@@ -61,6 +74,8 @@ export default function SettingsPage() {
         setToValue('')
       }
       setWebhooks(data.globalWebhooks)
+      setSecurity(securityData)
+      setAudit(auditData)
     } catch (error) {
       const message = error instanceof ApiError ? error.message : 'Failed to load settings'
       toast.error(message)
@@ -76,18 +91,26 @@ export default function SettingsPage() {
   async function handleSave() {
     setSaving(true)
     try {
-      await api.put('/notifications/settings', {
-        email: smtpEnabled
-          ? {
-              ...smtp,
-              to: toValue.split(',').map((value) => value.trim()).filter(Boolean),
-            }
-          : null,
-        globalWebhooks: webhooks,
-      })
+      await Promise.all([
+        api.put('/notifications/settings', {
+          email: smtpEnabled
+            ? {
+                ...smtp,
+                to: toValue.split(',').map((value) => value.trim()).filter(Boolean),
+              }
+            : null,
+          globalWebhooks: webhooks,
+        }),
+        api.put('/auth/settings', security),
+      ])
       toast.success('Notification settings saved')
       void loadSettings()
     } catch (error) {
+      if (isReauthRequiredError(error)) {
+        setReauthOpen(true)
+        toast.error('Verify your session to update security settings.')
+        return
+      }
       const message = error instanceof ApiError ? error.message : 'Failed to save settings'
       toast.error(message)
     } finally {
@@ -185,6 +208,51 @@ export default function SettingsPage() {
             Hide sensitive data
           </label>
         </div>
+      </section>
+
+      <section className="rounded-2xl border border-[var(--border)] bg-[var(--surface)] p-6">
+        <div className="flex flex-wrap items-start justify-between gap-4">
+          <div>
+            <h2 className="text-lg font-semibold text-[var(--text)]">Session security</h2>
+            <p className="mt-1 text-sm text-[var(--text-muted)]">
+              Control how long sessions last and whether dangerous actions require a fresh password check.
+            </p>
+          </div>
+          <Button variant="ghost" size="sm" onClick={() => setReauthOpen(true)}>
+            Verify session now
+          </Button>
+        </div>
+
+        <div className="mt-5 grid gap-4 md:grid-cols-2">
+          <Input
+            label="Session duration (hours)"
+            value={String(security.sessionDurationHours)}
+            onChange={(event) =>
+              setSecurity((current) => ({ ...current, sessionDurationHours: Number(event.target.value || 0) }))
+            }
+            inputMode="numeric"
+          />
+          <Input
+            label="Re-auth window (minutes)"
+            value={String(security.reauthWindowMinutes)}
+            onChange={(event) =>
+              setSecurity((current) => ({ ...current, reauthWindowMinutes: Number(event.target.value || 0) }))
+            }
+            inputMode="numeric"
+          />
+        </div>
+
+        <label className="mt-4 flex items-center gap-3 text-sm text-[var(--text)]">
+          <input
+            type="checkbox"
+            checked={security.requireReauthForDangerousActions}
+            onChange={(event) =>
+              setSecurity((current) => ({ ...current, requireReauthForDangerousActions: event.target.checked }))
+            }
+            className="h-4 w-4 accent-[var(--green)]"
+          />
+          Require re-authentication for deploys, deletes, proxy reloads, rollbacks, and other dangerous actions
+        </label>
       </section>
 
       <section className="rounded-2xl border border-[var(--border)] bg-[var(--surface)] p-6">
@@ -348,6 +416,20 @@ export default function SettingsPage() {
           )}
         </div>
       </section>
+
+      <section>
+        <h2 className="mb-3 text-lg font-semibold text-[var(--text)]">Security audit trail</h2>
+        <ActivityTimeline
+          events={audit}
+          emptyLabel="No security audit events yet. Session elevations, security-setting changes, and sensitive-value reveals will show up here."
+        />
+      </section>
+
+      <ReauthModal
+        open={reauthOpen}
+        onClose={() => setReauthOpen(false)}
+        onSuccess={() => void loadSettings()}
+      />
     </div>
   )
 }

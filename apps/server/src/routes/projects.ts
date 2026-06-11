@@ -3,6 +3,7 @@ import { Elysia, t } from 'elysia'
 import type { Project } from '@launchpad/shared'
 import { recordActivity } from '../lib/activity'
 import { decrypt, encrypt, hasKey } from '../lib/crypto'
+import { requireDangerousActionAuth } from '../lib/dangerousAction'
 import { getDb, saveDb } from '../lib/db'
 import { runProjectHealthCheck } from '../lib/projectHealth'
 import {
@@ -255,6 +256,8 @@ export const projectRoutes = new Elysia()
     const { requireAuth, params, set } = context
     await requireAuth()
     requireCryptoReady(set)
+    const denied = await requireDangerousActionAuth(context)
+    if (denied) return denied
 
     const db = await getDb()
     const projectIndex = db.data.projects.findIndex((item) => item.id === params.id)

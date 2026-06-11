@@ -9,6 +9,7 @@ const BASE = '/api'
 class ApiError extends Error {
   constructor(
     public status: number,
+    public code: string | undefined,
     message: string
   ) {
     super(message)
@@ -30,7 +31,7 @@ async function request<T>(
 
   if (!res.ok) {
     const err = await res.json().catch(() => ({ message: res.statusText }))
-    throw new ApiError(res.status, err.message ?? 'Request failed')
+    throw new ApiError(res.status, err.code, err.message ?? 'Request failed')
   }
 
   if (res.status === 204) {
@@ -48,4 +49,8 @@ export const api = {
   delete: <T>(path: string) => request<T>('DELETE', path),
 }
 
-export { ApiError }
+function isReauthRequiredError(error: unknown): error is ApiError {
+  return error instanceof ApiError && error.code === 'reauth_required'
+}
+
+export { ApiError, isReauthRequiredError }

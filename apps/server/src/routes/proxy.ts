@@ -1,6 +1,7 @@
 import { Elysia, t } from 'elysia'
 import { recordActivity } from '../lib/activity'
 import { hasKey } from '../lib/crypto'
+import { requireDangerousActionAuth } from '../lib/dangerousAction'
 import { getDb } from '../lib/db'
 import { listFileRevisions, saveFileRevision } from '../lib/fileHistory'
 import {
@@ -189,6 +190,8 @@ export const proxyRoutes = new Elysia({ prefix: '/proxy' })
       const { requireAuth, params, body, set } = context
       await requireAuth()
       requireCryptoReady(set)
+      const denied = await requireDangerousActionAuth(context)
+      if (denied) return denied
 
       try {
         return await withSsh(params.serverId, async (ssh) => {
@@ -304,6 +307,8 @@ export const proxyRoutes = new Elysia({ prefix: '/proxy' })
       const { requireAuth, params, body, set } = context
       await requireAuth()
       requireCryptoReady(set)
+      const denied = await requireDangerousActionAuth(context)
+      if (denied) return denied
 
       const db = await getDb()
       const revision = db.data.fileHistory.find(
@@ -338,6 +343,8 @@ export const proxyRoutes = new Elysia({ prefix: '/proxy' })
     const { requireAuth, params, set } = context
     await requireAuth()
     requireCryptoReady(set)
+    const denied = await requireDangerousActionAuth(context)
+    if (denied) return denied
 
     try {
       return await withSsh(params.serverId, async (ssh) => {
@@ -411,6 +418,8 @@ export const proxyRoutes = new Elysia({ prefix: '/proxy' })
       const { requireAuth, params, body, set } = context
       await requireAuth()
       requireCryptoReady(set)
+      const denied = await requireDangerousActionAuth(context)
+      if (denied) return denied
 
       try {
         return await withSsh(params.serverId, async (ssh) => {

@@ -7,7 +7,7 @@ import { randomBytes, createHmac, timingSafeEqual } from 'crypto'
 import { getDb, saveDb } from './db'
 import type { AuthSession } from '@launchpad/shared'
 
-const SESSION_TTL_MS = 8 * 60 * 60 * 1000 // 8 hours
+const DEFAULT_SESSION_TTL_MS = 8 * 60 * 60 * 1000 // 8 hours
 const SESSION_COOKIE = 'lp_session'
 const SIGNING_SECRET = process.env.SESSION_SECRET ?? randomBytes(32).toString('hex')
 
@@ -31,14 +31,14 @@ function verify(token: string): string | null {
 
 // ─── Public API ───────────────────────────────────────────────────────────────
 
-export async function createSession(): Promise<string> {
+export async function createSession(ttlMs = DEFAULT_SESSION_TTL_MS): Promise<string> {
   const id = randomBytes(32).toString('hex')
   const now = new Date()
   const session: AuthSession = {
     id,
     userId: 'launchpad-user',
     createdAt: now.toISOString(),
-    expiresAt: new Date(now.getTime() + SESSION_TTL_MS).toISOString(),
+    expiresAt: new Date(now.getTime() + ttlMs).toISOString(),
   }
 
   const db = await getDb()
@@ -62,6 +62,31 @@ export async function validateSession(token: string): Promise<boolean> {
   }
 
   return true
+}
+
+export async function elevateSession(token: string, windowMs: number): Promise<string | null> {
+  const id = verify(token)
+  if (!id) return null
+
+  const db = await getDb()
+  const session = db.data.sessions[id]
+  if (!session) return null
+
+  const elevatedUntil = new Date(Date.now() + windowMs).toISOString()
+  session.elevatedUntil = elevatedUntil
+  await saveDb()
+  return elevatedUntil
+}
+
+export async function hasElevatedSession(token: string): Promise<boolean> {
+  const id = verify(token)
+  if (!id) return false
+
+  const db = await getDb()
+  const session = db.data.sessions[id]
+  if (!session?.elevatedUntil) return false
+
+  return Date.now() <= new Date(session.elevatedUntil).getTime()
 }
 
 export async function destroySession(token: string): Promise<void> {
@@ -90,4 +115,4 @@ export async function purgeExpired(): Promise<void> {
   }
 }
 
-export { SESSION_COOKIE, SESSION_TTL_MS }
+export { SESSION_COOKIE, DEFAULT_SESSION_TTL_MS }

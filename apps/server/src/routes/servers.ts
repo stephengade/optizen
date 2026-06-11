@@ -3,6 +3,7 @@ import { Elysia, t } from 'elysia'
 import type { Server, ServerConnectionStatus } from '@launchpad/shared'
 import { recordActivity } from '../lib/activity'
 import { encrypt, hasKey } from '../lib/crypto'
+import { requireDangerousActionAuth } from '../lib/dangerousAction'
 import { getDb, saveDb } from '../lib/db'
 import { inferProjectRuntime, inferProjectSource, inferProxyTypeFromProject } from '../lib/projectInference'
 import { fetchServerResources } from '../lib/resources'
@@ -155,6 +156,8 @@ export const serverRoutes = new Elysia({ prefix: '/servers' })
     const { requireAuth, params, set } = context
     await requireAuth()
     requireCryptoReady(set)
+    const denied = await requireDangerousActionAuth(context)
+    if (denied) return denied
 
     const db = await getDb()
     const serverIndex = db.data.servers.findIndex((item) => item.id === params.id)

@@ -1,6 +1,7 @@
 import { Elysia, t } from 'elysia'
 import type { DeployRecord, Project, Server } from '@launchpad/shared'
 import { hasKey } from '../lib/crypto'
+import { requireDangerousActionAuth } from '../lib/dangerousAction'
 import { getDb } from '../lib/db'
 import { runDeploy } from '../lib/deployments'
 import { execCommand, getConnection } from '../lib/ssh'
@@ -97,6 +98,8 @@ export const imageRoutes = new Elysia({ prefix: '/images' })
       const { requireAuth, params, body, set } = context
       await requireAuth()
       requireCryptoReady(set)
+      const denied = await requireDangerousActionAuth(context)
+      if (denied) return denied
 
       const { project, server } = await loadProjectServer(params.projectId)
       if (!project) {
@@ -133,6 +136,8 @@ export const imageRoutes = new Elysia({ prefix: '/images' })
       const { requireAuth, params, body, set } = context
       await requireAuth()
       requireCryptoReady(set)
+      const denied = await requireDangerousActionAuth(context)
+      if (denied) return denied
 
       const { db, project, server } = await loadProjectServer(params.projectId)
       if (!project) {
@@ -176,6 +181,8 @@ export const imageRoutes = new Elysia({ prefix: '/images' })
     const { requireAuth, params, set } = context
     await requireAuth()
     requireCryptoReady(set)
+    const denied = await requireDangerousActionAuth(context)
+    if (denied) return denied
 
     const { project, server } = await loadProjectServer(params.projectId)
     if (!project) {

@@ -1,6 +1,7 @@
 import { Elysia, t } from 'elysia'
 import type { DeployRecord, DeployTriggerInput } from '@launchpad/shared'
 import { hasKey } from '../lib/crypto'
+import { requireDangerousActionAuth } from '../lib/dangerousAction'
 import { getDb } from '../lib/db'
 import { isProjectDeploying, runDeploy, subscribeToDeploy } from '../lib/deployments'
 
@@ -26,6 +27,8 @@ export const deployRoutes = new Elysia({ prefix: '/deploy' })
       const { requireAuth, params, body, set } = context
       await requireAuth()
       requireCryptoReady(set)
+      const denied = await requireDangerousActionAuth(context)
+      if (denied) return denied
 
       if (params.projectId !== body.projectId) {
         set.status = 400

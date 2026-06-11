@@ -9,7 +9,8 @@ import { EnvEditor } from '@/components/dashboard/EnvEditor'
 import { FileRevisionList } from '@/components/dashboard/FileRevisionList'
 import { FileSuggestions } from '@/components/dashboard/FileSuggestions'
 import { ConfirmActionModal } from '@/components/ui/ConfirmActionModal'
-import { api, ApiError } from '@/lib/api'
+import { ReauthModal } from '@/components/ui/ReauthModal'
+import { api, ApiError, isReauthRequiredError } from '@/lib/api'
 
 interface EnvResponse {
   path: string
@@ -28,6 +29,7 @@ export default function ProjectEnvPage() {
   const [saving, setSaving] = useState(false)
   const [restoringId, setRestoringId] = useState<string | null>(null)
   const [confirmSaveOpen, setConfirmSaveOpen] = useState(false)
+  const [reauthOpen, setReauthOpen] = useState(false)
 
   async function loadEnv() {
     setLoading(true)
@@ -70,6 +72,11 @@ export default function ProjectEnvPage() {
       await loadEnv()
       toast.success(response.backupPath ? `Env file updated with backup at ${response.backupPath}` : 'Env file updated')
     } catch (error) {
+      if (isReauthRequiredError(error)) {
+        setReauthOpen(true)
+        toast.error('Verify your session to save this env file.')
+        return
+      }
       const message = error instanceof ApiError ? error.message : 'Failed to save env file'
       toast.error(message)
     } finally {
@@ -84,6 +91,11 @@ export default function ProjectEnvPage() {
       await loadEnv()
       toast.success(response.backupPath ? `Env restored. Backup created at ${response.backupPath}` : 'Env restored')
     } catch (error) {
+      if (isReauthRequiredError(error)) {
+        setReauthOpen(true)
+        toast.error('Verify your session to restore this env revision.')
+        return
+      }
       const message = error instanceof ApiError ? error.message : 'Failed to restore env revision'
       toast.error(message)
     } finally {
@@ -155,6 +167,8 @@ export default function ProjectEnvPage() {
           setConfirmSaveOpen(false)
         }}
       />
+
+      <ReauthModal open={reauthOpen} onClose={() => setReauthOpen(false)} />
     </div>
   )
 }

@@ -15,6 +15,9 @@ export type ActivityType =
   | 'nginx_site_toggled'
   | 'health_check_passed'
   | 'health_check_failed'
+  | 'session_elevated'
+  | 'security_settings_updated'
+  | 'secret_revealed'
 
 export interface ActivityEvent {
   id: string

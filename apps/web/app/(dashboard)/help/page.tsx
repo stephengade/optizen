@@ -55,6 +55,12 @@ const dailyFlows = [
   },
 ]
 
+const trustControls = [
+  'Use Settings to shorten session length or require a fresh password check before deploys, rollbacks, deletes, env writes, and proxy reloads.',
+  'Treat the security audit trail as an operator logbook for secret reveals, security setting changes, and session elevations.',
+  'Turn on demo privacy before screen-sharing, and use seeded demo mode when you want realistic screenshots without live infrastructure.',
+]
+
 export default function HelpPage() {
   return (
     <div className="mx-auto flex w-full max-w-7xl flex-col gap-8 px-5 py-6 lg:px-8 lg:py-8">
@@ -135,7 +141,22 @@ export default function HelpPage() {
             <p>SSH private keys are not stored in Launchpad; only file paths are referenced.</p>
             <p>Env and proxy editors create backups and revision history before overwriting live files.</p>
             <p>Deploys now show previews and confirmations before destructive or high-impact actions.</p>
+            <p>Dangerous actions can require a fresh password check, so the person clicking deploy is still the person you trust.</p>
           </div>
+        </div>
+      </section>
+
+      <section className="rounded-[24px] border border-[var(--border)] bg-[var(--surface)] p-6">
+        <div className="flex items-center gap-3 text-[var(--text)]">
+          <ShieldCheck size={18} className="text-[var(--yellow)]" />
+          <h2 className="text-2xl font-semibold">Trust controls in practice</h2>
+        </div>
+        <div className="mt-5 grid gap-4 md:grid-cols-3">
+          {trustControls.map((item) => (
+            <div key={item} className="rounded-[20px] border border-[var(--border)] bg-[var(--surface-2)] p-4 text-sm leading-6 text-[var(--text-muted)]">
+              {item}
+            </div>
+          ))}
         </div>
       </section>
 

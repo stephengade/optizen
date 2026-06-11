@@ -2,9 +2,11 @@ export interface AuthConfig {
   passwordHash: string
   salt: string
   isSetup: boolean
- 
   totpEnabled: boolean
-  totpSecret?: string         
+  totpSecret?: string
+  sessionDurationHours?: number
+  requireReauthForDangerousActions?: boolean
+  reauthWindowMinutes?: number
 }
 
 export interface AuthSession {
@@ -12,6 +14,7 @@ export interface AuthSession {
   userId: string
   createdAt: string
   expiresAt: string
+  elevatedUntil?: string
 }
 
 export interface LoginInput {
@@ -26,4 +29,10 @@ export interface AuthResponse {
 export interface RateLimitState {
   attempts: number
   lockedUntil?: string
+}
+
+export interface AuthSecuritySettings {
+  sessionDurationHours: number
+  requireReauthForDangerousActions: boolean
+  reauthWindowMinutes: number
 }

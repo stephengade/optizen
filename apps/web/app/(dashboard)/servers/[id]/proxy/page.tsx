@@ -10,7 +10,8 @@ import { ProxyEditor } from '@/components/dashboard/ProxyEditor'
 import { SitesList } from '@/components/dashboard/SitesList'
 import { Button } from '@/components/ui/Button'
 import { ConfirmActionModal } from '@/components/ui/ConfirmActionModal'
-import { api, ApiError } from '@/lib/api'
+import { ReauthModal } from '@/components/ui/ReauthModal'
+import { api, ApiError, isReauthRequiredError } from '@/lib/api'
 
 interface ProxyStatus {
   type: 'caddy' | 'nginx' | 'none'
@@ -46,6 +47,7 @@ export default function ServerProxyPage() {
   const [togglingSite, setTogglingSite] = useState<string | null>(null)
   const [restoringId, setRestoringId] = useState<string | null>(null)
   const [confirmSaveOpen, setConfirmSaveOpen] = useState(false)
+  const [reauthOpen, setReauthOpen] = useState(false)
 
   async function loadData(pathOverride?: string) {
     setLoading(true)
@@ -140,6 +142,11 @@ export default function ServerProxyPage() {
       )
       void loadData(config.path)
     } catch (error) {
+      if (isReauthRequiredError(error)) {
+        setReauthOpen(true)
+        toast.error('Verify your session to save proxy config changes.')
+        return
+      }
       const message = error instanceof ApiError ? error.message : 'Failed to save proxy config'
       toast.error(message)
     } finally {
@@ -154,6 +161,11 @@ export default function ServerProxyPage() {
       toast.success(result.backupPath ? `Proxy config restored. Backup created at ${result.backupPath}` : 'Proxy config restored')
       void loadData(result.path)
     } catch (error) {
+      if (isReauthRequiredError(error)) {
+        setReauthOpen(true)
+        toast.error('Verify your session to restore this proxy revision.')
+        return
+      }
       const message = error instanceof ApiError ? error.message : 'Failed to restore proxy revision'
       toast.error(message)
     } finally {
@@ -168,6 +180,11 @@ export default function ServerProxyPage() {
       toast.success('Proxy reloaded')
       void loadData(config?.path)
     } catch (error) {
+      if (isReauthRequiredError(error)) {
+        setReauthOpen(true)
+        toast.error('Verify your session to reload the proxy.')
+        return
+      }
       const message = error instanceof ApiError ? error.message : 'Failed to reload proxy'
       toast.error(message)
     } finally {
@@ -182,6 +199,11 @@ export default function ServerProxyPage() {
       toast.success(`${site.name} ${site.enabled ? 'disabled' : 'enabled'}`)
       void loadData()
     } catch (error) {
+      if (isReauthRequiredError(error)) {
+        setReauthOpen(true)
+        toast.error('Verify your session to change proxy site state.')
+        return
+      }
       const message = error instanceof ApiError ? error.message : 'Failed to toggle site'
       toast.error(message)
     } finally {
@@ -294,6 +316,8 @@ export default function ServerProxyPage() {
           setConfirmSaveOpen(false)
         }}
       />
+
+      <ReauthModal open={reauthOpen} onClose={() => setReauthOpen(false)} />
     </div>
   )
 }
