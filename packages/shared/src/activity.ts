@@ -15,6 +15,7 @@ export type ActivityType =
   | 'nginx_site_toggled'
   | 'health_check_passed'
   | 'health_check_failed'
+  | 'server_storage_cleaned'
   | 'session_elevated'
   | 'security_settings_updated'
   | 'secret_revealed'

@@ -3,7 +3,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import Link from 'next/link'
 import type { Project, Server } from '@launchpad/shared'
-import { Search } from 'lucide-react'
+import { Loader2, Search } from 'lucide-react'
 import { api } from '@/lib/api'
 import { Modal } from '@/components/ui/Modal'
 
@@ -126,7 +126,12 @@ export function CommandPalette({ open, onClose }: CommandPaletteProps) {
           ))}
           {filtered.length === 0 && (
             <div className="border border-dashed border-(--border) px-4 py-6 text-sm text-(--text-muted)">
-              {loading ? 'Loading...' : 'No results.'}
+              {loading ? (
+                <div className="flex items-center gap-2">
+                  <Loader2 size={14} className="animate-spin" />
+                  <span>Loading results...</span>
+                </div>
+              ) : 'No results.'}
             </div>
           )}
         </div>

@@ -9,6 +9,7 @@ import { EnvEditor } from '@/components/dashboard/EnvEditor'
 import { FileRevisionList } from '@/components/dashboard/FileRevisionList'
 import { FileSuggestions } from '@/components/dashboard/FileSuggestions'
 import { ConfirmActionModal } from '@/components/ui/ConfirmActionModal'
+import { LoadingState } from '@/components/ui/LoadingState'
 import { ReauthModal } from '@/components/ui/ReauthModal'
 import { api, ApiError, isReauthRequiredError } from '@/lib/api'
 
@@ -119,9 +120,7 @@ export default function ProjectEnvPage() {
       </section>
 
       {loading ? (
-        <div className="rounded-2xl border border-(--border) bg-(--surface) p-6 text-sm text-(--text-muted)">
-          Loading env file...
-        </div>
+        <LoadingState label="Loading env file" detail="Fetching the remote environment file and recent revision history." />
       ) : path ? (
         <>
           <EnvEditor

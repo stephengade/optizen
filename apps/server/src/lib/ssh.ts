@@ -33,23 +33,36 @@ function shellEscape(value: string): string {
  * Private keys are read from disk at runtime — never stored in the DB.
  */
 export async function getConnection(server: Server): Promise<NodeSSH> {
-  const ssh = new NodeSSH()
-
   const privateKey = readFileSync(server.sshKeyPath, 'utf8')
   const passphrase = server.sshPassphrase
     ? decrypt(server.sshPassphrase)
     : undefined
 
-  await ssh.connect({
-    host: server.host,
-    port: server.port,
-    username: server.user,
-    privateKey,
-    passphrase,
-    readyTimeout: 15_000,
-  })
+  async function connectWithTimeout(readyTimeout: number) {
+    const ssh = new NodeSSH()
+    await ssh.connect({
+      host: server.host,
+      port: server.port,
+      username: server.user,
+      privateKey,
+      passphrase,
+      readyTimeout,
+      keepaliveInterval: 10_000,
+      keepaliveCountMax: 3,
+    })
+    return ssh
+  }
 
-  return ssh
+  try {
+    return await connectWithTimeout(30_000)
+  } catch (error) {
+    const message = error instanceof Error ? error.message : ''
+    if (!message.toLowerCase().includes('timed out while waiting for handshake')) {
+      throw error
+    }
+
+    return connectWithTimeout(60_000)
+  }
 }
 
 /**

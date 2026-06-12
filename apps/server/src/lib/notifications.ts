@@ -87,6 +87,26 @@ function renderDeployEmail(options: {
   }
 }
 
+function renderDiskWarningEmail(options: {
+  server: Server
+  usedPercent: number
+  thresholdPercent: number
+}) {
+  const { server, usedPercent, thresholdPercent } = options
+
+  return {
+    subject: `[Launchpad] Disk warning: ${server.name}`,
+    text: `Disk usage on ${server.name} (${server.host}) is at ${usedPercent.toFixed(1)}%, above the ${thresholdPercent}% threshold.`,
+    html: `
+      <div style="font-family: Inter, Arial, sans-serif; color: #111;">
+        <h2>Disk warning</h2>
+        <p>Disk usage on <strong>${server.name}</strong> (${server.host}) is at <strong>${usedPercent.toFixed(1)}%</strong>.</p>
+        <p><strong>Threshold:</strong> ${thresholdPercent}%</p>
+      </div>
+    `,
+  }
+}
+
 async function postWebhook(options: {
   webhook: { url: string; secret?: string }
   payload: WebhookPayload
@@ -143,6 +163,50 @@ export async function sendDeployNotifications(options: {
     ...project.notifications.webhooks.filter((webhook) => webhook.enabled),
     ...settings.globalWebhooks.filter((webhook) => webhook.enabled && webhook.events.includes(event)),
   ]
+
+  for (const webhook of webhookTargets) {
+    tasks.push(postWebhook({ webhook, payload }))
+  }
+
+  const results = await Promise.allSettled(tasks)
+  for (const result of results) {
+    if (result.status === 'rejected') {
+      console.error('[notifications] failed', result.reason)
+    }
+  }
+}
+
+export async function sendServerDiskWarningNotification(options: {
+  server: Server
+  usedPercent: number
+  thresholdPercent: number
+}) {
+  const { server, usedPercent, thresholdPercent } = options
+  const db = await getDb()
+  const settings = serializeNotificationSettings(db.data.notifications)
+  const event: NotificationEvent = 'server.disk_warning'
+
+  const payload: WebhookPayload = {
+    event,
+    project: { id: '', name: 'server-health' },
+    server: { id: server.id, name: server.name, host: server.host },
+    triggeredBy: 'system',
+    timestamp: new Date().toISOString(),
+    durationMs: 0,
+    logSnapshot: '',
+    detail: `Disk usage reached ${usedPercent.toFixed(1)}% on ${server.name}, above the ${thresholdPercent}% threshold.`,
+  }
+
+  const tasks: Promise<unknown>[] = []
+
+  if (settings.email) {
+    const email = renderDiskWarningEmail({ server, usedPercent, thresholdPercent })
+    tasks.push(sendEmail({ smtp: settings.email, ...email }))
+  }
+
+  const webhookTargets = settings.globalWebhooks.filter(
+    (webhook) => webhook.enabled && webhook.events.includes(event)
+  )
 
   for (const webhook of webhookTargets) {
     tasks.push(postWebhook({ webhook, payload }))

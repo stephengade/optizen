@@ -5,6 +5,7 @@ import type { Project, Server } from '@launchpad/shared'
 import { toast } from 'sonner'
 import { ProjectClassificationBadge } from '@/components/dashboard/ProjectClassificationBadge'
 import { Button } from '@/components/ui/Button'
+import { LoadingState } from '@/components/ui/LoadingState'
 import { Modal } from '@/components/ui/Modal'
 import { SensitiveText } from '@/components/ui/SensitiveText'
 import { api, ApiError } from '@/lib/api'
@@ -191,9 +192,7 @@ export default function ScanPage() {
   if (loading) {
     return (
       <div className="mx-auto flex w-full max-w-7xl flex-col gap-6 px-6 py-8 lg:px-8">
-        <div className="border border-(--border) bg-(--surface) p-6 text-sm text-(--text-muted)">
-          Loading servers...
-        </div>
+        <LoadingState label="Loading servers" detail="Preparing the list of hosts available for scanning." />
       </div>
     )
   }

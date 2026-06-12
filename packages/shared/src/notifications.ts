@@ -26,3 +26,4 @@ export type NotificationEvent =
   | 'deploy.success'
   | 'deploy.failed'
   | 'env.changed'
+  | 'server.disk_warning'

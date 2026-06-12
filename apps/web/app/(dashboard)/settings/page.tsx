@@ -6,6 +6,7 @@ import { toast } from 'sonner'
 import { ActivityTimeline } from '@/components/dashboard/ActivityTimeline'
 import { Button } from '@/components/ui/Button'
 import { Input } from '@/components/ui/Input'
+import { LoadingState } from '@/components/ui/LoadingState'
 import { ReauthModal } from '@/components/ui/ReauthModal'
 import { api, ApiError, isReauthRequiredError } from '@/lib/api'
 import { useDemoPrivacy } from '@/lib/demo-privacy-context'
@@ -137,9 +138,7 @@ export default function SettingsPage() {
   if (loading) {
     return (
       <div className="max-w-3xl mx-auto px-6 py-8">
-        <div className="border border-(--border) bg-(--surface) px-5 py-6 text-sm text-(--text-muted)">
-          Loading...
-        </div>
+        <LoadingState label="Loading settings" detail="Fetching session, notification, and display preferences." compact />
       </div>
     )
   }
@@ -301,7 +300,7 @@ export default function SettingsPage() {
                     </label>
                   </div>
                   <div className="flex items-center gap-4">
-                    {(['deploy.success', 'deploy.failed'] as NotificationEvent[]).map((event) => (
+                    {(['deploy.success', 'deploy.failed', 'server.disk_warning'] as NotificationEvent[]).map((event) => (
                       <label key={event} className="flex items-center gap-2 text-xs text-(--text-muted) cursor-pointer">
                         <input
                           type="checkbox"

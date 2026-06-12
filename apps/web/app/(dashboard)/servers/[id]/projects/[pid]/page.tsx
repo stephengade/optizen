@@ -26,6 +26,7 @@ import { LogStream, type LogLine } from '@/components/dashboard/LogStream'
 import { ProjectForm } from '@/components/dashboard/ProjectForm'
 import { Button } from '@/components/ui/Button'
 import { ConfirmActionModal } from '@/components/ui/ConfirmActionModal'
+import { LoadingState } from '@/components/ui/LoadingState'
 import { SensitivePanel } from '@/components/ui/SensitivePanel'
 import { ReauthModal } from '@/components/ui/ReauthModal'
 import { SensitiveText } from '@/components/ui/SensitiveText'
@@ -483,8 +484,8 @@ export default function ProjectDetailPage() {
 
   if (loading) {
     return (
-      <div className="px-6 py-8 text-sm text-(--text-muted) lg:px-8">
-        Loading project...
+      <div className="px-6 py-8 lg:px-8">
+        <LoadingState label="Loading project" detail="Fetching deploy history, image state, file suggestions, and health data." />
       </div>
     )
   }

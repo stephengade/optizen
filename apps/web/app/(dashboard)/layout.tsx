@@ -3,7 +3,7 @@
 import { useEffect, useState } from 'react'
 import Link from 'next/link'
 import { usePathname, useRouter } from 'next/navigation'
-import { BookOpen, Command, LogOut, Search, Server, Settings } from 'lucide-react'
+import { BookOpen, Command, HardDrive, LogOut, Search, Server, Settings } from 'lucide-react'
 import { useAuth } from '@/lib/auth-context'
 import { CommandPalette } from '@/components/dashboard/CommandPalette'
 import { cn } from '@/lib/utils'
@@ -11,7 +11,7 @@ import { cn } from '@/lib/utils'
 const NAV = [
   { href: '/servers', icon: Server, label: 'Servers' },
   { href: '/scan', icon: Search, label: 'Scan' },
-  { href: '/help', icon: BookOpen, label: 'Docs' },
+  { href: '/storage', icon: HardDrive, label: 'Storage' },
   { href: '/settings', icon: Settings, label: 'Settings' },
 ]
 
@@ -40,7 +40,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   return (
     <div className="dashboard-shell min-h-screen flex">
       {/* Sidebar */}
-      <aside className="hidden lg:flex flex-col w-[220px] shrink-0 border-r border-(--border) min-h-screen">
+      <aside className="hidden lg:flex flex-col w-[220px] shrink-0 border-r border-(--border) fixed top-0 left-0 h-screen z-30">
         {/* Brand */}
         <div className="flex items-center gap-2.5 px-5 py-4 border-b border-(--border)">
           <OptizenMark />
@@ -74,6 +74,15 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
 
         {/* Bottom */}
         <div className="border-t border-(--border) p-2 space-y-px">
+          <a
+            href="/help"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="w-full flex items-center gap-3 px-3 py-2 text-sm text-(--text-muted) hover:text-(--text) hover:bg-(--surface) transition-colors"
+          >
+            <BookOpen size={15} />
+            Docs
+          </a>
           <button
             type="button"
             onClick={() => setPaletteOpen(true)}
@@ -104,34 +113,22 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
         </div>
         <div className="flex items-center gap-1">
           {NAV.map(({ href, icon: Icon }) => (
-            href === '/help' ? (
-              <a
-                key={href}
-                href={href}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="p-2 text-(--text-muted) hover:text-(--text) transition-colors"
-              >
-                <Icon size={16} />
-              </a>
-            ) : (
-              <Link
-                key={href}
-                href={href}
-                className={cn(
-                  'p-2 transition-colors',
-                  href !== '/help' && pathname.startsWith(href) ? 'text-(--text)' : 'text-(--text-muted) hover:text-(--text)'
-                )}
-              >
-                <Icon size={16} />
-              </Link>
-            )
+            <Link
+              key={href}
+              href={href}
+              className={cn(
+                'p-2 transition-colors',
+                pathname.startsWith(href) ? 'text-(--text)' : 'text-(--text-muted) hover:text-(--text)'
+              )}
+            >
+              <Icon size={16} />
+            </Link>
           ))}
         </div>
       </div>
 
       {/* Main content */}
-      <main className="flex-1 min-w-0 lg:pt-0 pt-[53px]">
+      <main className="flex-1 min-w-0 lg:pl-[220px] lg:pt-0 pt-[53px]">
         {children}
       </main>
 

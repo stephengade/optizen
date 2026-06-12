@@ -4,16 +4,19 @@ import { useEffect, useState } from 'react'
 import Link from 'next/link'
 import { useParams, useRouter } from 'next/navigation'
 import type { ActivityEvent, DeployRecord, Project, Server, ServerConnectionStatus, ServerResourceStatus } from '@launchpad/shared'
+import { HardDrive, Plus } from 'lucide-react'
 import { toast } from 'sonner'
 import { ActivityTimeline } from '@/components/dashboard/ActivityTimeline'
 import { ConnectionBadge } from '@/components/dashboard/ConnectionBadge'
 import { ProjectCard } from '@/components/dashboard/ProjectCard'
 import { ProjectForm } from '@/components/dashboard/ProjectForm'
 import { ServerForm } from '@/components/dashboard/ServerForm'
+import { DeployStatusBadge } from '@/components/dashboard/DeployStatusBadge'
 import { ConfirmActionModal } from '@/components/ui/ConfirmActionModal'
 import { ReauthModal } from '@/components/ui/ReauthModal'
 import { SensitiveText } from '@/components/ui/SensitiveText'
 import { Button } from '@/components/ui/Button'
+import { LoadingState } from '@/components/ui/LoadingState'
 import { Modal } from '@/components/ui/Modal'
 import { api, ApiError, isReauthRequiredError } from '@/lib/api'
 import {
@@ -94,6 +97,7 @@ export default function ServerDetailPage() {
     user: string
     sshKeyPath: string
     sshPassphrase?: string
+    diskAlertThresholdPercent?: number
   }) {
     if (demoMode) {
       toast.success('Demo mode is active. Seeded server data stays read-only.')
@@ -194,8 +198,8 @@ export default function ServerDetailPage() {
 
   if (loading) {
     return (
-      <div className="px-6 py-8 text-sm text-(--text-muted) lg:px-8">
-        Loading server...
+      <div className="px-6 py-8 lg:px-8">
+        <LoadingState label="Loading server" detail="Gathering server details, projects, activity, and telemetry." />
       </div>
     )
   }
@@ -219,177 +223,144 @@ export default function ServerDetailPage() {
   const containersAvailable = resources?.containersAvailable !== false
 
   return (
-    <div className="mx-auto flex w-full max-w-7xl flex-col gap-8 px-6 py-8 lg:px-8">
-      <section className="flex flex-wrap items-start justify-between gap-4">
+    <div className="mx-auto w-full max-w-6xl px-6 py-8 lg:px-8 space-y-8">
+
+      {/* Header */}
+      <div className="flex flex-wrap items-start justify-between gap-4">
         <div>
-          <Link href="/servers" className="text-xs uppercase tracking-[0.24em] text-(--text-muted)">
-            Back to servers
+          <Link href="/servers" className="text-xs uppercase tracking-[0.24em] text-(--text-muted) hover:text-(--text) transition-colors">
+            ← Servers
           </Link>
-          <h1 className="mt-2 text-3xl font-semibold text-(--text)">{server.name}</h1>
-          <p className="mt-2 text-sm text-(--text-muted)">
+          <h1 className="mt-2 text-2xl font-semibold text-(--text)">{server.name}</h1>
+          <p className="mt-1 text-sm text-(--text-muted) font-mono">
             <SensitiveText value={`${server.user}@${server.host}:${server.port}`} />
           </p>
-          <p className="mt-2 text-sm text-(--text-muted)">
-            Launchpad now keeps servers, projects, deploys, and infra edits separate so you can reason about impact before you act.
-          </p>
-          <p className="mt-2 max-w-2xl text-sm text-(--text-muted)">
-            Imported projects from older scans may still carry stale labels. Refresh project types to reclassify them from image, name, working directory, and proxy hints.
-          </p>
-          <div className="mt-4">
-            <div className="flex flex-wrap gap-3">
-              <Button variant="ghost" size="sm" onClick={() => setEditOpen(true)}>
-                Edit server
-              </Button>
-              <Button size="sm" onClick={() => setAddProjectOpen(true)}>
-                Add project
-              </Button>
-              <Button variant="ghost" size="sm" onClick={() => void handleReclassifyProjects()} loading={reclassifying}>
-                Refresh project types
-              </Button>
-              <Link
-                href={`/servers/${params.id}/proxy`}
-                className="inline-flex h-8 items-center border border-(--border) px-3 text-xs font-medium text-(--text) transition-colors hover:bg-(--surface-2)"
-              >
-                Open proxy manager
-              </Link>
-            </div>
-          </div>
         </div>
-        <div className="flex items-center gap-3">
+        <div className="flex flex-wrap items-center gap-2 pt-1">
           <ConnectionBadge connected={status?.connected} latencyMs={status?.latencyMs} error={status?.error} />
           <Button variant="ghost" size="sm" onClick={() => void handleTest()} loading={testing}>
             Test SSH
           </Button>
-        </div>
-      </section>
-
-      <section className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
-        <div className="rounded-2xl border border-(--border) bg-(--surface) p-5">
-          <div className="text-xs uppercase tracking-[0.18em] text-(--text-muted)">CPU + Load</div>
-          <div className="mt-2 text-lg font-semibold text-(--text)">
-            {hasCpuUsage ? formatPercent(resources!.cpuUsagePercent!, 1) : 'n/a'}
-          </div>
-          <div className="mt-1 text-sm text-(--text-muted)">
-            {loadAverage
-              ? `${loadAverage.map((value) => value.toFixed(2)).join(' / ')}${hasCpuCapacity ? ` on ${resources!.cpuCoreCount!} cores` : ''}`
-              : hasCpuCapacity
-                ? `${resources!.cpuCoreCount!} CPU cores detected`
-                : 'Run Test SSH to refresh'}
-          </div>
-        </div>
-        <div className="rounded-2xl border border-(--border) bg-(--surface) p-5">
-          <div className="text-xs uppercase tracking-[0.18em] text-(--text-muted)">Memory + Disk</div>
-          <div className="mt-2 text-lg font-semibold text-(--text)">
-            {hasMemoryStats ? `${formatBytes(resources!.memoryUsedBytes!)} / ${formatBytes(resources!.memoryTotalBytes!)}` : 'n/a'}
-          </div>
-          <div className="mt-1 text-sm text-(--text-muted)">
-            {hasDiskStats ? `${formatBytes(resources!.diskUsedBytes!)} / ${formatBytes(resources!.diskTotalBytes!)} disk` : 'Run Test SSH to refresh'}
-          </div>
-        </div>
-        <div className="rounded-2xl border border-(--border) bg-(--surface) p-5">
-          <div className="text-xs uppercase tracking-[0.18em] text-(--text-muted)">Uptime + Inodes</div>
-          <div className="mt-2 text-lg font-semibold text-(--text)">
-            {hasUptime ? formatUptime(resources!.uptimeSeconds!) : 'n/a'}
-          </div>
-          <div className="mt-1 text-sm text-(--text-muted)">
-            {hasInodeStats ? `${formatPercent(resources!.diskInodesUsedPercent!)} inode use` : 'Run Test SSH to refresh'}
-          </div>
-        </div>
-        <div className="rounded-2xl border border-(--border) bg-(--surface) p-5">
-          <div className="text-xs uppercase tracking-[0.18em] text-(--text-muted)">Containers</div>
-          <div className="mt-2 text-lg font-semibold text-(--text)">
-            {containersAvailable && hasContainerStats ? resources!.runningContainers : 'n/a'}
-          </div>
-          <div className="mt-1 text-sm text-(--text-muted)">
-            {containersAvailable
-              ? hasContainerStats
-                ? `${resources!.exitedContainers} exited`
-                : 'Run Test SSH to refresh'
-              : 'Docker unavailable on this host'}
-          </div>
-        </div>
-      </section>
-
-      <section className="border border-(--border) bg-(--surface) p-6">
-        <div className="flex flex-wrap items-start justify-between gap-4">
-          <div>
-            <p className="text-xs uppercase tracking-[0.24em] text-(--accent)">Discovery</p>
-            <h2 className="mt-2 text-lg font-semibold text-(--text)">Import running apps</h2>
-            <p className="mt-1 max-w-3xl text-sm text-(--text-muted)">
-              Discovery now lives in the top-level scan workspace so you can scan every server from one place and import with a server-select modal.
-            </p>
-          </div>
+          <Button variant="ghost" size="sm" onClick={() => setEditOpen(true)}>
+            Edit
+          </Button>
           <Link
-            href="/scan"
-            className="inline-flex h-10 items-center border border-(--border) px-4 text-sm text-(--text) transition-colors hover:bg-(--surface-2)"
+            href={`/servers/${params.id}/proxy`}
+            className="inline-flex h-8 items-center border border-(--border) px-3 text-xs text-(--text-muted) hover:text-(--text) hover:border-(--border-strong) transition-colors"
           >
-            Open scan workspace
+            Proxy
+          </Link>
+          <Link
+            href={`/storage?server=${params.id}`}
+            className="inline-flex h-8 items-center gap-1.5 border border-(--border) px-3 text-xs text-(--text-muted) hover:text-(--text) hover:border-(--border-strong) transition-colors"
+          >
+            <HardDrive size={12} />
+            Storage
           </Link>
         </div>
-      </section>
+      </div>
 
-      <section className="grid gap-6 xl:grid-cols-[1.1fr_0.9fr]">
-        <div className="rounded-2xl border border-(--border) bg-(--surface) p-6">
-          <h2 className="text-lg font-semibold text-(--text)">Recent deploy outcomes</h2>
-          <div className="mt-4 space-y-3">
-            {server.recentDeployOutcomes?.length ? (
-              server.recentDeployOutcomes.map((record) => (
-                <div key={record.id} className="rounded-xl border border-(--border) bg-(--surface-2) px-4 py-3">
-                  <div className="flex flex-wrap items-center justify-between gap-3">
-                    <div className="text-sm font-medium text-(--text)">{record.status}</div>
-                    <div className="text-xs uppercase tracking-[0.18em] text-(--text-muted)">
-                      {formatRelative(record.triggeredAt)}
-                    </div>
-                  </div>
-                  <div className="mt-1 text-sm text-(--text-muted)">
-                    Triggered via {record.trigger}{record.imageTag ? ` using ${record.imageTag}` : ''}.
-                  </div>
-                </div>
-              ))
-            ) : (
-              <div className="rounded-xl border border-dashed border-(--border) bg-(--surface-2) p-4 text-sm text-(--text-muted)">
-                No deploys have run on this server yet.
-              </div>
-            )}
+      {/* Metrics */}
+      <div className="grid grid-cols-2 md:grid-cols-4 border border-(--border) divide-x divide-(--border)">
+        <Metric
+          label="CPU"
+          value={hasCpuUsage ? formatPercent(resources!.cpuUsagePercent!, 1) : '—'}
+          sub={loadAverage ? loadAverage.map((v) => v.toFixed(2)).join(' / ') : hasCpuCapacity ? `${resources!.cpuCoreCount}c` : 'no data'}
+        />
+        <Metric
+          label="Memory"
+          value={hasMemoryStats ? formatBytes(resources!.memoryUsedBytes!) : '—'}
+          sub={hasMemoryStats ? `of ${formatBytes(resources!.memoryTotalBytes!)}` : 'no data'}
+        />
+        <Metric
+          label="Disk"
+          value={hasDiskStats ? formatBytes(resources!.diskUsedBytes!) : '—'}
+          sub={hasDiskStats ? `of ${formatBytes(resources!.diskTotalBytes!)}${hasInodeStats ? ` · ${formatPercent(resources!.diskInodesUsedPercent!)} inodes` : ''}` : 'no data'}
+        />
+        <Metric
+          label="Uptime"
+          value={hasUptime ? formatUptime(resources!.uptimeSeconds!) : '—'}
+          sub={containersAvailable && hasContainerStats ? `${resources!.runningContainers} running / ${resources!.exitedContainers} exited` : 'no data'}
+        />
+      </div>
+
+      {/* Projects */}
+      <section>
+        <div className="flex items-center justify-between gap-4 mb-4">
+          <div>
+            <h2 className="text-sm font-semibold text-(--text)">
+              Projects
+              <span className="ml-2 text-(--text-muted) font-normal">{projects.length}</span>
+            </h2>
           </div>
-        </div>
-
-        <div>
-          <h2 className="mb-3 text-lg font-semibold text-(--text)">Activity timeline</h2>
-          <ActivityTimeline events={activity} emptyLabel="No tracked activity yet. Deploys, imports, proxy edits, env saves, and rollbacks will show up here." />
-        </div>
-      </section>
-
-      <section className="space-y-4">
-        <div>
-          <h2 className="text-lg font-semibold text-(--text)">Projects</h2>
-          <p className="mt-1 text-sm text-(--text-muted)">
-            {projects.length} project{projects.length === 1 ? '' : 's'} currently attached to this server.
-          </p>
+          <div className="flex items-center gap-2">
+            <Button variant="ghost" size="sm" onClick={() => void handleReclassifyProjects()} loading={reclassifying}>
+              Reclassify
+            </Button>
+            <button
+              type="button"
+              onClick={() => setAddProjectOpen(true)}
+              className="inline-flex items-center gap-1.5 h-8 px-3 border border-(--border) text-xs text-(--text-muted) hover:text-(--text) hover:border-(--border-strong) transition-colors"
+            >
+              <Plus size={13} />
+              Add project
+            </button>
+          </div>
         </div>
 
         {projects.length > 0 ? (
-          <div className="grid gap-4 md:grid-cols-2">
+          <div className="grid gap-px md:grid-cols-2">
             {projects.map((project) => (
               <ProjectCard key={project.id} project={project} />
             ))}
           </div>
         ) : (
-          <div className="rounded-2xl border border-dashed border-(--border) bg-(--surface) p-6 text-sm text-(--text-muted)">
-            No projects are attached to this server yet. Add one manually or import a running app from the scan workspace.
+          <div className="border border-dashed border-(--border) px-5 py-8 text-center">
+            <p className="text-sm text-(--text-muted)">No projects yet.</p>
+            <p className="mt-1 text-xs text-(--text-subtle)">Add one manually or import from the scan workspace.</p>
           </div>
         )}
       </section>
 
+      {/* Recent deploys + Activity */}
+      <div className="grid gap-6 xl:grid-cols-2">
+        <section>
+          <h2 className="text-sm font-semibold text-(--text) mb-3">Recent deploys</h2>
+          {server.recentDeployOutcomes?.length ? (
+            <div className="border border-(--border) divide-y divide-(--border)">
+              {server.recentDeployOutcomes.map((record) => (
+                <div key={record.id} className="flex items-center justify-between gap-4 px-4 py-3">
+                  <div className="flex items-center gap-3">
+                    <DeployStatusBadge status={record.status} />
+                    <span className="text-xs text-(--text-muted)">{record.trigger}{record.imageTag ? ` · ${record.imageTag}` : ''}</span>
+                  </div>
+                  <span className="text-xs text-(--text-muted) shrink-0">{formatRelative(record.triggeredAt)}</span>
+                </div>
+              ))}
+            </div>
+          ) : (
+            <div className="border border-dashed border-(--border) px-4 py-6 text-sm text-(--text-muted)">
+              No deploys yet.
+            </div>
+          )}
+        </section>
+
+        <section>
+          <h2 className="text-sm font-semibold text-(--text) mb-3">Activity</h2>
+          <ActivityTimeline events={activity.slice(0, 8)} emptyLabel="No activity yet." />
+        </section>
+      </div>
+
+      {/* Modals */}
       <Modal
         open={editOpen}
         title="Edit server"
-        description="Update connection details here. Deleting the server also deletes its associated projects."
+        description="Update connection details. Deleting removes all attached projects from Launchpad."
         onClose={() => setEditOpen(false)}
       >
         <ServerForm
           title="Edit server"
-          description="Update connection details here. Deleting the server also deletes its associated projects."
+          description=""
           submitLabel="Save changes"
           initialValue={server}
           inModal
@@ -407,12 +378,12 @@ export default function ServerDetailPage() {
       <Modal
         open={addProjectOpen}
         title="Add project"
-        description="Define deploy commands, image source, proxy mode, and notification defaults for this server."
+        description="Define deploy commands, image source, proxy mode, and notification defaults."
         onClose={() => setAddProjectOpen(false)}
       >
         <ProjectForm
           title="Add project"
-          description="Define deploy commands, image source, proxy mode, and notification defaults for this server."
+          description=""
           submitLabel="Create project"
           inModal
           onSubmit={async (payload) => {
@@ -425,7 +396,7 @@ export default function ServerDetailPage() {
       <ConfirmActionModal
         open={confirmDeleteOpen}
         title="Delete server"
-        description="This removes the saved server record and every Launchpad project attached to it. It does not stop containers on the VPS, but it does remove your local control surface."
+        description="Removes the server record and all Launchpad projects attached to it. Remote containers and files are unaffected."
         confirmLabel="Delete server"
         confirmKeyword={server.name}
         details={[
@@ -441,6 +412,16 @@ export default function ServerDetailPage() {
       />
 
       <ReauthModal open={reauthOpen} onClose={() => setReauthOpen(false)} />
+    </div>
+  )
+}
+
+function Metric({ label, value, sub }: { label: string; value: string; sub: string }) {
+  return (
+    <div className="px-4 py-3">
+      <div className="text-[10px] uppercase tracking-[0.16em] text-(--text-muted)">{label}</div>
+      <div className="mt-1 text-base font-semibold text-(--text)">{value}</div>
+      <div className="mt-0.5 text-xs text-(--text-muted) truncate">{sub}</div>
     </div>
   )
 }

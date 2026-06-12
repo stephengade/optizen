@@ -10,6 +10,7 @@ import { ProxyEditor } from '@/components/dashboard/ProxyEditor'
 import { SitesList } from '@/components/dashboard/SitesList'
 import { Button } from '@/components/ui/Button'
 import { ConfirmActionModal } from '@/components/ui/ConfirmActionModal'
+import { LoadingState } from '@/components/ui/LoadingState'
 import { ReauthModal } from '@/components/ui/ReauthModal'
 import { api, ApiError, isReauthRequiredError } from '@/lib/api'
 
@@ -224,9 +225,7 @@ export default function ServerProxyPage() {
       </section>
 
       {loading ? (
-        <div className="rounded-2xl border border-(--border) bg-(--surface) p-6 text-sm text-(--text-muted)">
-          Loading proxy state...
-        </div>
+        <LoadingState label="Loading proxy state" detail="Inspecting host services and likely proxy configuration files." />
       ) : (
         <>
           <section className="rounded-2xl border border-(--border) bg-(--surface) p-6">

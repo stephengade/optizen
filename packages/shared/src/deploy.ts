@@ -32,11 +32,12 @@ export interface DeployLogEvent {
 
 // Outbound webhook payload fired after deploy
 export interface WebhookPayload {
-  event: 'deploy.success' | 'deploy.failed'
+  event: 'deploy.success' | 'deploy.failed' | 'server.disk_warning'
   project: { id: string; name: string }
   server: { id: string; name: string; host: string }
-  triggeredBy: DeployTrigger
+  triggeredBy: DeployTrigger | 'system'
   timestamp: string
   durationMs: number
   logSnapshot: string
+  detail?: string
 }

@@ -40,3 +40,7 @@ bun-debug.log*
 
 # Local product requirement docs
 /prd*.md
+
+
+error.txt
+/error.txt

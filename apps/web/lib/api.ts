@@ -10,7 +10,8 @@ class ApiError extends Error {
   constructor(
     public status: number,
     public code: string | undefined,
-    message: string
+    message: string,
+    public rawBody?: string
   ) {
     super(message)
     this.name = 'ApiError'
@@ -30,8 +31,18 @@ async function request<T>(
   })
 
   if (!res.ok) {
-    const err = await res.json().catch(() => ({ message: res.statusText }))
-    throw new ApiError(res.status, err.code, err.message ?? 'Request failed')
+    const rawBody = await res.text().catch(() => '')
+    let err: { code?: string; message?: string } = { message: res.statusText }
+
+    if (rawBody) {
+      try {
+        err = JSON.parse(rawBody) as { code?: string; message?: string }
+      } catch {
+        err = { message: rawBody }
+      }
+    }
+
+    throw new ApiError(res.status, err.code, err.message ?? 'Request failed', rawBody || undefined)
   }
 
   if (res.status === 204) {

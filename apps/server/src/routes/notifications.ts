@@ -33,7 +33,7 @@ const webhookSchema = t.Object({
   url: t.String(),
   secret: t.Optional(t.String()),
   enabled: t.Boolean(),
-  events: t.Array(t.Union([t.Literal('deploy.success'), t.Literal('deploy.failed'), t.Literal('env.changed')])),
+  events: t.Array(t.Union([t.Literal('deploy.success'), t.Literal('deploy.failed'), t.Literal('env.changed'), t.Literal('server.disk_warning')])),
 })
 
 export const notificationRoutes = new Elysia({ prefix: '/notifications' })

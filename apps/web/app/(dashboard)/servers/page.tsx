@@ -7,6 +7,7 @@ import { Plus } from 'lucide-react'
 import { toast } from 'sonner'
 import { ServerCard } from '@/components/dashboard/ServerCard'
 import { ServerForm } from '@/components/dashboard/ServerForm'
+import { LoadingState } from '@/components/ui/LoadingState'
 import { api, ApiError } from '@/lib/api'
 import { demoServers } from '@/lib/demo-fixtures'
 import { useDemoPrivacy } from '@/lib/demo-privacy-context'
@@ -170,9 +171,7 @@ export default function ServersPage() {
       {/* Server list */}
       <div className="space-y-px">
         {loading ? (
-          <div className="border border-(--border) bg-(--surface) px-5 py-6 text-sm text-(--text-muted)">
-            Loading...
-          </div>
+          <LoadingState label="Loading servers" detail="Fetching server records and the latest saved telemetry." compact />
         ) : servers.length > 0 ? (
           servers.map((server) => (
             <ServerCard

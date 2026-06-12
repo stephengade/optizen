@@ -12,6 +12,7 @@ type ServerFormValues = {
   user: string
   sshKeyPath: string
   sshPassphrase: string
+  diskAlertThresholdPercent: string
 }
 
 interface ServerFormProps {
@@ -27,6 +28,7 @@ interface ServerFormProps {
     user: string
     sshKeyPath: string
     sshPassphrase?: string
+    diskAlertThresholdPercent?: number
   }) => Promise<void>
   onDelete?: () => Promise<void>
 }
@@ -39,6 +41,7 @@ function getInitialValue(initialValue?: Partial<Server>): ServerFormValues {
     user: initialValue?.user ?? 'root',
     sshKeyPath: initialValue?.sshKeyPath ?? '',
     sshPassphrase: '',
+    diskAlertThresholdPercent: initialValue?.diskAlertThresholdPercent ? String(initialValue.diskAlertThresholdPercent) : '50',
   }
 }
 
@@ -54,6 +57,12 @@ export function ServerForm({
   const [values, setValues] = useState<ServerFormValues>(getInitialValue(initialValue))
   const [loading, setLoading] = useState(false)
   const [deleting, setDeleting] = useState(false)
+  const thresholdValue = Number(values.diskAlertThresholdPercent)
+  const thresholdError =
+    values.diskAlertThresholdPercent.trim().length > 0
+    && (!Number.isFinite(thresholdValue) || thresholdValue < 1 || thresholdValue > 100)
+      ? 'Enter a percentage between 1 and 100.'
+      : undefined
 
   useEffect(() => {
     setValues(getInitialValue(initialValue))
@@ -61,6 +70,9 @@ export function ServerForm({
 
   async function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault()
+    if (thresholdError) {
+      return
+    }
     setLoading(true)
 
     try {
@@ -71,6 +83,7 @@ export function ServerForm({
         user: values.user,
         sshKeyPath: values.sshKeyPath,
         sshPassphrase: values.sshPassphrase || undefined,
+        diskAlertThresholdPercent: Number(values.diskAlertThresholdPercent || 50),
       })
       if (!initialValue?.id) {
         setValues(getInitialValue())
@@ -151,6 +164,18 @@ export function ServerForm({
           placeholder={initialValue?.id ? 'Leave blank to keep or clear' : 'Optional'}
           type="password"
           hint={initialValue?.id ? 'Entering a new value replaces the stored passphrase. Leaving it blank clears it.' : 'Only needed for encrypted private keys.'}
+        />
+        <Input
+          label="Disk alert threshold (%)"
+          value={values.diskAlertThresholdPercent}
+          onChange={(event) => setValues((current) => ({ ...current, diskAlertThresholdPercent: event.target.value }))}
+          placeholder="50"
+          type="number"
+          inputMode="numeric"
+          min={1}
+          max={100}
+          error={thresholdError}
+          hint="Launchpad sends a disk warning when root disk usage reaches this percentage. Defaults to 50%."
         />
 
         <div className="flex flex-wrap gap-3">
