@@ -89,6 +89,32 @@ function formatApiDebugError(error: ApiError) {
   }
 }
 
+async function requestInternalStorageAudit(serverId: string): Promise<ServerStorageAudit> {
+  const response = await fetch(`/internal/storage-audit/${serverId}`, {
+    method: 'GET',
+    credentials: 'include',
+    cache: 'no-store',
+  })
+
+  const rawBody = await response.text().catch(() => '')
+
+  if (!response.ok) {
+    let message = response.statusText || 'Request failed'
+    if (rawBody) {
+      try {
+        const parsed = JSON.parse(rawBody) as { message?: string }
+        message = parsed.message ?? message
+      } catch {
+        message = rawBody
+      }
+    }
+
+    throw new ApiError(response.status, undefined, message, rawBody || undefined)
+  }
+
+  return JSON.parse(rawBody) as ServerStorageAudit
+}
+
 export default function StoragePage() {
   const router = useRouter()
   const searchParams = useSearchParams()
@@ -200,7 +226,7 @@ export default function StoragePage() {
     setAuditLoading(true)
     setAuditing(true)
     try {
-      const data = await api.get<ServerStorageAudit>(`/servers/${selectedId}/storage-audit`)
+      const data = await requestInternalStorageAudit(selectedId)
       setAudit(data)
       setAuditError(null)
       setDeepAuditRan(true)
@@ -355,6 +381,15 @@ export default function StoragePage() {
             </div>
           ) : audit ? (
             <>
+              {auditError ? (
+                <div className="border border-(--red) bg-[rgba(239,68,68,0.08)] px-4 py-3">
+                  <div className="text-xs uppercase tracking-[0.18em] text-(--red) mb-2">
+                    {deepAuditRan ? 'Deep Audit Error' : 'Storage Error'}
+                  </div>
+                  <pre className="whitespace-pre-wrap font-mono text-xs text-(--text)">{auditError}</pre>
+                </div>
+              ) : null}
+
               <div className="border border-(--border) bg-(--surface) px-4 py-3 text-sm text-(--text-muted)">
                 {deepAuditRan
                   ? 'Deep audit mode. Directory sizes may take longer to compute, especially for containerd and Docker data roots.'

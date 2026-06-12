@@ -100,7 +100,7 @@ export function EnvEditor({
           <textarea
             value={value}
             onChange={(event) => onChange(event.target.value)}
-            className="min-h-[28rem] w-full  border border-(--border) bg-[#0b0b0d] px-4 py-3 font-mono text-sm text-(--text) outline-none focus:border-(--border-strong)"
+            className="min-h-112 w-full  border border-(--border) bg-[#0b0b0d] px-4 py-3 font-mono text-sm text-(--text) outline-none focus:border-(--border-strong)"
             spellCheck={false}
           />
         </div>

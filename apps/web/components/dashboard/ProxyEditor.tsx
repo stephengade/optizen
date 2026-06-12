@@ -86,7 +86,7 @@ export function ProxyEditor({
       </div>
 
       {error ? (
-        <div className="mt-5 border border-(--yellow) bg-[color:rgba(255,184,63,0.08)] px-4 py-3 text-sm text-(--yellow)">
+        <div className="mt-5 border border-(--yellow) bg-[rgba(255,184,63,0.08)] px-4 py-3 text-sm text-(--yellow)">
           {error}
         </div>
       ) : null}
@@ -95,7 +95,7 @@ export function ProxyEditor({
         <textarea
           value={configValue}
           onChange={(event) => onChange(event.target.value)}
-          className="min-h-[32rem] w-full  border border-(--border) bg-[#0b0b0d] px-4 py-3 font-mono text-sm text-(--text) outline-none focus:border-(--border-strong)"
+          className="min-h-128 w-full  border border-(--border) bg-[#0b0b0d] px-4 py-3 font-mono text-sm text-(--text) outline-none focus:border-(--border-strong)"
           spellCheck={false}
           disabled={!editable}
         />

@@ -3,7 +3,8 @@ import { NextRequest, NextResponse } from 'next/server'
 export const maxDuration = 300
 
 function getApiBaseUrl() {
-  return process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:3001'
+  const base = process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:3001'
+  return base.replace('http://localhost:', 'http://127.0.0.1:').replace('https://localhost:', 'https://127.0.0.1:')
 }
 
 export async function GET(
@@ -63,10 +64,16 @@ export async function GET(
       upstreamContentType: contentType || undefined,
     })
   } catch (error) {
+    const cause =
+      error instanceof Error && 'cause' in error
+        ? String((error as Error & { cause?: unknown }).cause ?? '')
+        : undefined
+
     return NextResponse.json(
       {
         message: error instanceof Error ? error.message : 'Failed to reach storage audit upstream',
         debug: error instanceof Error ? String(error.stack ?? error.message) : String(error),
+        cause,
         target,
       },
       { status: 500 }
