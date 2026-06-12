@@ -3,6 +3,16 @@ import { ArrowRight } from 'lucide-react'
 
 const sections = [
   {
+    href: '/help/get-started',
+    title: 'Get started',
+    description: 'Fork, clone, install dependencies, configure env files, and run Launchpad locally.',
+  },
+  {
+    href: '/help/contribute',
+    title: 'Contribute',
+    description: 'How to make changes, test them, and keep contributions easy to review.',
+  },
+  {
     href: '/help/setup',
     title: 'Quick start',
     description: 'Get from zero to a running deploy in six steps.',
