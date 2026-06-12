@@ -15,9 +15,9 @@ interface SitesListProps {
 
 export function SitesList({ sites, togglingSite, onToggle }: SitesListProps) {
   return (
-    <section className="rounded-2xl border border-[var(--border)] bg-[var(--surface)] p-6">
-      <h2 className="text-lg font-semibold text-[var(--text)]">Nginx sites</h2>
-      <p className="mt-1 text-sm text-[var(--text-muted)]">
+    <section className="rounded-2xl border border-(--border) bg-(--surface) p-6">
+      <h2 className="text-lg font-semibold text-(--text)">Nginx sites</h2>
+      <p className="mt-1 text-sm text-(--text-muted)">
         Enable or disable files from `/etc/nginx/sites-available`.
       </p>
 
@@ -26,11 +26,11 @@ export function SitesList({ sites, togglingSite, onToggle }: SitesListProps) {
           {sites.map((site) => (
             <div
               key={site.name}
-              className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-[var(--border)] bg-[var(--surface-2)] px-4 py-3"
+              className="flex flex-wrap items-center justify-between gap-3  border border-(--border) bg-(--surface-2) px-4 py-3"
             >
               <div>
-                <div className="font-mono text-sm text-[var(--text)]">{site.name}</div>
-                <div className="mt-1 text-xs uppercase tracking-[0.18em] text-[var(--text-muted)]">
+                <div className="font-mono text-sm text-(--text)">{site.name}</div>
+                <div className="mt-1 text-xs uppercase tracking-[0.18em] text-(--text-muted)">
                   {site.enabled ? 'Enabled' : 'Disabled'}
                 </div>
               </div>
@@ -46,7 +46,7 @@ export function SitesList({ sites, togglingSite, onToggle }: SitesListProps) {
           ))}
         </div>
       ) : (
-        <div className="mt-5 rounded-xl border border-dashed border-[var(--border)] bg-[var(--surface-2)] p-4 text-sm text-[var(--text-muted)]">
+        <div className="mt-5  border border-dashed border-(--border) bg-(--surface-2) p-4 text-sm text-(--text-muted)">
           No sites available.
         </div>
       )}

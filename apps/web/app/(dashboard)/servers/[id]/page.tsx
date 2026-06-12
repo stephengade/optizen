@@ -194,7 +194,7 @@ export default function ServerDetailPage() {
 
   if (loading) {
     return (
-      <div className="px-6 py-8 text-sm text-[var(--text-muted)] lg:px-8">
+      <div className="px-6 py-8 text-sm text-(--text-muted) lg:px-8">
         Loading server...
       </div>
     )
@@ -206,17 +206,17 @@ export default function ServerDetailPage() {
     <div className="mx-auto flex w-full max-w-7xl flex-col gap-8 px-6 py-8 lg:px-8">
       <section className="flex flex-wrap items-start justify-between gap-4">
         <div>
-          <Link href="/servers" className="text-xs uppercase tracking-[0.24em] text-[var(--text-muted)]">
+          <Link href="/servers" className="text-xs uppercase tracking-[0.24em] text-(--text-muted)">
             Back to servers
           </Link>
-          <h1 className="mt-2 text-3xl font-semibold text-[var(--text)]">{server.name}</h1>
-          <p className="mt-2 text-sm text-[var(--text-muted)]">
+          <h1 className="mt-2 text-3xl font-semibold text-(--text)">{server.name}</h1>
+          <p className="mt-2 text-sm text-(--text-muted)">
             <SensitiveText value={`${server.user}@${server.host}:${server.port}`} />
           </p>
-          <p className="mt-2 text-sm text-[var(--text-muted)]">
+          <p className="mt-2 text-sm text-(--text-muted)">
             Launchpad now keeps servers, projects, deploys, and infra edits separate so you can reason about impact before you act.
           </p>
-          <p className="mt-2 max-w-2xl text-sm text-[var(--text-muted)]">
+          <p className="mt-2 max-w-2xl text-sm text-(--text-muted)">
             Imported projects from older scans may still carry stale labels. Refresh project types to reclassify them from image, name, working directory, and proxy hints.
           </p>
           <div className="mt-4">
@@ -232,7 +232,7 @@ export default function ServerDetailPage() {
               </Button>
               <Link
                 href={`/servers/${params.id}/proxy`}
-                className="inline-flex h-8 items-center border border-[var(--border)] px-3 text-xs font-medium text-[var(--text)] transition-colors hover:bg-[var(--surface-2)]"
+                className="inline-flex h-8 items-center border border-(--border) px-3 text-xs font-medium text-(--text) transition-colors hover:bg-(--surface-2)"
               >
                 Open proxy manager
               </Link>
@@ -248,56 +248,56 @@ export default function ServerDetailPage() {
       </section>
 
       <section className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
-        <div className="rounded-2xl border border-[var(--border)] bg-[var(--surface)] p-5">
-          <div className="text-xs uppercase tracking-[0.18em] text-[var(--text-muted)]">CPU + Load</div>
-          <div className="mt-2 text-lg font-semibold text-[var(--text)]">
+        <div className="rounded-2xl border border-(--border) bg-(--surface) p-5">
+          <div className="text-xs uppercase tracking-[0.18em] text-(--text-muted)">CPU + Load</div>
+          <div className="mt-2 text-lg font-semibold text-(--text)">
             {resources ? formatPercent(resources.cpuUsagePercent, 1) : 'n/a'}
           </div>
-          <div className="mt-1 text-sm text-[var(--text-muted)]">
+          <div className="mt-1 text-sm text-(--text-muted)">
             {resources ? resources.loadAverage.map((value) => value.toFixed(2)).join(' / ') : 'Run Test SSH to refresh'}
           </div>
         </div>
-        <div className="rounded-2xl border border-[var(--border)] bg-[var(--surface)] p-5">
-          <div className="text-xs uppercase tracking-[0.18em] text-[var(--text-muted)]">Memory + Disk</div>
-          <div className="mt-2 text-lg font-semibold text-[var(--text)]">
+        <div className="rounded-2xl border border-(--border) bg-(--surface) p-5">
+          <div className="text-xs uppercase tracking-[0.18em] text-(--text-muted)">Memory + Disk</div>
+          <div className="mt-2 text-lg font-semibold text-(--text)">
             {resources ? `${formatBytes(resources.memoryUsedBytes)} / ${formatBytes(resources.memoryTotalBytes)}` : 'n/a'}
           </div>
-          <div className="mt-1 text-sm text-[var(--text-muted)]">
+          <div className="mt-1 text-sm text-(--text-muted)">
             {resources ? `${formatBytes(resources.diskUsedBytes)} / ${formatBytes(resources.diskTotalBytes)} disk` : 'Run Test SSH to refresh'}
           </div>
         </div>
-        <div className="rounded-2xl border border-[var(--border)] bg-[var(--surface)] p-5">
-          <div className="text-xs uppercase tracking-[0.18em] text-[var(--text-muted)]">Uptime + Inodes</div>
-          <div className="mt-2 text-lg font-semibold text-[var(--text)]">
+        <div className="rounded-2xl border border-(--border) bg-(--surface) p-5">
+          <div className="text-xs uppercase tracking-[0.18em] text-(--text-muted)">Uptime + Inodes</div>
+          <div className="mt-2 text-lg font-semibold text-(--text)">
             {resources ? formatUptime(resources.uptimeSeconds) : 'n/a'}
           </div>
-          <div className="mt-1 text-sm text-[var(--text-muted)]">
+          <div className="mt-1 text-sm text-(--text-muted)">
             {resources ? `${formatPercent(resources.diskInodesUsedPercent)} inode use` : 'Run Test SSH to refresh'}
           </div>
         </div>
-        <div className="rounded-2xl border border-[var(--border)] bg-[var(--surface)] p-5">
-          <div className="text-xs uppercase tracking-[0.18em] text-[var(--text-muted)]">Containers</div>
-          <div className="mt-2 text-lg font-semibold text-[var(--text)]">
+        <div className="rounded-2xl border border-(--border) bg-(--surface) p-5">
+          <div className="text-xs uppercase tracking-[0.18em] text-(--text-muted)">Containers</div>
+          <div className="mt-2 text-lg font-semibold text-(--text)">
             {resources ? resources.runningContainers : 'n/a'}
           </div>
-          <div className="mt-1 text-sm text-[var(--text-muted)]">
+          <div className="mt-1 text-sm text-(--text-muted)">
             {resources ? `${resources.exitedContainers} exited` : 'Run Test SSH to refresh'}
           </div>
         </div>
       </section>
 
-      <section className="border border-[var(--border)] bg-[var(--surface)] p-6">
+      <section className="border border-(--border) bg-(--surface) p-6">
         <div className="flex flex-wrap items-start justify-between gap-4">
           <div>
-            <p className="text-xs uppercase tracking-[0.24em] text-[var(--green)]">Discovery</p>
-            <h2 className="mt-2 text-lg font-semibold text-[var(--text)]">Import running apps</h2>
-            <p className="mt-1 max-w-3xl text-sm text-[var(--text-muted)]">
+            <p className="text-xs uppercase tracking-[0.24em] text-(--accent)">Discovery</p>
+            <h2 className="mt-2 text-lg font-semibold text-(--text)">Import running apps</h2>
+            <p className="mt-1 max-w-3xl text-sm text-(--text-muted)">
               Discovery now lives in the top-level scan workspace so you can scan every server from one place and import with a server-select modal.
             </p>
           </div>
           <Link
             href="/scan"
-            className="inline-flex h-10 items-center border border-[var(--border)] px-4 text-sm text-[var(--text)] transition-colors hover:bg-[var(--surface-2)]"
+            className="inline-flex h-10 items-center border border-(--border) px-4 text-sm text-(--text) transition-colors hover:bg-(--surface-2)"
           >
             Open scan workspace
           </Link>
@@ -305,25 +305,25 @@ export default function ServerDetailPage() {
       </section>
 
       <section className="grid gap-6 xl:grid-cols-[1.1fr_0.9fr]">
-        <div className="rounded-2xl border border-[var(--border)] bg-[var(--surface)] p-6">
-          <h2 className="text-lg font-semibold text-[var(--text)]">Recent deploy outcomes</h2>
+        <div className="rounded-2xl border border-(--border) bg-(--surface) p-6">
+          <h2 className="text-lg font-semibold text-(--text)">Recent deploy outcomes</h2>
           <div className="mt-4 space-y-3">
             {server.recentDeployOutcomes?.length ? (
               server.recentDeployOutcomes.map((record) => (
-                <div key={record.id} className="rounded-xl border border-[var(--border)] bg-[var(--surface-2)] px-4 py-3">
+                <div key={record.id} className="rounded-xl border border-(--border) bg-(--surface-2) px-4 py-3">
                   <div className="flex flex-wrap items-center justify-between gap-3">
-                    <div className="text-sm font-medium text-[var(--text)]">{record.status}</div>
-                    <div className="text-xs uppercase tracking-[0.18em] text-[var(--text-muted)]">
+                    <div className="text-sm font-medium text-(--text)">{record.status}</div>
+                    <div className="text-xs uppercase tracking-[0.18em] text-(--text-muted)">
                       {formatRelative(record.triggeredAt)}
                     </div>
                   </div>
-                  <div className="mt-1 text-sm text-[var(--text-muted)]">
+                  <div className="mt-1 text-sm text-(--text-muted)">
                     Triggered via {record.trigger}{record.imageTag ? ` using ${record.imageTag}` : ''}.
                   </div>
                 </div>
               ))
             ) : (
-              <div className="rounded-xl border border-dashed border-[var(--border)] bg-[var(--surface-2)] p-4 text-sm text-[var(--text-muted)]">
+              <div className="rounded-xl border border-dashed border-(--border) bg-(--surface-2) p-4 text-sm text-(--text-muted)">
                 No deploys have run on this server yet.
               </div>
             )}
@@ -331,15 +331,15 @@ export default function ServerDetailPage() {
         </div>
 
         <div>
-          <h2 className="mb-3 text-lg font-semibold text-[var(--text)]">Activity timeline</h2>
+          <h2 className="mb-3 text-lg font-semibold text-(--text)">Activity timeline</h2>
           <ActivityTimeline events={activity} emptyLabel="No tracked activity yet. Deploys, imports, proxy edits, env saves, and rollbacks will show up here." />
         </div>
       </section>
 
       <section className="space-y-4">
         <div>
-          <h2 className="text-lg font-semibold text-[var(--text)]">Projects</h2>
-          <p className="mt-1 text-sm text-[var(--text-muted)]">
+          <h2 className="text-lg font-semibold text-(--text)">Projects</h2>
+          <p className="mt-1 text-sm text-(--text-muted)">
             {projects.length} project{projects.length === 1 ? '' : 's'} currently attached to this server.
           </p>
         </div>
@@ -351,7 +351,7 @@ export default function ServerDetailPage() {
             ))}
           </div>
         ) : (
-          <div className="rounded-2xl border border-dashed border-[var(--border)] bg-[var(--surface)] p-6 text-sm text-[var(--text-muted)]">
+          <div className="rounded-2xl border border-dashed border-(--border) bg-(--surface) p-6 text-sm text-(--text-muted)">
             No projects are attached to this server yet. Add one manually or import a running app from the scan workspace.
           </div>
         )}

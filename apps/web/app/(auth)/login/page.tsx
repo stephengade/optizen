@@ -28,7 +28,7 @@ export default function LoginPage() {
     if (result.success) {
       router.push('/servers')
     } else {
-      setError(result.error ?? 'Login failed')
+      setError(result.error ?? 'Invalid password')
       setPassword('')
     }
 
@@ -36,13 +36,13 @@ export default function LoginPage() {
   }
 
   return (
-    <div className="rounded-[24px] border border-[var(--border)] bg-[var(--surface)] p-6 shadow-[var(--shadow)]">
-      <h1 className="mb-1 text-xl font-semibold text-[var(--text)]">Welcome back</h1>
-      <p className="mb-6 text-sm leading-6 text-[var(--text-muted)]">
-        Enter your master password to unlock Launchpad. This decrypts the local credentials and configuration state for your session.
+    <div>
+      <h1 className="text-xl font-semibold text-(--text)">Sign in</h1>
+      <p className="mt-2 text-sm text-(--text-muted)">
+        Enter your master password to unlock Optizen.
       </p>
 
-      <form onSubmit={handleSubmit} className="flex flex-col gap-4">
+      <form onSubmit={handleSubmit} className="mt-8 flex flex-col gap-5">
         <div className="relative">
           <Input
             label="Master password"
@@ -57,19 +57,19 @@ export default function LoginPage() {
           <button
             type="button"
             onClick={() => setShowPassword(v => !v)}
-            className="absolute right-3 top-[2.1rem] rounded-[10px] p-1 text-[var(--text-muted)] transition-colors hover:text-[var(--text)]"
+            className="absolute right-3 top-[2rem] p-1 text-(--text-muted) transition-colors hover:text-(--text)"
             aria-label={showPassword ? 'Hide password' : 'Show password'}
           >
-            {showPassword ? <EyeOff size={14} /> : <Eye size={14} />}
+            {showPassword ? <EyeOff size={13} /> : <Eye size={13} />}
           </button>
         </div>
 
-        <Button type="submit" loading={loading} disabled={!password}>
+        <Button type="submit" loading={loading} disabled={!password} className="w-full">
           Sign in
         </Button>
 
-        <p className="text-xs leading-5 text-[var(--text-muted)]">
-          If this is your first time here, Launchpad will redirect you to setup automatically.
+        <p className="text-xs text-(--text-muted)">
+          First time here? Optizen will redirect you to setup automatically.
         </p>
       </form>
     </div>

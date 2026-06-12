@@ -49,9 +49,9 @@ export function SensitivePanel({
     : 'text-sm break-all'
 
   return (
-    <div className="rounded-[18px] border border-[var(--border)] bg-[var(--surface-2)] p-4">
+    <div className=" border border-(--border) bg-(--surface-2) p-4">
       <div className="mb-3 flex flex-wrap items-center justify-between gap-3">
-        <div className="text-sm font-medium text-[var(--text)]">{label}</div>
+        <div className="text-sm font-medium text-(--text)">{label}</div>
         <div className="flex gap-2">
           <button
             type="button"
@@ -67,7 +67,7 @@ export function SensitivePanel({
                 }).catch(() => undefined)
               }
             }}
-            className="inline-flex items-center gap-1 rounded-[12px] border border-[var(--border)] px-2 py-1 text-xs text-[var(--text-muted)] transition-colors hover:bg-[var(--surface-3)] hover:text-[var(--text)]"
+            className="inline-flex items-center gap-1  border border-(--border) px-2 py-1 text-xs text-(--text-muted) transition-colors hover:bg-(--surface-2) hover:text-(--text)"
           >
             {revealed ? <EyeOff size={12} /> : <Eye size={12} />}
             {revealed ? 'Hide' : 'Reveal'}
@@ -76,7 +76,7 @@ export function SensitivePanel({
             type="button"
             onClick={() => void handleCopy()}
             disabled={!hasValue}
-            className="inline-flex items-center gap-1 rounded-[12px] border border-[var(--border)] px-2 py-1 text-xs text-[var(--text-muted)] transition-colors hover:bg-[var(--surface-3)] hover:text-[var(--text)] disabled:opacity-50"
+            className="inline-flex items-center gap-1  border border-(--border) px-2 py-1 text-xs text-(--text-muted) transition-colors hover:bg-(--surface-2) hover:text-(--text) disabled:opacity-50"
           >
             <Copy size={12} />
             Copy

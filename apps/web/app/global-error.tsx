@@ -17,15 +17,15 @@ export default function GlobalError({
   return (
     <html lang="en">
       <body>
-        <div className="flex min-h-screen items-center justify-center bg-[#0f1410] px-6 py-10 text-white">
-          <div className="w-full max-w-2xl rounded-[28px] border border-white/10 bg-black/30 p-8">
-            <p className="text-xs uppercase tracking-[0.24em] text-[#d6ff72]">Launchpad</p>
-            <h1 className="mt-2 text-3xl font-semibold">The control plane needs a refresh</h1>
-            <p className="mt-3 text-sm text-white/70">
-              Something failed outside the current page boundary. Retry the app shell to restore the dashboard.
+        <div className="flex min-h-screen items-center justify-center bg-[#0d0d0d] px-6 py-10 text-white">
+          <div className="w-full max-w-xl border border-white/10 p-8">
+            <p className="text-xs uppercase tracking-[0.2em] text-[#c8ff57]">Optizen</p>
+            <h1 className="mt-3 text-2xl font-semibold">Something went wrong</h1>
+            <p className="mt-2 text-sm text-white/60">
+              An error occurred outside the page boundary. Reload to restore the dashboard.
             </p>
             <div className="mt-6">
-              <Button onClick={reset}>Reload app</Button>
+              <Button onClick={reset}>Reload</Button>
             </div>
           </div>
         </div>

@@ -1,23 +1,35 @@
 @import "tailwindcss";
 
 :root {
-  --bg: #0b1211;
-  --bg-accent: #13211d;
-  --surface: #101918;
-  --surface-2: #172322;
-  --surface-3: #1d2d2a;
-  --border: #29403a;
-  --text: #eff7f3;
-  --text-muted: #94ada4;
-  --green: #68f0a7;
-  --green-dim: rgba(104, 240, 167, 0.12);
-  --red: #ff7b7b;
-  --red-dim: rgba(255, 123, 123, 0.12);
-  --yellow: #ffcf6b;
-  --blue: #79bcff;
-  --ink: #07100f;
-  --shadow: 0 18px 50px rgba(0, 0, 0, 0.22);
-  --radius: 20px;
+  /* Surfaces */
+  --bg: #0d0d0d;
+  --bg-subtle: #111111;
+  --surface: #161616;
+  --surface-2: #1c1c1c;
+  --surface-3: #222222;
+
+  /* Borders */
+  --border: rgba(255, 255, 255, 0.08);
+  --border-strong: rgba(255, 255, 255, 0.14);
+
+  /* Text */
+  --text: #f0f0f0;
+  --text-muted: #6b6b6b;
+  --text-subtle: #3d3d3d;
+
+  /* Accent — single sharp lime */
+  --accent: #c8ff57;
+  --accent-dim: rgba(200, 255, 87, 0.1);
+
+  /* States */
+  --red: #ff5252;
+  --red-dim: rgba(255, 82, 82, 0.1);
+  --yellow: #f5a623;
+  --blue: #5b9cf6;
+
+  /* Misc */
+  --shadow: 0 1px 3px rgba(0, 0, 0, 0.5), 0 8px 24px rgba(0, 0, 0, 0.3);
+  --radius: 0px;
 }
 
 @layer base {
@@ -33,10 +45,7 @@
     color: var(--text);
     font-family: var(--font-sans), system-ui, sans-serif;
     -webkit-font-smoothing: antialiased;
-    background-image:
-      radial-gradient(circle at top left, rgba(104, 240, 167, 0.12), transparent 28%),
-      radial-gradient(circle at top right, rgba(121, 188, 255, 0.1), transparent 22%),
-      linear-gradient(180deg, var(--bg-accent), var(--bg));
+    -moz-osx-font-smoothing: grayscale;
   }
 
   body {
@@ -44,19 +53,18 @@
   }
 
   /* Scrollbar */
-  ::-webkit-scrollbar { width: 6px; height: 6px; }
+  ::-webkit-scrollbar { width: 4px; height: 4px; }
   ::-webkit-scrollbar-track { background: transparent; }
-  ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
-  ::-webkit-scrollbar-thumb:hover { background: var(--text-muted); }
+  ::-webkit-scrollbar-thumb { background: var(--surface-3); }
+  ::-webkit-scrollbar-thumb:hover { background: var(--text-subtle); }
 
-  /* Terminal / monospace */
   .font-mono {
     font-family: var(--font-mono), ui-monospace, monospace;
     font-feature-settings: "liga" 1, "calt" 1;
   }
 
   ::selection {
-    background: rgba(104, 240, 167, 0.2);
+    background: var(--accent-dim);
     color: var(--text);
   }
 
@@ -75,26 +83,23 @@
 }
 
 @layer components {
-  .glass-panel {
-    background: linear-gradient(180deg, rgba(16, 25, 24, 0.92), rgba(16, 25, 24, 0.82));
+  .panel {
+    background: var(--surface);
     border: 1px solid var(--border);
-    box-shadow: var(--shadow);
-    backdrop-filter: blur(14px);
+  }
+
+  .panel-2 {
+    background: var(--surface-2);
+    border: 1px solid var(--border);
   }
 
   .dashboard-shell {
     position: relative;
+    background: var(--bg);
   }
 
-  .dashboard-shell::before {
-    content: "";
-    position: fixed;
-    inset: 0;
-    pointer-events: none;
-    background-image: linear-gradient(rgba(255,255,255,0.03) 1px, transparent 1px),
-      linear-gradient(90deg, rgba(255,255,255,0.03) 1px, transparent 1px);
-    background-size: 48px 48px;
-    mask-image: linear-gradient(180deg, rgba(0,0,0,0.35), transparent 88%);
-    opacity: 0.2;
+  .divider {
+    border: none;
+    border-top: 1px solid var(--border);
   }
 }

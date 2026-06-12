@@ -32,12 +32,12 @@ export function ProjectLogsPanel({
   onAutoRefreshToggle,
 }: ProjectLogsPanelProps) {
   return (
-    <section className="rounded-2xl border border-[var(--border)] bg-[var(--surface)] p-6">
+    <section className="rounded-2xl border border-(--border) bg-(--surface) p-6">
       <div className="flex flex-wrap items-start justify-between gap-4">
         <div>
-          <h2 className="text-lg font-semibold text-[var(--text)]">Project logs</h2>
-          <p className="mt-1 text-sm text-[var(--text-muted)]">
-            Snapshot recent runtime logs without leaving Launchpad. Auto-refresh gives you a lightweight tailing experience.
+          <h2 className="text-lg font-semibold text-(--text)">Project logs</h2>
+          <p className="mt-1 text-sm text-(--text-muted)">
+            Snapshot recent runtime logs without leaving Optizen. Auto-refresh gives you a lightweight tailing experience.
           </p>
         </div>
         <div className="flex flex-wrap gap-3">
@@ -54,7 +54,7 @@ export function ProjectLogsPanel({
         <select
           value={selectedSource}
           onChange={(event) => onSourceChange(event.target.value)}
-          className="h-10 rounded border border-[var(--border)] bg-[var(--surface-2)] px-3 text-sm text-[var(--text)] outline-none focus:border-[var(--green)]"
+          className="h-10 rounded border border-(--border) bg-(--surface-2) px-3 text-sm text-(--text) outline-none focus:border-(--border-strong)"
         >
           {sources.map((source) => (
             <option key={source.id} value={source.id}>
@@ -62,12 +62,12 @@ export function ProjectLogsPanel({
             </option>
           ))}
         </select>
-        <div className="text-sm text-[var(--text-muted)]">
+        <div className="text-sm text-(--text-muted)">
           {checkedAt ? `Last snapshot: ${formatDateTime(checkedAt)}` : 'No snapshot loaded yet'}
         </div>
       </div>
 
-      <div className="mt-5 h-96 overflow-auto rounded-xl border border-[var(--border)] bg-[#0b0b0d] px-4 py-3 font-mono text-xs text-[var(--text)]">
+      <div className="mt-5 h-96 overflow-auto  border border-(--border) bg-[#0b0b0d] px-4 py-3 font-mono text-xs text-(--text)">
         {lines.length > 0 ? (
           <div className="space-y-2">
             {lines.map((line, index) => (
@@ -75,7 +75,7 @@ export function ProjectLogsPanel({
             ))}
           </div>
         ) : (
-          <div className="text-[var(--text-muted)]">No project logs returned for this source yet.</div>
+          <div className="text-(--text-muted)">No project logs returned for this source yet.</div>
         )}
       </div>
     </section>

@@ -44,19 +44,18 @@ export function ProxyEditor({
   }, [configValue])
 
   return (
-    <section className="rounded-2xl border border-[var(--border)] bg-[var(--surface)] p-6">
+    <section className="rounded-2xl border border-(--border) bg-(--surface) p-6">
       <div className="flex flex-wrap items-start justify-between gap-4">
         <div>
-          <p className="text-xs uppercase tracking-[0.24em] text-[var(--green)]">Phase 8</p>
-          <h2 className="mt-2 text-lg font-semibold text-[var(--text)]">Proxy editor</h2>
-          <p className="mt-1 text-sm text-[var(--text-muted)]">
+                    <h2 className="mt-2 text-lg font-semibold text-(--text)">Proxy editor</h2>
+          <p className="mt-1 text-sm text-(--text-muted)">
             {!hasPath && proxyType === 'none'
               ? 'No reverse proxy detected on this server.'
               : proxyType === 'none'
                 ? `Editing custom config at ${configPath}. Save writes the file, but host-level validation and reload are unavailable.`
                 : `Editing ${proxyType} config at ${configPath}. Save validates and reloads automatically.`}
           </p>
-          <p className="mt-2 text-xs text-[var(--text-muted)]">
+          <p className="mt-2 text-xs text-(--text-muted)">
             If your live rules are in another file, paste the full path here and click Load path. This also works for
             include files and site-specific configs.
           </p>
@@ -76,18 +75,18 @@ export function ProxyEditor({
 
       <div className="mt-5">
         <label className="flex flex-col gap-1.5">
-          <span className="text-xs font-medium uppercase tracking-wider text-[var(--text-muted)]">Config path</span>
+          <span className="text-xs font-medium uppercase tracking-wider text-(--text-muted)">Config path</span>
           <input
             value={configPath}
             onChange={(event) => onPathChange(event.target.value)}
-            className="h-10 border border-[var(--border)] bg-[var(--surface-2)] px-3 text-sm text-[var(--text)] outline-none focus:border-[var(--green)]"
+            className="h-10 border border-(--border) bg-(--surface-2) px-3 text-sm text-(--text) outline-none focus:border-(--border-strong)"
             placeholder={proxyType === 'caddy' ? '/etc/caddy/Caddyfile' : '/etc/nginx/nginx.conf'}
           />
         </label>
       </div>
 
       {error ? (
-        <div className="mt-5 border border-[var(--yellow)] bg-[color:rgba(255,184,63,0.08)] px-4 py-3 text-sm text-[var(--yellow)]">
+        <div className="mt-5 border border-(--yellow) bg-[color:rgba(255,184,63,0.08)] px-4 py-3 text-sm text-(--yellow)">
           {error}
         </div>
       ) : null}
@@ -96,24 +95,24 @@ export function ProxyEditor({
         <textarea
           value={configValue}
           onChange={(event) => onChange(event.target.value)}
-          className="min-h-[32rem] w-full rounded-xl border border-[var(--border)] bg-[#0b0b0d] px-4 py-3 font-mono text-sm text-[var(--text)] outline-none focus:border-[var(--green)]"
+          className="min-h-[32rem] w-full  border border-(--border) bg-[#0b0b0d] px-4 py-3 font-mono text-sm text-(--text) outline-none focus:border-(--border-strong)"
           spellCheck={false}
           disabled={!editable}
         />
 
         <div className="space-y-4">
-          <div className="rounded-xl border border-[var(--border)] bg-[var(--surface-2)] p-4">
-            <h3 className="text-sm font-medium text-[var(--text)]">Write safety</h3>
-            <div className="mt-3 space-y-2 text-sm text-[var(--text-muted)]">
+          <div className=" border border-(--border) bg-(--surface-2) p-4">
+            <h3 className="text-sm font-medium text-(--text)">Write safety</h3>
+            <div className="mt-3 space-y-2 text-sm text-(--text-muted)">
               <div>Temp validation: {proxyType === 'none' ? 'Skipped' : 'Before overwrite'}</div>
               <div>Remote backup: Created before replace</div>
-              <div>Local revision: Saved in Launchpad history</div>
+              <div>Local revision: Saved in Optizen history</div>
             </div>
           </div>
 
-          <div className="rounded-xl border border-[var(--border)] bg-[var(--surface-2)] p-4">
-            <h3 className="text-sm font-medium text-[var(--text)]">File stats</h3>
-            <div className="mt-3 space-y-2 text-sm text-[var(--text-muted)]">
+          <div className=" border border-(--border) bg-(--surface-2) p-4">
+            <h3 className="text-sm font-medium text-(--text)">File stats</h3>
+            <div className="mt-3 space-y-2 text-sm text-(--text-muted)">
               <div>Lines: {stats.lineCount}</div>
               <div>Non-empty lines: {stats.nonEmpty}</div>
               <div>Reload path: {canReload ? 'Available' : 'Manual only'}</div>

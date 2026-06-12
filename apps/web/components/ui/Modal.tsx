@@ -44,20 +44,20 @@ export function Modal({ open, title, description, onClose, children }: ModalProp
         role="dialog"
         aria-modal="true"
         aria-label={title}
-        className="max-h-full w-full max-w-3xl overflow-auto rounded-[24px] border border-[var(--border)] bg-[var(--surface)] shadow-[var(--shadow)]"
+        className="max-h-full w-full max-w-3xl overflow-auto border border-(--border) bg-(--surface) shadow-(--shadow)"
       >
-        <div className="flex items-start justify-between gap-4 border-b border-[var(--border)] px-6 py-5">
+        <div className="flex items-start justify-between gap-4 border-b border-(--border) px-6 py-4">
           <div>
-            <h2 className="text-lg font-semibold text-[var(--text)]">{title}</h2>
+            <h2 className="text-sm font-semibold text-(--text)">{title}</h2>
             {description ? (
-              <p className="mt-1 max-w-2xl text-sm text-[var(--text-muted)]">{description}</p>
+              <p className="mt-1 max-w-2xl text-xs text-(--text-muted)">{description}</p>
             ) : null}
           </div>
           <button
             ref={closeButtonRef}
             type="button"
             onClick={onClose}
-            className="rounded-[14px] border border-[var(--border)] px-3 py-2 text-sm text-[var(--text-muted)] transition-colors hover:bg-[var(--surface-2)] hover:text-[var(--text)]"
+            className="border border-(--border) px-3 py-1.5 text-xs text-(--text-muted) transition-colors hover:bg-(--surface-2) hover:text-(--text)"
           >
             Close
           </button>

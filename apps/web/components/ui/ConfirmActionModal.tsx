@@ -45,7 +45,7 @@ export function ConfirmActionModal({
     <Modal open={open} title={title} description={description} onClose={onClose}>
       <div className="space-y-4">
         {details.length > 0 ? (
-          <div className="rounded-xl border border-[var(--border)] bg-[var(--surface-2)] p-4 text-sm text-[var(--text-muted)]">
+          <div className="border border-(--border) bg-(--surface-2) p-4 text-sm text-(--text-muted)">
             {details.map((detail) => (
               <div key={detail}>{detail}</div>
             ))}

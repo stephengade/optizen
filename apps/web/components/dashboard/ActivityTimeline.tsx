@@ -11,23 +11,23 @@ interface ActivityTimelineProps {
 export function ActivityTimeline({ events, emptyLabel }: ActivityTimelineProps) {
   if (events.length === 0) {
     return (
-      <div className="rounded-xl border border-dashed border-[var(--border)] bg-[var(--surface)] p-5 text-sm text-[var(--text-muted)]">
+      <div className=" border border-dashed border-(--border) bg-(--surface) p-5 text-sm text-(--text-muted)">
         {emptyLabel}
       </div>
     )
   }
 
   return (
-    <div className="rounded-2xl border border-[var(--border)] bg-[var(--surface)]">
+    <div className="rounded-2xl border border-(--border) bg-(--surface)">
       {events.map((event, index) => (
-        <div key={event.id} className={`px-5 py-4 ${index === events.length - 1 ? '' : 'border-b border-[var(--border)]'}`}>
+        <div key={event.id} className={`px-5 py-4 ${index === events.length - 1 ? '' : 'border-b border-(--border)'}`}>
           <div className="flex flex-wrap items-center justify-between gap-3">
-            <div className="text-sm font-medium text-[var(--text)]">{event.title}</div>
-            <div className="text-xs uppercase tracking-[0.18em] text-[var(--text-muted)]" title={formatDateTime(event.createdAt)}>
+            <div className="text-sm font-medium text-(--text)">{event.title}</div>
+            <div className="text-xs uppercase tracking-[0.18em] text-(--text-muted)" title={formatDateTime(event.createdAt)}>
               {formatRelative(event.createdAt)}
             </div>
           </div>
-          {event.detail ? <p className="mt-1 text-sm text-[var(--text-muted)]">{event.detail}</p> : null}
+          {event.detail ? <p className="mt-1 text-sm text-(--text-muted)">{event.detail}</p> : null}
         </div>
       ))}
     </div>

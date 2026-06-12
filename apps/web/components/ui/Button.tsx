@@ -22,17 +22,17 @@ export function Button({
     <button
       disabled={disabled || loading}
       className={cn(
-        'inline-flex items-center justify-center gap-2 rounded font-medium transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--green)] disabled:opacity-50 disabled:cursor-not-allowed',
-        size === 'md' && 'h-10 px-4 text-sm',
-        size === 'sm' && 'h-8 px-3 text-xs',
-        variant === 'primary' && 'bg-[var(--green)] text-[var(--bg)] hover:opacity-90',
-        variant === 'ghost' && 'border border-[var(--border)] text-[var(--text)] hover:bg-[var(--surface-2)]',
-        variant === 'danger' && 'bg-[var(--red-dim)] text-[var(--red)] border border-[var(--red)] hover:bg-[var(--red)] hover:text-white',
+        'inline-flex items-center justify-center gap-2 font-medium transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-(--accent) disabled:opacity-40 disabled:cursor-not-allowed',
+        size === 'md' && 'h-9 px-4 text-sm',
+        size === 'sm' && 'h-7 px-3 text-xs',
+        variant === 'primary' && 'bg-(--accent) text-(--bg) hover:opacity-90',
+        variant === 'ghost' && 'border border-(--border) text-(--text-muted) hover:text-(--text) hover:border-(--border-strong) hover:bg-(--surface-2)',
+        variant === 'danger' && 'border border-(--red) bg-(--red-dim) text-(--red) hover:bg-(--red) hover:text-white',
         className
       )}
       {...props}
     >
-      {loading && <Loader2 size={14} className="animate-spin" />}
+      {loading && <Loader2 size={13} className="animate-spin" />}
       {children}
     </button>
   )

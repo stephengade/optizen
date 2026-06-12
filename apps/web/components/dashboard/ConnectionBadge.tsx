@@ -9,29 +9,27 @@ interface ConnectionBadgeProps {
 }
 
 export function ConnectionBadge({ connected, latencyMs, error }: ConnectionBadgeProps) {
-  const tone =
+  const dot =
     connected === undefined
-      ? 'bg-[var(--text-muted)]'
+      ? 'bg-(--text-muted)'
       : connected
-        ? 'bg-[var(--green)]'
-        : 'bg-[var(--red)]'
+        ? 'bg-(--accent)'
+        : 'bg-(--red)'
 
   const label =
     connected === undefined
-      ? 'Unknown'
+      ? 'unknown'
       : connected
-        ? latencyMs
-          ? `${latencyMs}ms`
-          : 'Online'
-        : 'Offline'
+        ? latencyMs ? `${latencyMs}ms` : 'online'
+        : 'offline'
 
   return (
     <span
       title={error || label}
-      className="inline-flex items-center gap-2 rounded-full border border-[var(--border)] bg-[var(--surface-2)] px-2.5 py-1 text-xs text-[var(--text-muted)]"
+      className="inline-flex items-center gap-1.5 border border-(--border) px-2 py-1 text-[10px] uppercase tracking-[0.14em] text-(--text-muted)"
     >
-      <span className={cn('h-2 w-2 rounded-full', tone)} />
-      <span>{label}</span>
+      <span className={cn('h-1.5 w-1.5 shrink-0', dot)} />
+      {label}
     </span>
   )
 }

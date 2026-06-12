@@ -3,7 +3,7 @@
 import { useState } from 'react'
 import Link from 'next/link'
 import type { Server, ServerResourceStatus } from '@launchpad/shared'
-import { Activity, ArrowRight, Cpu, Eye, EyeOff, FolderGit2, HardDrive, PlugZap, TimerReset } from 'lucide-react'
+import { ArrowRight, Eye, EyeOff } from 'lucide-react'
 import { Button } from '@/components/ui/Button'
 import { SensitiveText } from '@/components/ui/SensitiveText'
 import { formatBytes, formatPercent, formatUptime } from '@/lib/format'
@@ -19,119 +19,79 @@ interface ServerCardProps {
 
 export function ServerCard({ server, status, resources, onTest, testing }: ServerCardProps) {
   const [showSshKey, setShowSshKey] = useState(false)
+  const loadAvg = Array.isArray(resources?.loadAverage) ? resources.loadAverage : null
 
   return (
-    <article className="rounded-[22px] border border-[var(--border)] bg-[linear-gradient(180deg,rgba(16,25,24,0.96),rgba(23,35,34,0.92))] p-5 shadow-[var(--shadow)]">
+    <article className="border border-(--border) bg-(--surface) p-5">
+      {/* Header */}
       <div className="flex items-start justify-between gap-4">
         <div>
-          <h2 className="text-lg font-semibold text-[var(--text)]">{server.name}</h2>
-          <p className="mt-1 text-sm text-[var(--text-muted)]">
+          <h2 className="text-sm font-semibold text-(--text)">{server.name}</h2>
+          <p className="mt-0.5 text-xs text-(--text-muted)">
             <SensitiveText value={`${server.user}@${server.host}:${server.port}`} />
           </p>
         </div>
         <ConnectionBadge {...status} />
       </div>
 
-      <div className="mt-5 grid gap-3 md:grid-cols-2 xl:grid-cols-3">
-        <div className="rounded-[18px] border border-[var(--border)] bg-[var(--surface-2)] px-3 py-3">
-          <div className="flex items-center gap-2 text-xs uppercase tracking-[0.18em] text-[var(--text-muted)]">
-            <FolderGit2 size={13} />
-            Projects
-          </div>
-          <div className="mt-2 text-sm text-[var(--text)]">
-            {server.projectCount ?? 0} project{server.projectCount === 1 ? '' : 's'}
-          </div>
-        </div>
+      {/* Metrics */}
+      <div className="mt-4 grid grid-cols-2 md:grid-cols-4 border border-(--border) divide-x divide-(--border)">
+        <Metric label="CPU" value={resources ? formatPercent(resources.cpuUsagePercent, 1) : '—'} />
+        <Metric label="RAM" value={resources ? `${formatBytes(resources.memoryUsedBytes)} / ${formatBytes(resources.memoryTotalBytes)}` : '—'} />
+        <Metric label="Disk" value={resources ? `${formatBytes(resources.diskUsedBytes)} / ${formatBytes(resources.diskTotalBytes)}` : '—'} />
+        <Metric label="Uptime" value={resources ? formatUptime(resources.uptimeSeconds) : '—'} />
+      </div>
 
-        <div className="rounded-[18px] border border-[var(--border)] bg-[var(--surface-2)] px-3 py-3">
-          <div className="flex items-center justify-between gap-3">
-            <div className="flex items-center gap-2 text-xs uppercase tracking-[0.18em] text-[var(--text-muted)]">
-              <PlugZap size={13} />
-              SSH Key
-            </div>
-            <button
-              type="button"
-              onClick={() => setShowSshKey((current) => !current)}
-              className="inline-flex items-center gap-1 text-[10px] uppercase tracking-[0.18em] text-[var(--text-muted)] transition-colors hover:text-[var(--text)]"
-            >
-              {showSshKey ? <EyeOff size={12} /> : <Eye size={12} />}
-              {showSshKey ? 'Hide' : 'Show'}
-            </button>
-          </div>
-          <div className="mt-2 break-all text-sm text-[var(--text)]">
-            {showSshKey ? <SensitiveText value={server.sshKeyPath} /> : '*****'}
-          </div>
-        </div>
-
-        <div className="rounded-[18px] border border-[var(--border)] bg-[var(--surface-2)] px-3 py-3">
-          <div className="flex items-center gap-2 text-xs uppercase tracking-[0.18em] text-[var(--text-muted)]">
-            <Cpu size={13} />
-            CPU
-          </div>
-          <div className="mt-2 text-sm text-[var(--text)]">
-            {resources ? formatPercent(resources.cpuUsagePercent, 1) : 'n/a'}
-          </div>
-        </div>
-
-        <div className="rounded-[18px] border border-[var(--border)] bg-[var(--surface-2)] px-3 py-3">
-          <div className="flex items-center gap-2 text-xs uppercase tracking-[0.18em] text-[var(--text-muted)]">
-            <Activity size={13} />
-            RAM
-          </div>
-          <div className="mt-2 text-sm text-[var(--text)]">
-            {resources ? `${formatBytes(resources.memoryUsedBytes)} / ${formatBytes(resources.memoryTotalBytes)}` : 'n/a'}
-          </div>
-        </div>
-
-        <div className="rounded-[18px] border border-[var(--border)] bg-[var(--surface-2)] px-3 py-3">
-          <div className="flex items-center gap-2 text-xs uppercase tracking-[0.18em] text-[var(--text-muted)]">
-            <HardDrive size={13} />
-            Disk
-          </div>
-          <div className="mt-2 text-sm text-[var(--text)]">
-            {resources ? `${formatBytes(resources.diskUsedBytes)} / ${formatBytes(resources.diskTotalBytes)}` : 'n/a'}
-          </div>
-        </div>
-
-        <div className="rounded-[18px] border border-[var(--border)] bg-[var(--surface-2)] px-3 py-3">
-          <div className="flex items-center gap-2 text-xs uppercase tracking-[0.18em] text-[var(--text-muted)]">
-            <TimerReset size={13} />
-            Uptime
-          </div>
-          <div className="mt-2 text-sm text-[var(--text)]">
-            {resources ? formatUptime(resources.uptimeSeconds) : 'n/a'}
-          </div>
-        </div>
-
-        <div className="border border-[var(--border)] bg-[var(--surface-2)] px-3 py-3">
-          <div className="text-xs uppercase tracking-[0.18em] text-[var(--text-muted)]">Load Avg</div>
-          <div className="mt-2 text-sm text-[var(--text)]">
-            {resources ? resources.loadAverage.map((value) => value.toFixed(2)).join(' / ') : 'n/a'}
-          </div>
-        </div>
-
-        <div className="border border-[var(--border)] bg-[var(--surface-2)] px-3 py-3">
-          <div className="text-xs uppercase tracking-[0.18em] text-[var(--text-muted)]">Inodes + Containers</div>
-          <div className="mt-2 text-sm text-[var(--text)]">
-            {resources
-              ? `${formatPercent(resources.diskInodesUsedPercent)} inode use, ${resources.runningContainers} up`
-              : 'n/a'}
-          </div>
+      {/* Secondary metrics */}
+      <div className="mt-px grid grid-cols-2 md:grid-cols-3 border border-(--border) border-t-0 divide-x divide-(--border)">
+        <Metric label="Load avg" value={loadAvg ? loadAvg.map((v) => v.toFixed(2)).join(' / ') : '—'} />
+        <Metric label="Inodes" value={resources ? formatPercent(resources.diskInodesUsedPercent) : '—'} />
+        <div className="col-span-2 md:col-span-1 px-4 py-3">
+          <div className="text-[10px] uppercase tracking-[0.16em] text-(--text-muted) mb-1">Projects</div>
+          <div className="text-sm text-(--text)">{server.projectCount ?? 0}</div>
         </div>
       </div>
 
-      <div className="mt-5 flex flex-wrap gap-3">
+      {/* SSH key row */}
+      <div className="mt-px border border-(--border) border-t-0 px-4 py-3 flex items-center justify-between gap-4">
+        <div>
+          <div className="text-[10px] uppercase tracking-[0.16em] text-(--text-muted) mb-0.5">SSH key path</div>
+          <div className="text-xs text-(--text) font-mono break-all">
+            {showSshKey ? <SensitiveText value={server.sshKeyPath} /> : '•••••••••••••'}
+          </div>
+        </div>
+        <button
+          type="button"
+          onClick={() => setShowSshKey((v) => !v)}
+          className="flex items-center gap-1 text-[10px] text-(--text-muted) hover:text-(--text) transition-colors shrink-0"
+        >
+          {showSshKey ? <EyeOff size={11} /> : <Eye size={11} />}
+          {showSshKey ? 'Hide' : 'Show'}
+        </button>
+      </div>
+
+      {/* Actions */}
+      <div className="mt-4 flex items-center gap-2">
         <Button size="sm" variant="ghost" onClick={onTest} loading={testing}>
           Test SSH
         </Button>
         <Link
           href={`/servers/${server.id}`}
-          className="inline-flex h-8 items-center gap-2 rounded-[14px] border border-[var(--border)] px-3 text-xs font-medium text-[var(--text)] transition-colors hover:bg-[var(--surface-2)]"
+          className="inline-flex h-7 items-center gap-1.5 border border-(--border) px-3 text-xs text-(--text-muted) hover:text-(--text) hover:border-(--border-strong) transition-colors"
         >
           Open
-          <ArrowRight size={14} />
+          <ArrowRight size={12} />
         </Link>
       </div>
     </article>
+  )
+}
+
+function Metric({ label, value }: { label: string; value: string }) {
+  return (
+    <div className="px-4 py-3">
+      <div className="text-[10px] uppercase tracking-[0.16em] text-(--text-muted) mb-1">{label}</div>
+      <div className="text-sm text-(--text)">{value}</div>
+    </div>
   )
 }

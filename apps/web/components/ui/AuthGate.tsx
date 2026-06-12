@@ -14,14 +14,15 @@ export function AuthGate({ children }: { children: React.ReactNode }) {
     if (loading) return
 
     const isAuthRoute = pathname.startsWith('/login') || pathname.startsWith('/setup')
+    const isPublicRoute = pathname === '/'
 
     if (!isSetup) {
-      if (!isAuthRoute) router.replace('/setup')
+      if (!isAuthRoute && !isPublicRoute) router.replace('/setup')
       return
     }
 
     if (!authenticated) {
-      if (!isAuthRoute) router.replace('/login')
+      if (!isAuthRoute && !isPublicRoute) router.replace('/login')
       return
     }
 
@@ -33,8 +34,8 @@ export function AuthGate({ children }: { children: React.ReactNode }) {
 
   if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-[var(--bg)]">
-        <Loader2 size={20} className="animate-spin text-[var(--text-muted)]" />
+      <div className="min-h-screen flex items-center justify-center bg-(--bg)">
+        <Loader2 size={20} className="animate-spin text-(--text-muted)" />
       </div>
     )
   }

@@ -8,19 +8,19 @@ interface ProjectClassificationBadgeProps {
 }
 
 const runtimeLabel: Record<ProjectRuntime, string> = {
-  compose: 'Compose app',
-  image: 'Image app',
-  proxy: 'Proxy app',
-  custom: 'Custom app',
+  compose: 'Compose',
+  image: 'Image',
+  proxy: 'Proxy',
+  custom: 'Custom',
 }
 
 export function ProjectClassificationBadge({ source, runtime }: ProjectClassificationBadgeProps) {
   return (
-    <div className="flex flex-wrap gap-2">
-      <span className="rounded-full border border-[var(--border)] px-2 py-1 text-[10px] uppercase tracking-[0.18em] text-[var(--text-muted)]">
+    <div className="flex flex-wrap gap-1.5">
+      <span className="border border-(--border) px-2 py-0.5 text-[10px] uppercase tracking-[0.14em] text-(--text-muted)">
         {source}
       </span>
-      <span className="rounded-full border border-[var(--green)] bg-[var(--green-dim)] px-2 py-1 text-[10px] uppercase tracking-[0.18em] text-[var(--green)]">
+      <span className="border border-(--accent) px-2 py-0.5 text-[10px] uppercase tracking-[0.14em] text-(--accent)">
         {runtimeLabel[runtime]}
       </span>
     </div>

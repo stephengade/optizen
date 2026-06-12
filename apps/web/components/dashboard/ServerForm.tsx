@@ -93,10 +93,10 @@ export function ServerForm({
   }
 
   return (
-    <section className={inModal ? '' : 'border border-[var(--border)] bg-[var(--surface)] p-6'}>
+    <section className={inModal ? '' : 'border border-(--border) bg-(--surface) p-6'}>
       <div className="mb-6">
-        <h2 className="text-lg font-semibold text-[var(--text)]">{title}</h2>
-        <p className="mt-1 text-sm text-[var(--text-muted)]">{description}</p>
+        <h2 className="text-lg font-semibold text-(--text)">{title}</h2>
+        <p className="mt-1 text-sm text-(--text-muted)">{description}</p>
       </div>
 
       <form className="space-y-4" onSubmit={handleSubmit}>

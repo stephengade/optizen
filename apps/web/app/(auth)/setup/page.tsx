@@ -2,7 +2,7 @@
 
 import { useState, FormEvent } from 'react'
 import { useRouter } from 'next/navigation'
-import { Eye, EyeOff, ShieldCheck } from 'lucide-react'
+import { Eye, EyeOff } from 'lucide-react'
 import { useAuth } from '@/lib/auth-context'
 import { Button } from '@/components/ui/Button'
 import { Input } from '@/components/ui/Input'
@@ -18,7 +18,7 @@ function getStrength(password: string): { score: number; label: string; color: s
 
   if (score <= 1) return { score, label: 'Weak', color: 'var(--red)' }
   if (score <= 3) return { score, label: 'Fair', color: 'var(--yellow)' }
-  return { score, label: 'Strong', color: 'var(--green)' }
+  return { score, label: 'Strong', color: 'var(--accent)' }
 }
 
 export default function SetupPage() {
@@ -54,20 +54,13 @@ export default function SetupPage() {
   }
 
   return (
-    <div className="rounded-[24px] border border-[var(--border)] bg-[var(--surface)] p-6 shadow-[var(--shadow)]">
-      <div className="mb-5 flex items-start gap-3">
-        <div className="flex h-10 w-10 items-center justify-center rounded-[14px] bg-[var(--green-dim)] text-[var(--green)]">
-          <ShieldCheck size={18} />
-        </div>
-        <div>
-          <h1 className="text-xl font-semibold text-[var(--text)]">Create master password</h1>
-          <p className="mt-0.5 text-sm leading-6 text-[var(--text-muted)]">
-            This encrypts all your server credentials. It cannot be recovered if lost.
-          </p>
-        </div>
-      </div>
+    <div>
+      <h1 className="text-xl font-semibold text-(--text)">Create master password</h1>
+      <p className="mt-2 text-sm text-(--text-muted)">
+        This encrypts all your server credentials. It cannot be recovered if lost.
+      </p>
 
-      <form onSubmit={handleSubmit} className="flex flex-col gap-4">
+      <form onSubmit={handleSubmit} className="mt-8 flex flex-col gap-5">
         {/* Password field */}
         <div className="relative">
           <Input
@@ -82,7 +75,7 @@ export default function SetupPage() {
           <button
             type="button"
             onClick={() => setShowPassword(v => !v)}
-            className="absolute right-3 top-[2.1rem] rounded-[10px] p-1 text-[var(--text-muted)] transition-colors hover:text-[var(--text)]"
+            className="absolute right-3 top-[2rem] p-1 text-(--text-muted) transition-colors hover:text-(--text)"
             aria-label={showPassword ? 'Hide password' : 'Show password'}
           >
             {showPassword ? <EyeOff size={14} /> : <Eye size={14} />}
@@ -96,7 +89,7 @@ export default function SetupPage() {
               {[1, 2, 3, 4, 5].map(i => (
                 <div
                   key={i}
-                  className="h-1 flex-1 rounded-full transition-all"
+                  className="h-1 flex-1 transition-all"
                   style={{
                     background: i <= strength.score ? strength.color : 'var(--border)',
                   }}
@@ -129,7 +122,7 @@ export default function SetupPage() {
           ].map(req => (
             <li key={req.label} className={cn(
               'flex items-center gap-2 text-xs transition-colors',
-              req.met ? 'text-[var(--green)]' : 'text-[var(--text-muted)]'
+              req.met ? 'text-(--accent)' : 'text-(--text-muted)'
             )}>
               <span>{req.met ? '✓' : '○'}</span>
               {req.label}
@@ -141,13 +134,13 @@ export default function SetupPage() {
           type="submit"
           loading={loading}
           disabled={password.length < 12 || mismatch || password !== confirm}
-          className="mt-1"
+          className="w-full mt-1"
         >
-          Set up Launchpad
+          Set up Optizen
         </Button>
 
-        <p className="text-xs leading-5 text-[var(--text-muted)]">
-          Recommended: use a password manager and store this alongside the machine that hosts Launchpad.
+        <p className="text-xs text-(--text-muted)">
+          Use a password manager. Store it alongside the machine that hosts Optizen.
         </p>
       </form>
     </div>

@@ -83,7 +83,7 @@ export default function ProjectDetailPage() {
     : ''
   const workflowSnippet = webhookUrl
     ? [
-        '- name: Deploy via Launchpad',
+        '- name: Deploy via Optizen',
         '  run: |',
         `    curl -X POST "${webhookUrl}" \\`,
         '      -H "Content-Type: application/json" \\',
@@ -483,7 +483,7 @@ export default function ProjectDetailPage() {
 
   if (loading) {
     return (
-      <div className="px-6 py-8 text-sm text-[var(--text-muted)] lg:px-8">
+      <div className="px-6 py-8 text-sm text-(--text-muted) lg:px-8">
         Loading project...
       </div>
     )
@@ -494,11 +494,11 @@ export default function ProjectDetailPage() {
   return (
     <div className="mx-auto flex w-full max-w-5xl flex-col gap-8 px-6 py-8 lg:px-8">
       <section>
-        <Link href={`/servers/${params.id}`} className="text-xs uppercase tracking-[0.24em] text-[var(--text-muted)]">
+        <Link href={`/servers/${params.id}`} className="text-xs uppercase tracking-[0.24em] text-(--text-muted)">
           Back to server
         </Link>
-        <h1 className="mt-2 text-3xl font-semibold text-[var(--text)]">{project.name}</h1>
-        <p className="mt-2 text-sm text-[var(--text-muted)]">
+        <h1 className="mt-2 text-3xl font-semibold text-(--text)">{project.name}</h1>
+        <p className="mt-2 text-sm text-(--text-muted)">
           <SensitiveText value={project.repoImage} />
         </p>
         <div className="mt-3 flex flex-wrap gap-2">
@@ -508,7 +508,7 @@ export default function ProjectDetailPage() {
         <div className="mt-4 flex flex-wrap gap-3">
           <Link
             href={`/servers/${params.id}/projects/${params.pid}/env`}
-            className="inline-flex h-9 items-center rounded border border-[var(--border)] px-3 text-sm text-[var(--text)] transition-colors hover:bg-[var(--surface-2)]"
+            className="inline-flex h-9 items-center rounded border border-(--border) px-3 text-sm text-(--text) transition-colors hover:bg-(--surface-2)"
           >
             Open env editor
           </Link>
@@ -519,28 +519,28 @@ export default function ProjectDetailPage() {
       </section>
 
       <section className="grid gap-4 md:grid-cols-3">
-        <div className="rounded-2xl border border-[var(--border)] bg-[var(--surface)] p-5">
-          <div className="text-xs uppercase tracking-[0.18em] text-[var(--text-muted)]">Health</div>
-          <div className="mt-2 text-lg font-semibold text-[var(--text)]">{project.healthStatus?.status ?? 'unknown'}</div>
-          <div className="mt-1 text-sm text-[var(--text-muted)]">
+        <div className="rounded-2xl border border-(--border) bg-(--surface) p-5">
+          <div className="text-xs uppercase tracking-[0.18em] text-(--text-muted)">Health</div>
+          <div className="mt-2 text-lg font-semibold text-(--text)">{project.healthStatus?.status ?? 'unknown'}</div>
+          <div className="mt-1 text-sm text-(--text-muted)">
             {project.healthStatus?.message ?? 'Configure a path or port to start heartbeat tracking.'}
           </div>
         </div>
-        <div className="rounded-2xl border border-[var(--border)] bg-[var(--surface)] p-5">
-          <div className="text-xs uppercase tracking-[0.18em] text-[var(--text-muted)]">Last successful heartbeat</div>
-          <div className="mt-2 text-lg font-semibold text-[var(--text)]">
+        <div className="rounded-2xl border border-(--border) bg-(--surface) p-5">
+          <div className="text-xs uppercase tracking-[0.18em] text-(--text-muted)">Last successful heartbeat</div>
+          <div className="mt-2 text-lg font-semibold text-(--text)">
             {project.healthStatus?.lastSuccessfulAt ? formatRelative(project.healthStatus.lastSuccessfulAt) : 'Never'}
           </div>
-          <div className="mt-1 text-sm text-[var(--text-muted)]">
+          <div className="mt-1 text-sm text-(--text-muted)">
             {project.healthStatus?.lastSuccessfulAt ? formatDateTime(project.healthStatus.lastSuccessfulAt) : 'Run a health check after configuring it.'}
           </div>
         </div>
-        <div className="rounded-2xl border border-[var(--border)] bg-[var(--surface)] p-5">
-          <div className="text-xs uppercase tracking-[0.18em] text-[var(--text-muted)]">Health target</div>
-          <div className="mt-2 text-lg font-semibold text-[var(--text)]">
+        <div className="rounded-2xl border border-(--border) bg-(--surface) p-5">
+          <div className="text-xs uppercase tracking-[0.18em] text-(--text-muted)">Health target</div>
+          <div className="mt-2 text-lg font-semibold text-(--text)">
             {project.healthCheck?.path || (project.healthCheck?.port ? `:${project.healthCheck.port}` : 'Not set')}
           </div>
-          <div className="mt-1 text-sm text-[var(--text-muted)]">
+          <div className="mt-1 text-sm text-(--text-muted)">
             {project.healthCheck?.path ? 'HTTP endpoint on 127.0.0.1' : project.healthCheck?.port ? 'TCP port check on 127.0.0.1' : 'Add one in project settings.'}
           </div>
         </div>
@@ -548,12 +548,11 @@ export default function ProjectDetailPage() {
 
       <FileSuggestions suggestions={fileSuggestions} />
 
-      <section className="rounded-2xl border border-[var(--border)] bg-[var(--surface)] p-6">
+      <section className="rounded-2xl border border-(--border) bg-(--surface) p-6">
         <div className="flex flex-wrap items-start justify-between gap-4">
           <div>
-            <p className="text-xs uppercase tracking-[0.24em] text-[var(--green)]">Phase 4</p>
-            <h2 className="mt-2 text-lg font-semibold text-[var(--text)]">Deploy engine</h2>
-            <p className="mt-1 text-sm text-[var(--text-muted)]">
+                        <h2 className="mt-2 text-lg font-semibold text-(--text)">Deploy engine</h2>
+            <p className="mt-1 text-sm text-(--text-muted)">
               Trigger commands over SSH and watch output stream into the dashboard in real time.
             </p>
           </div>
@@ -562,22 +561,22 @@ export default function ProjectDetailPage() {
 
         <div className="mt-5 flex flex-wrap items-end gap-3">
           <label className="flex min-w-64 flex-col gap-1.5">
-            <span className="text-xs font-medium uppercase tracking-wider text-[var(--text-muted)]">
+            <span className="text-xs font-medium uppercase tracking-wider text-(--text-muted)">
               Image tag
             </span>
             <input
               value={imageTag}
               onChange={(event) => setImageTag(event.target.value)}
               placeholder="latest or git sha"
-              className="h-10 rounded border border-[var(--border)] bg-[var(--surface-2)] px-3 text-sm text-[var(--text)] outline-none focus:border-[var(--green)]"
+              className="h-10 rounded border border-(--border) bg-(--surface-2) px-3 text-sm text-(--text) outline-none focus:border-(--border-strong)"
             />
           </label>
           <DeployButton status={deploying ? 'deploying' : status} onDeploy={() => setDeployConfirmOpen(true)} />
         </div>
 
-        <div className="mt-4 rounded-xl border border-[var(--border)] bg-[var(--surface-2)] px-4 py-3 text-sm text-[var(--text-muted)]">
-          Launchpad will run these commands in {project.workingDir || 'the remote default directory'}:
-          <pre data-sensitive="true" className="mt-2 whitespace-pre-wrap font-mono text-xs text-[var(--text)]">
+        <div className="mt-4 rounded-xl border border-(--border) bg-(--surface-2) px-4 py-3 text-sm text-(--text-muted)">
+          Optizen will run these commands in {project.workingDir || 'the remote default directory'}:
+          <pre data-sensitive="true" className="mt-2 whitespace-pre-wrap font-mono text-xs text-(--text)">
             {project.deployCommands.join('\n')}
           </pre>
         </div>
@@ -619,7 +618,7 @@ export default function ProjectDetailPage() {
 
       <section className="grid gap-6 xl:grid-cols-[1.1fr_0.9fr]">
         <div>
-          <h2 className="mb-3 text-lg font-semibold text-[var(--text)]">Deploy history</h2>
+          <h2 className="mb-3 text-lg font-semibold text-(--text)">Deploy history</h2>
           <DeployHistory
             records={history}
             selectedId={selectedDeploy?.id}
@@ -627,52 +626,51 @@ export default function ProjectDetailPage() {
           />
         </div>
 
-        <div className="rounded-2xl border border-[var(--border)] bg-[var(--surface)] p-6">
-          <h2 className="text-lg font-semibold text-[var(--text)]">Selected deploy</h2>
+        <div className="rounded-2xl border border-(--border) bg-(--surface) p-6">
+          <h2 className="text-lg font-semibold text-(--text)">Selected deploy</h2>
           {selectedDeploy ? (
             <div className="mt-4 space-y-4">
               <div className="flex flex-wrap items-center gap-3">
                 <DeployStatusBadge status={selectedDeploy.status} />
-                <span className="text-sm text-[var(--text-muted)]">{selectedDeploy.trigger}</span>
-                <span className="text-sm text-[var(--text-muted)]">
+                <span className="text-sm text-(--text-muted)">{selectedDeploy.trigger}</span>
+                <span className="text-sm text-(--text-muted)">
                   {selectedDeploy.durationMs ? formatDuration(selectedDeploy.durationMs) : 'Pending'}
                 </span>
               </div>
               {selectedDeploy.imageTag ? (
-                <div className="text-sm text-[var(--text-muted)]">Image tag: {selectedDeploy.imageTag}</div>
+                <div className="text-sm text-(--text-muted)">Image tag: {selectedDeploy.imageTag}</div>
               ) : null}
               {selectedDeploy.error ? (
-                <div className="rounded-lg border border-[var(--red)] bg-[var(--red-dim)] px-3 py-2 text-sm text-[var(--red)]">
+                <div className="rounded-lg border border-(--red) bg-(--red-dim) px-3 py-2 text-sm text-(--red)">
                   {selectedDeploy.error}
                 </div>
               ) : null}
-              <div className="rounded-xl border border-[var(--border)] bg-[#0b0b0d] px-4 py-3 font-mono text-xs text-[var(--text)]">
+              <div className="rounded-xl border border-(--border) bg-[#0b0b0d] px-4 py-3 font-mono text-xs text-(--text)">
                 <div className="space-y-2">
                   {selectedDeploy.logSnapshot.length > 0 ? (
                     selectedDeploy.logSnapshot.map((line, index) => <div key={`${selectedDeploy.id}-${index}`}>{line}</div>)
                   ) : (
-                    <div className="text-[var(--text-muted)]">No log snapshot captured.</div>
+                    <div className="text-(--text-muted)">No log snapshot captured.</div>
                   )}
                 </div>
               </div>
             </div>
           ) : (
-            <p className="mt-4 text-sm text-[var(--text-muted)]">Select a deploy to inspect its log snapshot.</p>
+            <p className="mt-4 text-sm text-(--text-muted)">Select a deploy to inspect its log snapshot.</p>
           )}
         </div>
       </section>
 
       <section>
-        <h2 className="mb-3 text-lg font-semibold text-[var(--text)]">Activity timeline</h2>
+        <h2 className="mb-3 text-lg font-semibold text-(--text)">Activity timeline</h2>
         <ActivityTimeline events={activity} emptyLabel="No project activity yet. Deploys, imports, env edits, proxy edits, and health checks will appear here." />
       </section>
 
-      <div className="rounded-2xl border border-[var(--border)] bg-[var(--surface)] p-6">
+      <div className="rounded-2xl border border-(--border) bg-(--surface) p-6">
         <div className="flex flex-wrap items-center justify-between gap-4">
           <div>
-            <p className="text-xs uppercase tracking-[0.24em] text-[var(--green)]">Phase 5</p>
-            <h2 className="mt-2 text-lg font-semibold text-[var(--text)]">Inbound webhook</h2>
-            <p className="mt-1 text-sm text-[var(--text-muted)]">
+                        <h2 className="mt-2 text-lg font-semibold text-(--text)">Inbound webhook</h2>
+            <p className="mt-1 text-sm text-(--text-muted)">
               Use this endpoint from GitHub Actions or another CI system to trigger deploys after a build succeeds.
             </p>
           </div>
@@ -685,17 +683,17 @@ export default function ProjectDetailPage() {
         </div>
 
         <div className="mt-5 grid gap-4">
-          <div className="rounded-lg border border-[var(--border)] bg-[var(--surface-2)] px-4 py-3">
+          <div className="rounded-lg border border-(--border) bg-(--surface-2) px-4 py-3">
             <div className="flex flex-wrap items-center justify-between gap-3">
               <div>
-                <h3 className="text-sm font-medium text-[var(--text)]">Webhook status</h3>
-                <p className="mt-1 text-xs text-[var(--text-muted)]">
+                <h3 className="text-sm font-medium text-(--text)">Webhook status</h3>
+                <p className="mt-1 text-xs text-(--text-muted)">
                   {project.webhookEnabled
                     ? 'Public endpoint is active and secret-gated.'
                     : 'Webhook is disabled. Requests will return 404 until you enable it in project settings.'}
                 </p>
               </div>
-              <span className="text-xs uppercase tracking-[0.18em] text-[var(--text-muted)]">
+              <span className="text-xs uppercase tracking-[0.18em] text-(--text-muted)">
                 {project.webhookEnabled ? 'Enabled' : 'Disabled'}
               </span>
             </div>

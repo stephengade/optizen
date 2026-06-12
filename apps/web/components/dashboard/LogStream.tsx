@@ -24,7 +24,7 @@ export function LogStream({ lines }: LogStreamProps) {
   return (
     <div
       ref={containerRef}
-      className="h-96 overflow-auto rounded-xl border border-[var(--border)] bg-[#0b0b0d] px-4 py-3 font-mono text-xs"
+      className="h-96 overflow-auto  border border-(--border) bg-[#0b0b0d] px-4 py-3 font-mono text-xs"
     >
       {lines.length > 0 ? (
         <div className="space-y-2">
@@ -33,14 +33,14 @@ export function LogStream({ lines }: LogStreamProps) {
             const isCommand = line.text.startsWith('$ ')
             return (
               <div key={line.id} className="grid grid-cols-[72px_1fr] gap-3">
-                <span className="text-[var(--text-muted)]">{line.timestamp}</span>
+                <span className="text-(--text-muted)">{line.timestamp}</span>
                 <span
                   className={
                     isStdErr
-                      ? 'text-[var(--yellow)]'
+                      ? 'text-(--yellow)'
                       : isCommand
-                        ? 'text-[var(--green)]'
-                        : 'text-[var(--text)]'
+                        ? 'text-(--accent)'
+                        : 'text-(--text)'
                   }
                 >
                   {line.text}
@@ -50,7 +50,7 @@ export function LogStream({ lines }: LogStreamProps) {
           })}
         </div>
       ) : (
-        <p className="text-[var(--text-muted)]">No live logs yet. Trigger a deploy to start streaming output.</p>
+        <p className="text-(--text-muted)">No live logs yet. Trigger a deploy to start streaming output.</p>
       )}
     </div>
   )

@@ -1,9 +1,7 @@
 'use client'
 
 import { useEffect, useState } from 'react'
-import Link from 'next/link'
 import type { ActivityEvent, AuthSecuritySettings, GlobalWebhook, NotificationEvent, SmtpConfig } from '@launchpad/shared'
-import { ArrowRight, BookOpen } from 'lucide-react'
 import { toast } from 'sonner'
 import { ActivityTimeline } from '@/components/dashboard/ActivityTimeline'
 import { Button } from '@/components/ui/Button'
@@ -18,26 +16,27 @@ interface NotificationSettingsResponse {
 }
 
 function createEmptySmtp(): SmtpConfig {
-  return {
-    host: '',
-    port: 587,
-    secure: false,
-    user: '',
-    password: '',
-    from: '',
-    to: [],
-  }
+  return { host: '', port: 587, secure: false, user: '', password: '', from: '', to: [] }
 }
 
 function createWebhook(): GlobalWebhook {
   return {
     id: `local-${Date.now()}-${Math.random()}`,
-    name: '',
-    url: '',
-    secret: '',
-    enabled: true,
+    name: '', url: '', secret: '', enabled: true,
     events: ['deploy.success', 'deploy.failed'],
   }
+}
+
+function Section({ title, description, children }: { title: string; description?: string; children: React.ReactNode }) {
+  return (
+    <section className="border border-(--border) bg-(--surface)">
+      <div className="px-5 py-4 border-b border-(--border)">
+        <h2 className="text-sm font-semibold text-(--text)">{title}</h2>
+        {description && <p className="mt-0.5 text-xs text-(--text-muted)">{description}</p>}
+      </div>
+      <div className="p-5">{children}</div>
+    </section>
+  )
 }
 
 export default function SettingsPage() {
@@ -76,17 +75,14 @@ export default function SettingsPage() {
       setWebhooks(data.globalWebhooks)
       setSecurity(securityData)
       setAudit(auditData)
-    } catch (error) {
-      const message = error instanceof ApiError ? error.message : 'Failed to load settings'
-      toast.error(message)
+    } catch (err) {
+      toast.error(err instanceof ApiError ? err.message : 'Failed to load settings')
     } finally {
       setLoading(false)
     }
   }
 
-  useEffect(() => {
-    void loadSettings()
-  }, [])
+  useEffect(() => { void loadSettings() }, [])
 
   async function handleSave() {
     setSaving(true)
@@ -94,25 +90,21 @@ export default function SettingsPage() {
       await Promise.all([
         api.put('/notifications/settings', {
           email: smtpEnabled
-            ? {
-                ...smtp,
-                to: toValue.split(',').map((value) => value.trim()).filter(Boolean),
-              }
+            ? { ...smtp, to: toValue.split(',').map((v) => v.trim()).filter(Boolean) }
             : null,
           globalWebhooks: webhooks,
         }),
         api.put('/auth/settings', security),
       ])
-      toast.success('Notification settings saved')
+      toast.success('Settings saved')
       void loadSettings()
-    } catch (error) {
-      if (isReauthRequiredError(error)) {
+    } catch (err) {
+      if (isReauthRequiredError(err)) {
         setReauthOpen(true)
         toast.error('Verify your session to update security settings.')
         return
       }
-      const message = error instanceof ApiError ? error.message : 'Failed to save settings'
-      toast.error(message)
+      toast.error(err instanceof ApiError ? err.message : 'Failed to save settings')
     } finally {
       setSaving(false)
     }
@@ -122,308 +114,236 @@ export default function SettingsPage() {
     setTesting(true)
     try {
       await api.post('/notifications/test-email', {
-        smtp: {
-          ...smtp,
-          to: toValue.split(',').map((value) => value.trim()).filter(Boolean),
-        },
+        smtp: { ...smtp, to: toValue.split(',').map((v) => v.trim()).filter(Boolean) },
       })
       toast.success('Test email sent')
-    } catch (error) {
-      const message = error instanceof ApiError ? error.message : 'Failed to send test email'
-      toast.error(message)
+    } catch (err) {
+      toast.error(err instanceof ApiError ? err.message : 'Failed to send test email')
     } finally {
       setTesting(false)
     }
   }
 
   function toggleEvent(index: number, event: NotificationEvent) {
-    setWebhooks((current) =>
-      current.map((webhook, currentIndex) => {
-        if (currentIndex !== index) return webhook
-        const exists = webhook.events.includes(event)
-        return {
-          ...webhook,
-          events: exists ? webhook.events.filter((item) => item !== event) : [...webhook.events, event],
-        }
+    setWebhooks((cur) =>
+      cur.map((wh, i) => {
+        if (i !== index) return wh
+        const exists = wh.events.includes(event)
+        return { ...wh, events: exists ? wh.events.filter((e) => e !== event) : [...wh.events, event] }
       })
     )
   }
 
   if (loading) {
     return (
-      <div className="mx-auto flex w-full max-w-6xl flex-col gap-4 px-6 py-8 lg:px-8">
-        <div className="rounded-2xl border border-[var(--border)] bg-[var(--surface)] p-6 text-sm text-[var(--text-muted)]">
-          Loading settings...
+      <div className="max-w-3xl mx-auto px-6 py-8">
+        <div className="border border-(--border) bg-(--surface) px-5 py-6 text-sm text-(--text-muted)">
+          Loading...
         </div>
       </div>
     )
   }
 
   return (
-    <div className="mx-auto flex w-full max-w-6xl flex-col gap-8 px-6 py-8 lg:px-8">
-      <section>
-        <p className="text-xs uppercase tracking-[0.24em] text-[var(--green)]">Phase 9</p>
-        <h1 className="mt-2 text-3xl font-semibold text-[var(--text)]">Settings</h1>
-        <p className="mt-2 text-sm text-[var(--text-muted)]">
-          Configure SMTP delivery and global outbound webhooks for deploy notifications.
-        </p>
-      </section>
+    <div className="max-w-3xl mx-auto px-6 py-8">
+      <div className="mb-8">
+        <h1 className="text-xl font-semibold text-(--text)">Settings</h1>
+        <p className="mt-1 text-sm text-(--text-muted)">Session security, notifications, and display preferences.</p>
+      </div>
 
-      <section className="rounded-[22px] border border-[var(--border)] bg-[var(--surface)] p-6">
-        <div className="flex flex-wrap items-center justify-between gap-4">
-          <div>
-            <div className="flex items-center gap-3 text-[var(--text)]">
-              <BookOpen size={18} className="text-[var(--yellow)]" />
-              <h2 className="text-lg font-semibold">Need setup guidance?</h2>
+      <div className="space-y-px">
+        {/* Display */}
+        <Section title="Display" description="Control what is visible in the UI.">
+          <div className="space-y-4">
+            <label className="flex items-center justify-between gap-4 cursor-pointer">
+              <div>
+                <div className="text-sm text-(--text)">Demo privacy</div>
+                <div className="text-xs text-(--text-muted) mt-0.5">Mask sensitive values — useful when screen-sharing.</div>
+              </div>
+              <input
+                type="checkbox"
+                checked={demoPrivacy}
+                onChange={(e) => setDemoPrivacy(e.target.checked)}
+                className="h-4 w-4 accent-(--accent)"
+              />
+            </label>
+            <div className="border-t border-(--border) pt-4">
+              <label className="flex items-center justify-between gap-4 cursor-pointer">
+                <div>
+                  <div className="text-sm text-(--text)">Seeded demo mode</div>
+                  <div className="text-xs text-(--text-muted) mt-0.5">Show sample servers and data instead of live infrastructure.</div>
+                </div>
+                <input
+                  type="checkbox"
+                  checked={demoMode}
+                  onChange={(e) => setDemoMode(e.target.checked)}
+                  className="h-4 w-4 accent-(--accent)"
+                />
+              </label>
             </div>
-            <p className="mt-2 text-sm text-[var(--text-muted)]">
-              The help page explains Launchpad&apos;s trust model, project types, first-server checklist, and recommended operator workflow.
-            </p>
           </div>
-          <Link
-            href="/help"
-            className="inline-flex items-center gap-2 rounded-[16px] border border-[var(--border)] px-4 py-2 text-sm text-[var(--text)] transition-colors hover:bg-[var(--surface-2)]"
-          >
-            Open help
-            <ArrowRight size={16} />
-          </Link>
-        </div>
-      </section>
+        </Section>
 
-      <section className="rounded-2xl border border-[var(--border)] bg-[var(--surface)] p-6">
-        <div className="flex flex-wrap items-center justify-between gap-4">
-          <div>
-            <h2 className="text-lg font-semibold text-[var(--text)]">Demo privacy</h2>
-            <p className="mt-1 text-sm text-[var(--text-muted)]">
-              Hide sensitive values across Launchpad when screen-sharing or recording demos.
-            </p>
+        {/* Session security */}
+        <Section title="Session security" description="Control session length and re-authentication requirements.">
+          <div className="space-y-5">
+            <div className="grid grid-cols-2 gap-4">
+              <Input
+                label="Session duration (hours)"
+                value={String(security.sessionDurationHours)}
+                onChange={(e) => setSecurity((c) => ({ ...c, sessionDurationHours: Number(e.target.value || 0) }))}
+                inputMode="numeric"
+              />
+              <Input
+                label="Re-auth window (minutes)"
+                value={String(security.reauthWindowMinutes)}
+                onChange={(e) => setSecurity((c) => ({ ...c, reauthWindowMinutes: Number(e.target.value || 0) }))}
+                inputMode="numeric"
+              />
+            </div>
+            <label className="flex items-start gap-3 cursor-pointer">
+              <input
+                type="checkbox"
+                checked={security.requireReauthForDangerousActions}
+                onChange={(e) => setSecurity((c) => ({ ...c, requireReauthForDangerousActions: e.target.checked }))}
+                className="mt-0.5 h-4 w-4 accent-(--accent)"
+              />
+              <div>
+                <div className="text-sm text-(--text)">Require re-auth for dangerous actions</div>
+                <div className="text-xs text-(--text-muted) mt-0.5">Deploys, rollbacks, deletes, env writes, and proxy reloads will require a fresh password check.</div>
+              </div>
+            </label>
+            <div className="flex gap-2">
+              <Button variant="ghost" size="sm" onClick={() => setReauthOpen(true)}>Verify session now</Button>
+            </div>
           </div>
-          <label className="flex items-center gap-3 text-sm text-[var(--text)]">
-            <input
-              type="checkbox"
-              checked={demoPrivacy}
-              onChange={(event) => setDemoPrivacy(event.target.checked)}
-              className="h-4 w-4 accent-[var(--green)]"
-            />
-            Hide sensitive data
-          </label>
-        </div>
-      </section>
+        </Section>
 
-      <section className="rounded-2xl border border-[var(--border)] bg-[var(--surface)] p-6">
-        <div className="flex flex-wrap items-start justify-between gap-4">
-          <div>
-            <h2 className="text-lg font-semibold text-[var(--text)]">Session security</h2>
-            <p className="mt-1 text-sm text-[var(--text-muted)]">
-              Control how long sessions last and whether dangerous actions require a fresh password check.
-            </p>
-          </div>
-          <Button variant="ghost" size="sm" onClick={() => setReauthOpen(true)}>
-            Verify session now
-          </Button>
-        </div>
+        {/* SMTP */}
+        <Section title="SMTP" description="Email notifications for deploy success and failure.">
+          <div className="space-y-5">
+            <label className="flex items-center gap-3 cursor-pointer">
+              <input
+                type="checkbox"
+                checked={smtpEnabled}
+                onChange={(e) => setSmtpEnabled(e.target.checked)}
+                className="h-4 w-4 accent-(--accent)"
+              />
+              <span className="text-sm text-(--text)">Enable SMTP</span>
+            </label>
 
-        <div className="mt-5 grid gap-4 md:grid-cols-2">
-          <Input
-            label="Session duration (hours)"
-            value={String(security.sessionDurationHours)}
-            onChange={(event) =>
-              setSecurity((current) => ({ ...current, sessionDurationHours: Number(event.target.value || 0) }))
-            }
-            inputMode="numeric"
-          />
-          <Input
-            label="Re-auth window (minutes)"
-            value={String(security.reauthWindowMinutes)}
-            onChange={(event) =>
-              setSecurity((current) => ({ ...current, reauthWindowMinutes: Number(event.target.value || 0) }))
-            }
-            inputMode="numeric"
-          />
-        </div>
-
-        <label className="mt-4 flex items-center gap-3 text-sm text-[var(--text)]">
-          <input
-            type="checkbox"
-            checked={security.requireReauthForDangerousActions}
-            onChange={(event) =>
-              setSecurity((current) => ({ ...current, requireReauthForDangerousActions: event.target.checked }))
-            }
-            className="h-4 w-4 accent-[var(--green)]"
-          />
-          Require re-authentication for deploys, deletes, proxy reloads, rollbacks, and other dangerous actions
-        </label>
-      </section>
-
-      <section className="rounded-2xl border border-[var(--border)] bg-[var(--surface)] p-6">
-        <div className="flex flex-wrap items-center justify-between gap-4">
-          <div>
-            <h2 className="text-lg font-semibold text-[var(--text)]">Seeded demo mode</h2>
-            <p className="mt-1 text-sm text-[var(--text-muted)]">
-              Swap the main dashboards to safe sample servers, projects, deploy history, activity, telemetry, and logs for screenshots or walkthroughs.
-            </p>
-          </div>
-          <label className="flex items-center gap-3 text-sm text-[var(--text)]">
-            <input
-              type="checkbox"
-              checked={demoMode}
-              onChange={(event) => setDemoMode(event.target.checked)}
-              className="h-4 w-4 accent-[var(--green)]"
-            />
-            Use seeded demo data
-          </label>
-        </div>
-      </section>
-
-      <section className="rounded-2xl border border-[var(--border)] bg-[var(--surface)] p-6">
-        <div className="flex flex-wrap items-center justify-between gap-4">
-          <div>
-            <h2 className="text-lg font-semibold text-[var(--text)]">SMTP</h2>
-            <p className="mt-1 text-sm text-[var(--text-muted)]">Used for deploy success and failure emails.</p>
-          </div>
-          <label className="flex items-center gap-3 text-sm text-[var(--text)]">
-            <input
-              type="checkbox"
-              checked={smtpEnabled}
-              onChange={(event) => setSmtpEnabled(event.target.checked)}
-              className="h-4 w-4 accent-[var(--green)]"
-            />
-            Enable SMTP
-          </label>
-        </div>
-
-        <div className="mt-5 grid gap-4 md:grid-cols-2">
-          <Input label="Host" sensitive value={smtp.host} onChange={(event) => setSmtp((c) => ({ ...c, host: event.target.value }))} />
-          <Input label="Port" value={String(smtp.port)} onChange={(event) => setSmtp((c) => ({ ...c, port: Number(event.target.value || 0) }))} />
-          <Input label="User" sensitive value={smtp.user} onChange={(event) => setSmtp((c) => ({ ...c, user: event.target.value }))} />
-          <Input label="Password" sensitive type="password" value={smtp.password} onChange={(event) => setSmtp((c) => ({ ...c, password: event.target.value }))} />
-          <Input label="From" sensitive value={smtp.from} onChange={(event) => setSmtp((c) => ({ ...c, from: event.target.value }))} />
-          <Input label="To" sensitive value={toValue} onChange={(event) => setToValue(event.target.value)} hint="Comma-separated recipient emails" />
-        </div>
-
-        <div className="mt-4">
-          <label className="flex items-center gap-3 text-sm text-[var(--text)]">
-            <input
-              type="checkbox"
-              checked={smtp.secure}
-              onChange={(event) => setSmtp((c) => ({ ...c, secure: event.target.checked }))}
-              className="h-4 w-4 accent-[var(--green)]"
-            />
-            Use secure transport
-          </label>
-        </div>
-
-        <div className="mt-5 flex flex-wrap gap-3">
-          <Button onClick={() => void handleSave()} loading={saving}>
-            Save settings
-          </Button>
-          <Button variant="ghost" onClick={() => void handleTestEmail()} loading={testing} disabled={!smtpEnabled}>
-            Send test email
-          </Button>
-        </div>
-      </section>
-
-      <section className="rounded-2xl border border-[var(--border)] bg-[var(--surface)] p-6">
-        <div className="flex flex-wrap items-center justify-between gap-4">
-          <div>
-            <h2 className="text-lg font-semibold text-[var(--text)]">Global webhooks</h2>
-            <p className="mt-1 text-sm text-[var(--text-muted)]">These fire for all deploys across all projects.</p>
-          </div>
-          <Button variant="ghost" onClick={() => setWebhooks((current) => [...current, createWebhook()])}>
-            Add webhook
-          </Button>
-        </div>
-
-        <div className="mt-5 space-y-4">
-          {webhooks.length > 0 ? (
-            webhooks.map((webhook, index) => (
-              <div key={webhook.id} className="rounded-xl border border-[var(--border)] bg-[var(--surface-2)] p-4">
-                <div className="grid gap-4 md:grid-cols-2">
-                  <Input
-                    label="Name"
-                    value={webhook.name}
-                    onChange={(event) =>
-                      setWebhooks((current) =>
-                        current.map((item, currentIndex) => currentIndex === index ? { ...item, name: event.target.value } : item)
-                      )
-                    }
-                  />
-                  <Input
-                    label="URL"
-                    sensitive
-                    value={webhook.url}
-                    onChange={(event) =>
-                      setWebhooks((current) =>
-                        current.map((item, currentIndex) => currentIndex === index ? { ...item, url: event.target.value } : item)
-                      )
-                    }
-                  />
-                  <Input
-                    label="Secret"
-                    sensitive
-                    type="password"
-                    value={webhook.secret ?? ''}
-                    onChange={(event) =>
-                      setWebhooks((current) =>
-                        current.map((item, currentIndex) => currentIndex === index ? { ...item, secret: event.target.value } : item)
-                      )
-                    }
-                  />
-                  <label className="flex items-center gap-3 rounded border border-[var(--border)] bg-[var(--surface)] px-3 py-2 text-sm text-[var(--text)]">
+            {smtpEnabled && (
+              <div className="grid grid-cols-2 gap-4">
+                <Input label="Host" sensitive value={smtp.host} onChange={(e) => setSmtp((c) => ({ ...c, host: e.target.value }))} />
+                <Input label="Port" value={String(smtp.port)} onChange={(e) => setSmtp((c) => ({ ...c, port: Number(e.target.value || 0) }))} />
+                <Input label="User" sensitive value={smtp.user} onChange={(e) => setSmtp((c) => ({ ...c, user: e.target.value }))} />
+                <Input label="Password" sensitive type="password" value={smtp.password} onChange={(e) => setSmtp((c) => ({ ...c, password: e.target.value }))} />
+                <Input label="From" sensitive value={smtp.from} onChange={(e) => setSmtp((c) => ({ ...c, from: e.target.value }))} />
+                <Input label="To" sensitive value={toValue} onChange={(e) => setToValue(e.target.value)} hint="Comma-separated" />
+                <div className="col-span-2">
+                  <label className="flex items-center gap-3 cursor-pointer">
                     <input
                       type="checkbox"
-                      checked={webhook.enabled}
-                      onChange={(event) =>
-                        setWebhooks((current) =>
-                          current.map((item, currentIndex) => currentIndex === index ? { ...item, enabled: event.target.checked } : item)
-                        )
-                      }
-                      className="h-4 w-4 accent-[var(--green)]"
+                      checked={smtp.secure}
+                      onChange={(e) => setSmtp((c) => ({ ...c, secure: e.target.checked }))}
+                      className="h-4 w-4 accent-(--accent)"
                     />
-                    Enabled
+                    <span className="text-sm text-(--text)">Use secure transport (TLS)</span>
                   </label>
                 </div>
+              </div>
+            )}
 
-                <div className="mt-4 flex flex-wrap gap-3">
-                  {(['deploy.success', 'deploy.failed'] as NotificationEvent[]).map((event) => (
-                    <label key={event} className="flex items-center gap-2 text-sm text-[var(--text)]">
+            <div className="flex gap-2">
+              <Button onClick={() => void handleSave()} loading={saving}>Save settings</Button>
+              {smtpEnabled && (
+                <Button variant="ghost" onClick={() => void handleTestEmail()} loading={testing}>
+                  Send test email
+                </Button>
+              )}
+            </div>
+          </div>
+        </Section>
+
+        {/* Webhooks */}
+        <Section title="Global webhooks" description="Fire on all deploys across all projects.">
+          <div className="space-y-4">
+            {webhooks.length > 0 ? (
+              webhooks.map((webhook, index) => (
+                <div key={webhook.id} className="border border-(--border) bg-(--surface-2) p-4 space-y-4">
+                  <div className="grid grid-cols-2 gap-4">
+                    <Input
+                      label="Name"
+                      value={webhook.name}
+                      onChange={(e) => setWebhooks((cur) => cur.map((w, i) => i === index ? { ...w, name: e.target.value } : w))}
+                    />
+                    <Input
+                      label="URL"
+                      sensitive
+                      value={webhook.url}
+                      onChange={(e) => setWebhooks((cur) => cur.map((w, i) => i === index ? { ...w, url: e.target.value } : w))}
+                    />
+                    <Input
+                      label="Secret"
+                      sensitive
+                      type="password"
+                      value={webhook.secret ?? ''}
+                      onChange={(e) => setWebhooks((cur) => cur.map((w, i) => i === index ? { ...w, secret: e.target.value } : w))}
+                    />
+                    <label className="flex items-center gap-3 cursor-pointer border border-(--border) bg-(--surface) px-3 py-2 text-sm text-(--text)">
                       <input
                         type="checkbox"
-                        checked={webhook.events.includes(event)}
-                        onChange={() => toggleEvent(index, event)}
-                        className="h-4 w-4 accent-[var(--green)]"
+                        checked={webhook.enabled}
+                        onChange={(e) => setWebhooks((cur) => cur.map((w, i) => i === index ? { ...w, enabled: e.target.checked } : w))}
+                        className="h-4 w-4 accent-(--accent)"
                       />
-                      {event}
+                      Enabled
                     </label>
-                  ))}
+                  </div>
+                  <div className="flex items-center gap-4">
+                    {(['deploy.success', 'deploy.failed'] as NotificationEvent[]).map((event) => (
+                      <label key={event} className="flex items-center gap-2 text-xs text-(--text-muted) cursor-pointer">
+                        <input
+                          type="checkbox"
+                          checked={webhook.events.includes(event)}
+                          onChange={() => toggleEvent(index, event)}
+                          className="h-3.5 w-3.5 accent-(--accent)"
+                        />
+                        {event}
+                      </label>
+                    ))}
+                    <Button
+                      variant="danger"
+                      size="sm"
+                      className="ml-auto"
+                      onClick={() => setWebhooks((cur) => cur.filter((_, i) => i !== index))}
+                    >
+                      Remove
+                    </Button>
+                  </div>
                 </div>
+              ))
+            ) : (
+              <p className="text-sm text-(--text-muted)">No webhooks configured.</p>
+            )}
+            <Button variant="ghost" size="sm" onClick={() => setWebhooks((cur) => [...cur, createWebhook()])}>
+              Add webhook
+            </Button>
+            {webhooks.length > 0 && (
+              <Button onClick={() => void handleSave()} loading={saving} className="ml-2">Save settings</Button>
+            )}
+          </div>
+        </Section>
+      </div>
 
-                <div className="mt-4">
-                  <Button
-                    variant="danger"
-                    size="sm"
-                    onClick={() => setWebhooks((current) => current.filter((_, currentIndex) => currentIndex !== index))}
-                  >
-                    Remove webhook
-                  </Button>
-                </div>
-              </div>
-            ))
-          ) : (
-            <div className="rounded-xl border border-dashed border-[var(--border)] bg-[var(--surface-2)] p-4 text-sm text-[var(--text-muted)]">
-              No global webhooks configured yet.
-            </div>
-          )}
-        </div>
-      </section>
-
-      <section>
-        <h2 className="mb-3 text-lg font-semibold text-[var(--text)]">Security audit trail</h2>
+      {/* Audit trail */}
+      <div className="mt-8">
+        <h2 className="text-sm font-semibold text-(--text) mb-4">Security audit trail</h2>
         <ActivityTimeline
           events={audit}
-          emptyLabel="No security audit events yet. Session elevations, security-setting changes, and sensitive-value reveals will show up here."
+          emptyLabel="No audit events yet. Session elevations, security setting changes, and sensitive reveals will appear here."
         />
-      </section>
+      </div>
 
       <ReauthModal
         open={reauthOpen}

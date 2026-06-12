@@ -51,12 +51,11 @@ export function ImagePanel({
   onRollback,
 }: ImagePanelProps) {
   return (
-    <section className="rounded-2xl border border-[var(--border)] bg-[var(--surface)] p-6">
+    <section className="rounded-2xl border border-(--border) bg-(--surface) p-6">
       <div className="flex flex-wrap items-start justify-between gap-4">
         <div>
-          <p className="text-xs uppercase tracking-[0.24em] text-[var(--green)]">Phase 7</p>
-          <h2 className="mt-2 text-lg font-semibold text-[var(--text)]">Docker image manager</h2>
-          <p className="mt-1 text-sm text-[var(--text-muted)]">
+                    <h2 className="mt-2 text-lg font-semibold text-(--text)">Docker image manager</h2>
+          <p className="mt-1 text-sm text-(--text-muted)">
             Inspect the running container, pull new tags, and roll back using recent successful deploys.
           </p>
         </div>
@@ -66,30 +65,30 @@ export function ImagePanel({
       </div>
 
       <div className="mt-5 grid gap-4 lg:grid-cols-[1fr_320px]">
-        <div className="rounded-xl border border-[var(--border)] bg-[var(--surface-2)] p-4">
-          <h3 className="text-sm font-medium text-[var(--text)]">Container status</h3>
+        <div className=" border border-(--border) bg-(--surface-2) p-4">
+          <h3 className="text-sm font-medium text-(--text)">Container status</h3>
           {status ? (
-            <div className="mt-3 grid gap-2 text-sm text-[var(--text-muted)]">
-              <div>Image: <SensitiveText value={status.image || repoImage} className="text-[var(--text)]" /></div>
-              <div>Tag: <span className="text-[var(--text)]">{status.tag}</span></div>
-              <div>Status: <span className="text-[var(--text)]">{status.status || 'unknown'}</span></div>
-              <div>Container: <SensitiveText value={status.name || 'not running'} className="font-mono text-[var(--text)]" /></div>
-              <div>Uptime: <span className="text-[var(--text)]">{status.uptime || 'n/a'}</span></div>
-              <div>Ports: <SensitiveText value={status.ports.length > 0 ? status.ports.join(', ') : 'n/a'} className="text-[var(--text)]" /></div>
+            <div className="mt-3 grid gap-2 text-sm text-(--text-muted)">
+              <div>Image: <SensitiveText value={status.image || repoImage} className="text-(--text)" /></div>
+              <div>Tag: <span className="text-(--text)">{status.tag}</span></div>
+              <div>Status: <span className="text-(--text)">{status.status || 'unknown'}</span></div>
+              <div>Container: <SensitiveText value={status.name || 'not running'} className="font-mono text-(--text)" /></div>
+              <div>Uptime: <span className="text-(--text)">{status.uptime || 'n/a'}</span></div>
+              <div>Ports: <SensitiveText value={status.ports.length > 0 ? status.ports.join(', ') : 'n/a'} className="text-(--text)" /></div>
             </div>
           ) : (
-            <p className="mt-3 text-sm text-[var(--text-muted)]">No status loaded yet.</p>
+            <p className="mt-3 text-sm text-(--text-muted)">No status loaded yet.</p>
           )}
         </div>
 
         <div className="space-y-4">
-          <div className="rounded-xl border border-[var(--border)] bg-[var(--surface-2)] p-4">
-            <h3 className="text-sm font-medium text-[var(--text)]">Pull tag</h3>
+          <div className=" border border-(--border) bg-(--surface-2) p-4">
+            <h3 className="text-sm font-medium text-(--text)">Pull tag</h3>
             <div className="mt-3 space-y-3">
               <select
                 value={selectedTag}
                 onChange={(event) => onTagChange(event.target.value)}
-                className="h-10 w-full rounded border border-[var(--border)] bg-[var(--surface)] px-3 text-sm text-[var(--text)] outline-none focus:border-[var(--green)]"
+                className="h-10 w-full rounded border border-(--border) bg-(--surface) px-3 text-sm text-(--text) outline-none focus:border-(--border-strong)"
               >
                 <option value="">latest</option>
                 {tags.map((tag) => (
@@ -104,13 +103,13 @@ export function ImagePanel({
             </div>
           </div>
 
-          <div className="rounded-xl border border-[var(--border)] bg-[var(--surface-2)] p-4">
-            <h3 className="text-sm font-medium text-[var(--text)]">Rollback</h3>
+          <div className=" border border-(--border) bg-(--surface-2) p-4">
+            <h3 className="text-sm font-medium text-(--text)">Rollback</h3>
             <div className="mt-3 space-y-3">
               <select
                 value={selectedRollbackId}
                 onChange={(event) => onRollbackChange(event.target.value)}
-                className="h-10 w-full rounded border border-[var(--border)] bg-[var(--surface)] px-3 text-sm text-[var(--text)] outline-none focus:border-[var(--green)]"
+                className="h-10 w-full rounded border border-(--border) bg-(--surface) px-3 text-sm text-(--text) outline-none focus:border-(--border-strong)"
               >
                 <option value="">Select successful deploy</option>
                 {rollbackCandidates.map((record) => (
@@ -131,9 +130,9 @@ export function ImagePanel({
             </div>
           </div>
 
-          <div className="rounded-xl border border-[var(--border)] bg-[var(--surface-2)] p-4">
-            <h3 className="text-sm font-medium text-[var(--text)]">Cleanup</h3>
-            <p className="mt-2 text-sm text-[var(--text-muted)]">Prune dangling images on the remote host.</p>
+          <div className=" border border-(--border) bg-(--surface-2) p-4">
+            <h3 className="text-sm font-medium text-(--text)">Cleanup</h3>
+            <p className="mt-2 text-sm text-(--text-muted)">Prune dangling images on the remote host.</p>
             <div className="mt-3">
               <Button size="sm" variant="ghost" onClick={onPrune} loading={pruning}>
                 Prune images

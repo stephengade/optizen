@@ -3,16 +3,15 @@
 import { useEffect, useState } from 'react'
 import Link from 'next/link'
 import { usePathname, useRouter } from 'next/navigation'
-import { BookOpen, Command, LogOut, Rocket, Search, Server, Settings, ShieldCheck, Sparkles } from 'lucide-react'
+import { BookOpen, Command, LogOut, Search, Server, Settings } from 'lucide-react'
 import { useAuth } from '@/lib/auth-context'
 import { CommandPalette } from '@/components/dashboard/CommandPalette'
-import { useDemoPrivacy } from '@/lib/demo-privacy-context'
 import { cn } from '@/lib/utils'
 
 const NAV = [
   { href: '/servers', icon: Server, label: 'Servers' },
   { href: '/scan', icon: Search, label: 'Scan' },
-  { href: '/help', icon: BookOpen, label: 'Help' },
+  { href: '/help', icon: BookOpen, label: 'Docs' },
   { href: '/settings', icon: Settings, label: 'Settings' },
 ]
 
@@ -20,7 +19,6 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   const pathname = usePathname()
   const router = useRouter()
   const { logout } = useAuth()
-  const { enabled: demoPrivacy, demoMode } = useDemoPrivacy()
   const [paletteOpen, setPaletteOpen] = useState(false)
 
   useEffect(() => {
@@ -30,7 +28,6 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
         setPaletteOpen(true)
       }
     }
-
     window.addEventListener('keydown', handleKeyDown)
     return () => window.removeEventListener('keydown', handleKeyDown)
   }, [])
@@ -41,102 +38,98 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   }
 
   return (
-    <div className="dashboard-shell min-h-screen">
-      <div className="mx-auto flex min-h-screen w-full max-w-[1600px] flex-col px-3 py-3 lg:flex-row lg:gap-4 lg:px-4 lg:py-4">
-        <aside className="glass-panel mb-4 flex flex-col gap-4 rounded-[28px] p-3 lg:mb-0 lg:w-[280px] lg:p-4">
-          <div className="flex items-center justify-between gap-3 rounded-[22px] border border-[var(--border)] bg-[var(--surface-2)] px-4 py-3">
-            <div className="flex items-center gap-3">
-              <div className="flex h-11 w-11 items-center justify-center rounded-[16px] bg-[var(--green-dim)] text-[var(--green)]">
-                <Rocket size={18} />
-              </div>
-              <div>
-                <div className="text-sm font-semibold text-[var(--text)]">Launchpad</div>
-                <div className="text-xs uppercase tracking-[0.24em] text-[var(--text-muted)]">Phase D</div>
-              </div>
-            </div>
-            <Sparkles size={16} className="text-[var(--yellow)]" />
-          </div>
+    <div className="dashboard-shell min-h-screen flex">
+      {/* Sidebar */}
+      <aside className="hidden lg:flex flex-col w-[220px] shrink-0 border-r border-(--border) min-h-screen">
+        {/* Brand */}
+        <div className="flex items-center gap-2.5 px-5 py-4 border-b border-(--border)">
+          <OptizenMark />
+          <span className="text-sm font-semibold text-(--text) tracking-tight">Optizen</span>
+        </div>
 
-          <div className="rounded-[22px] border border-[var(--border)] bg-[var(--surface-2)] p-4">
-            <div className="flex items-start gap-3">
-              <ShieldCheck size={18} className="mt-0.5 text-[var(--green)]" />
-              <div>
-                <div className="text-sm font-medium text-[var(--text)]">Trust mode</div>
-                <div className="mt-1 text-sm text-[var(--text-muted)]">
-                  {demoMode
-                    ? 'Seeded demo mode is active. Launchpad is showing safe sample infrastructure data.'
-                    : demoPrivacy
-                      ? 'Demo privacy is active. Sensitive values are masked across the dashboard.'
-                      : 'Live values are visible. Turn on demo privacy in settings before recording or screen-sharing.'}
-                </div>
-              </div>
-            </div>
-          </div>
+        {/* Nav */}
+        <nav className="flex flex-col gap-px p-2 flex-1">
+          {NAV.map(({ href, icon: Icon, label }) => {
+            const active = pathname === href || (href !== '/servers' && pathname.startsWith(href)) || (href === '/servers' && pathname.startsWith('/servers'))
+            return (
+              <Link
+                key={href}
+                href={href}
+                className={cn(
+                  'flex items-center gap-3 px-3 py-2 text-sm transition-colors',
+                  active
+                    ? 'bg-(--surface-2) text-(--text)'
+                    : 'text-(--text-muted) hover:text-(--text) hover:bg-(--surface)'
+                )}
+              >
+                <Icon size={15} />
+                {label}
+              </Link>
+            )
+          })}
+        </nav>
 
-          <nav className="grid gap-2">
-            {NAV.map(({ href, icon: Icon, label }) => {
-              const active = pathname.startsWith(href)
-              return (
-                <Link
-                  key={href}
-                  href={href}
-                  title={label}
-                  className={cn(
-                    'flex items-center justify-between rounded-[18px] border px-4 py-3 text-sm transition-colors',
-                    active
-                      ? 'border-[var(--green)] bg-[var(--green-dim)] text-[var(--text)]'
-                      : 'border-transparent bg-transparent text-[var(--text-muted)] hover:border-[var(--border)] hover:bg-[var(--surface-2)] hover:text-[var(--text)]'
-                  )}
-                >
-                  <span className="inline-flex items-center gap-3">
-                    <Icon size={16} />
-                    {label}
-                  </span>
-                  <span className="text-[10px] uppercase tracking-[0.2em] text-[var(--text-muted)]">
-                    {active ? 'Open' : 'Go'}
-                  </span>
-                </Link>
-              )
-            })}
-          </nav>
-
+        {/* Bottom */}
+        <div className="border-t border-(--border) p-2 space-y-px">
           <button
             type="button"
             onClick={() => setPaletteOpen(true)}
-            className="flex items-center justify-between rounded-[18px] border border-[var(--border)] bg-[var(--surface-2)] px-4 py-3 text-sm text-[var(--text-muted)] transition-colors hover:bg-[var(--surface-3)] hover:text-[var(--text)]"
+            className="w-full flex items-center justify-between px-3 py-2 text-sm text-(--text-muted) hover:text-(--text) hover:bg-(--surface) transition-colors"
           >
-            <span className="inline-flex items-center gap-3">
-              <Command size={16} />
-              Quick actions
+            <span className="flex items-center gap-3">
+              <Command size={15} />
+              Command
             </span>
-            <span className="text-[10px] uppercase tracking-[0.2em]">Ctrl K</span>
+            <span className="text-[10px] text-(--text-subtle)">⌘K</span>
           </button>
+          <button
+            type="button"
+            onClick={handleLogout}
+            className="w-full flex items-center gap-3 px-3 py-2 text-sm text-(--text-muted) hover:text-(--red) hover:bg-(--red-dim) transition-colors"
+          >
+            <LogOut size={15} />
+            Sign out
+          </button>
+        </div>
+      </aside>
 
-          <div className="mt-auto rounded-[22px] border border-[var(--border)] bg-[var(--surface-2)] p-4">
-            <div className="text-sm font-medium text-[var(--text)]">Quick orientation</div>
-            <div className="mt-2 space-y-2 text-sm text-[var(--text-muted)]">
-              <div>Servers store SSH access and telemetry snapshots.</div>
-              <div>Projects define deploy commands, health, and runtime context.</div>
-              <div>Help explains classification, setup, and common workflows.</div>
-            </div>
-            <button
-              onClick={handleLogout}
-              title="Sign out"
-              className="mt-4 inline-flex w-full items-center justify-center gap-2 rounded-[16px] border border-[var(--border)] px-3 py-2 text-sm text-[var(--text-muted)] transition-colors hover:border-[var(--red)] hover:bg-[var(--red-dim)] hover:text-[var(--red)]"
+      {/* Mobile top bar */}
+      <div className="lg:hidden fixed top-0 left-0 right-0 z-40 flex items-center justify-between bg-(--bg) border-b border-(--border) px-4 py-3">
+        <div className="flex items-center gap-2">
+          <OptizenMark />
+          <span className="text-sm font-semibold text-(--text)">Optizen</span>
+        </div>
+        <div className="flex items-center gap-1">
+          {NAV.map(({ href, icon: Icon }) => (
+            <Link
+              key={href}
+              href={href}
+              className={cn(
+                'p-2 transition-colors',
+                pathname.startsWith(href) ? 'text-(--text)' : 'text-(--text-muted) hover:text-(--text)'
+              )}
             >
-              <LogOut size={16} />
-              Sign out
-            </button>
-          </div>
-        </aside>
-
-        <main className="min-w-0 flex-1">
-          <div className="glass-panel min-h-full rounded-[28px] overflow-hidden">
-            {children}
-          </div>
-        </main>
+              <Icon size={16} />
+            </Link>
+          ))}
+        </div>
       </div>
+
+      {/* Main content */}
+      <main className="flex-1 min-w-0 lg:pt-0 pt-[53px]">
+        {children}
+      </main>
+
       <CommandPalette open={paletteOpen} onClose={() => setPaletteOpen(false)} />
     </div>
+  )
+}
+
+function OptizenMark() {
+  return (
+    <svg width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden="true">
+      <rect width="16" height="16" fill="var(--accent)" />
+      <path d="M4 8h8M8 4v8" stroke="var(--bg)" strokeWidth="1.5" strokeLinecap="square" />
+    </svg>
   )
 }
