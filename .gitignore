@@ -37,3 +37,6 @@ bun-debug.log*
 
 # TypeScript
 *.tsbuildinfo
+
+# Local product requirement docs
+/prd*.md

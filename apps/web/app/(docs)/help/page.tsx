@@ -18,6 +18,16 @@ const sections = [
     description: 'How to deploy, edit env files, read logs, and interpret health checks.',
   },
   {
+    href: '/help/server-metrics',
+    title: 'Server metrics',
+    description: 'What CPU, load, uptime, memory, disk, inodes, and containers actually mean.',
+  },
+  {
+    href: '/help/server-health',
+    title: 'Server health',
+    description: 'How to keep a VPS stable, predictable, and easy to recover.',
+  },
+  {
     href: '/help/security',
     title: 'Trust & security',
     description: 'Session controls, re-auth, demo privacy, and the audit trail.',

@@ -72,7 +72,10 @@ deploy:
       </div>
 
       <div className="mt-8 border-t border-(--border) pt-6 flex items-center justify-between">
-        <p className="text-xs text-(--text-muted)">Next: understand project types</p>
+        <Link href="/help/server-metrics" className="inline-flex items-center gap-1.5 text-xs text-(--text-muted) hover:text-(--text) border border-(--border) px-3 py-1.5 transition-colors">
+          Server metrics
+          <ArrowLeft size={11} className="rotate-180" />
+        </Link>
         <Link href="/help/projects" className="inline-flex items-center gap-1.5 text-xs text-(--text-muted) hover:text-(--text) border border-(--border) px-3 py-1.5 transition-colors">
           Project types
           <ArrowLeft size={11} className="rotate-180" />
