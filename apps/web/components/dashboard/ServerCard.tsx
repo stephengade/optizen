@@ -20,6 +20,16 @@ interface ServerCardProps {
 export function ServerCard({ server, status, resources, onTest, testing }: ServerCardProps) {
   const [showSshKey, setShowSshKey] = useState(false)
   const loadAvg = Array.isArray(resources?.loadAverage) ? resources.loadAverage : null
+  const hasCpuUsage = Number.isFinite(resources?.cpuUsagePercent)
+  const hasCpuCapacity = Number.isFinite(resources?.cpuCoreCount) && (resources?.cpuCoreCount ?? 0) > 0
+  const hasMemoryStats =
+    Number.isFinite(resources?.memoryUsedBytes) &&
+    Number.isFinite(resources?.memoryTotalBytes)
+  const hasDiskStats =
+    Number.isFinite(resources?.diskUsedBytes) &&
+    Number.isFinite(resources?.diskTotalBytes)
+  const hasUptime = Number.isFinite(resources?.uptimeSeconds)
+  const hasInodeStats = Number.isFinite(resources?.diskInodesUsedPercent)
 
   return (
     <article className="border border-(--border) bg-(--surface) p-5">
@@ -36,16 +46,25 @@ export function ServerCard({ server, status, resources, onTest, testing }: Serve
 
       {/* Metrics */}
       <div className="mt-4 grid grid-cols-2 md:grid-cols-4 border border-(--border) divide-x divide-(--border)">
-        <Metric label="CPU" value={resources ? formatPercent(resources.cpuUsagePercent, 1) : '—'} />
-        <Metric label="RAM" value={resources ? `${formatBytes(resources.memoryUsedBytes)} / ${formatBytes(resources.memoryTotalBytes)}` : '—'} />
-        <Metric label="Disk" value={resources ? `${formatBytes(resources.diskUsedBytes)} / ${formatBytes(resources.diskTotalBytes)}` : '—'} />
-        <Metric label="Uptime" value={resources ? formatUptime(resources.uptimeSeconds) : '—'} />
+        <Metric
+          label="CPU"
+          value={
+            hasCpuUsage
+              ? `${formatPercent(resources!.cpuUsagePercent!, 1)}${hasCpuCapacity ? ` / ${resources!.cpuCoreCount}c` : ''}`
+              : hasCpuCapacity
+                ? `${resources!.cpuCoreCount}c`
+                : '—'
+          }
+        />
+        <Metric label="RAM" value={hasMemoryStats ? `${formatBytes(resources!.memoryUsedBytes!)} / ${formatBytes(resources!.memoryTotalBytes!)}` : '—'} />
+        <Metric label="Disk" value={hasDiskStats ? `${formatBytes(resources!.diskUsedBytes!)} / ${formatBytes(resources!.diskTotalBytes!)}` : '—'} />
+        <Metric label="Uptime" value={hasUptime ? formatUptime(resources!.uptimeSeconds!) : '—'} />
       </div>
 
       {/* Secondary metrics */}
       <div className="mt-px grid grid-cols-2 md:grid-cols-3 border border-(--border) border-t-0 divide-x divide-(--border)">
         <Metric label="Load avg" value={loadAvg ? loadAvg.map((v) => v.toFixed(2)).join(' / ') : '—'} />
-        <Metric label="Inodes" value={resources ? formatPercent(resources.diskInodesUsedPercent) : '—'} />
+        <Metric label="Inodes" value={hasInodeStats ? formatPercent(resources!.diskInodesUsedPercent!) : '—'} />
         <div className="col-span-2 md:col-span-1 px-4 py-3">
           <div className="text-[10px] uppercase tracking-[0.16em] text-(--text-muted) mb-1">Projects</div>
           <div className="text-sm text-(--text)">{server.projectCount ?? 0}</div>

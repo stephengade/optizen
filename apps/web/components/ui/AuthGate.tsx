@@ -14,7 +14,7 @@ export function AuthGate({ children }: { children: React.ReactNode }) {
     if (loading) return
 
     const isAuthRoute = pathname.startsWith('/login') || pathname.startsWith('/setup')
-    const isPublicRoute = pathname === '/'
+    const isPublicRoute = pathname === '/' || pathname.startsWith('/help')
 
     if (!isSetup) {
       if (!isAuthRoute && !isPublicRoute) router.replace('/setup')

@@ -50,18 +50,21 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
         {/* Nav */}
         <nav className="flex flex-col gap-px p-2 flex-1">
           {NAV.map(({ href, icon: Icon, label }) => {
-            const active = pathname === href || (href !== '/servers' && pathname.startsWith(href)) || (href === '/servers' && pathname.startsWith('/servers'))
-            return (
-              <Link
-                key={href}
-                href={href}
-                className={cn(
-                  'flex items-center gap-3 px-3 py-2 text-sm transition-colors',
-                  active
-                    ? 'bg-(--surface-2) text-(--text)'
-                    : 'text-(--text-muted) hover:text-(--text) hover:bg-(--surface)'
-                )}
-              >
+            const isExternal = href === '/help'
+            const active = !isExternal && (pathname === href || pathname.startsWith(href))
+            const cls = cn(
+              'flex items-center gap-3 px-3 py-2 text-sm transition-colors',
+              active
+                ? 'bg-(--surface-2) text-(--text)'
+                : 'text-(--text-muted) hover:text-(--text) hover:bg-(--surface)'
+            )
+            return isExternal ? (
+              <a key={href} href={href} target="_blank" rel="noopener noreferrer" className={cls}>
+                <Icon size={15} />
+                {label}
+              </a>
+            ) : (
+              <Link key={href} href={href} className={cls}>
                 <Icon size={15} />
                 {label}
               </Link>
@@ -101,16 +104,28 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
         </div>
         <div className="flex items-center gap-1">
           {NAV.map(({ href, icon: Icon }) => (
-            <Link
-              key={href}
-              href={href}
-              className={cn(
-                'p-2 transition-colors',
-                pathname.startsWith(href) ? 'text-(--text)' : 'text-(--text-muted) hover:text-(--text)'
-              )}
-            >
-              <Icon size={16} />
-            </Link>
+            href === '/help' ? (
+              <a
+                key={href}
+                href={href}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="p-2 text-(--text-muted) hover:text-(--text) transition-colors"
+              >
+                <Icon size={16} />
+              </a>
+            ) : (
+              <Link
+                key={href}
+                href={href}
+                className={cn(
+                  'p-2 transition-colors',
+                  href !== '/help' && pathname.startsWith(href) ? 'text-(--text)' : 'text-(--text-muted) hover:text-(--text)'
+                )}
+              >
+                <Icon size={16} />
+              </Link>
+            )
           ))}
         </div>
       </div>

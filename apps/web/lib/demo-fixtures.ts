@@ -164,6 +164,7 @@ export const demoServers: ServerSummary[] = [
     lastResourceStatus: {
       serverId: 'demo-server-lagos',
       cpuUsagePercent: 36.4,
+      cpuCoreCount: 4,
       memoryTotalBytes: 8 * 1024 * 1024 * 1024,
       memoryUsedBytes: 4.7 * 1024 * 1024 * 1024,
       diskTotalBytes: 128 * 1024 * 1024 * 1024,
@@ -173,6 +174,7 @@ export const demoServers: ServerSummary[] = [
       diskInodesUsedPercent: 39,
       runningContainers: 7,
       exitedContainers: 1,
+      containersAvailable: true,
       checkedAt: minutesAgo(3),
     },
     projectCount: 2,
@@ -196,6 +198,7 @@ export const demoServers: ServerSummary[] = [
     lastResourceStatus: {
       serverId: 'demo-server-edge',
       cpuUsagePercent: 12.1,
+      cpuCoreCount: 8,
       memoryTotalBytes: 4 * 1024 * 1024 * 1024,
       memoryUsedBytes: 1.6 * 1024 * 1024 * 1024,
       diskTotalBytes: 64 * 1024 * 1024 * 1024,
@@ -205,6 +208,7 @@ export const demoServers: ServerSummary[] = [
       diskInodesUsedPercent: 16,
       runningContainers: 2,
       exitedContainers: 0,
+      containersAvailable: true,
       checkedAt: minutesAgo(9),
     },
     projectCount: 1,

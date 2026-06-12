@@ -46,7 +46,6 @@ const model = [
 export default function HelpPage() {
   return (
     <div className="max-w-4xl mx-auto px-6 py-8">
-      {/* Header */}
       <div className="mb-8">
         <h1 className="text-xl font-semibold text-(--text)">Docs</h1>
         <p className="mt-1 text-sm text-(--text-muted)">
@@ -54,7 +53,6 @@ export default function HelpPage() {
         </p>
       </div>
 
-      {/* Sections nav */}
       <div className="grid grid-cols-1 md:grid-cols-2 border border-(--border) divide-y md:divide-y-0 md:divide-x divide-(--border) mb-8">
         {sections.map((s) => (
           <Link
@@ -74,7 +72,6 @@ export default function HelpPage() {
         ))}
       </div>
 
-      {/* Core model */}
       <div className="mb-2">
         <h2 className="text-sm font-semibold text-(--text)">The four-layer model</h2>
         <p className="mt-1 text-xs text-(--text-muted)">Optizen organises everything into four distinct layers.</p>

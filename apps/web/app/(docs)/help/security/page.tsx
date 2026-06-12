@@ -67,7 +67,7 @@ export default function SecurityPage() {
         </p>
       </div>
 
-      <div className="mt-8 border-t border-(--border) pt-6 flex items-center justify-start">
+      <div className="mt-8 border-t border-(--border) pt-6">
         <Link href="/help/workflows" className="inline-flex items-center gap-1.5 text-xs text-(--text-muted) hover:text-(--text) border border-(--border) px-3 py-1.5 transition-colors">
           <ArrowLeft size={11} />
           Workflows

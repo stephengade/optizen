@@ -25,15 +25,17 @@ export interface ServerConnectionStatus {
 
 export interface ServerResourceStatus {
   serverId: string
-  cpuUsagePercent: number
-  memoryTotalBytes: number
-  memoryUsedBytes: number
-  diskTotalBytes: number
-  diskUsedBytes: number
-  uptimeSeconds: number
-  loadAverage: [number, number, number]
-  diskInodesUsedPercent: number
-  runningContainers: number
-  exitedContainers: number
+  cpuUsagePercent?: number
+  cpuCoreCount?: number
+  memoryTotalBytes?: number
+  memoryUsedBytes?: number
+  diskTotalBytes?: number
+  diskUsedBytes?: number
+  uptimeSeconds?: number
+  loadAverage?: [number, number, number]
+  diskInodesUsedPercent?: number
+  runningContainers?: number
+  exitedContainers?: number
+  containersAvailable?: boolean
   checkedAt: string
 }

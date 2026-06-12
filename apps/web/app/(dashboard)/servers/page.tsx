@@ -108,8 +108,9 @@ export default function ServersPage() {
 
   const onlineCount = servers.filter((s) => (statuses[s.id] ?? s.lastConnectionStatus)?.connected).length
   const totalProjects = servers.reduce((sum, s) => sum + (s.projectCount ?? 0), 0)
-  const avgCpu = Object.values(resources).length
-    ? Object.values(resources).reduce((sum, r) => sum + r.cpuUsagePercent, 0) / Object.values(resources).length
+  const cpuSnapshots = Object.values(resources).filter((resource) => Number.isFinite(resource.cpuUsagePercent))
+  const avgCpu = cpuSnapshots.length
+    ? cpuSnapshots.reduce((sum, resource) => sum + (resource.cpuUsagePercent ?? 0), 0) / cpuSnapshots.length
     : null
 
   return (

@@ -202,6 +202,22 @@ export default function ServerDetailPage() {
 
   if (!server) return null
 
+  const loadAverage = Array.isArray(resources?.loadAverage) ? resources.loadAverage : null
+  const hasMemoryStats =
+    Number.isFinite(resources?.memoryUsedBytes) &&
+    Number.isFinite(resources?.memoryTotalBytes)
+  const hasDiskStats =
+    Number.isFinite(resources?.diskUsedBytes) &&
+    Number.isFinite(resources?.diskTotalBytes)
+  const hasUptime = Number.isFinite(resources?.uptimeSeconds)
+  const hasInodeStats = Number.isFinite(resources?.diskInodesUsedPercent)
+  const hasCpuUsage = Number.isFinite(resources?.cpuUsagePercent)
+  const hasCpuCapacity = Number.isFinite(resources?.cpuCoreCount) && (resources?.cpuCoreCount ?? 0) > 0
+  const hasContainerStats =
+    Number.isFinite(resources?.runningContainers) &&
+    Number.isFinite(resources?.exitedContainers)
+  const containersAvailable = resources?.containersAvailable !== false
+
   return (
     <div className="mx-auto flex w-full max-w-7xl flex-col gap-8 px-6 py-8 lg:px-8">
       <section className="flex flex-wrap items-start justify-between gap-4">
@@ -251,37 +267,45 @@ export default function ServerDetailPage() {
         <div className="rounded-2xl border border-(--border) bg-(--surface) p-5">
           <div className="text-xs uppercase tracking-[0.18em] text-(--text-muted)">CPU + Load</div>
           <div className="mt-2 text-lg font-semibold text-(--text)">
-            {resources ? formatPercent(resources.cpuUsagePercent, 1) : 'n/a'}
+            {hasCpuUsage ? formatPercent(resources!.cpuUsagePercent!, 1) : 'n/a'}
           </div>
           <div className="mt-1 text-sm text-(--text-muted)">
-            {resources ? resources.loadAverage.map((value) => value.toFixed(2)).join(' / ') : 'Run Test SSH to refresh'}
+            {loadAverage
+              ? `${loadAverage.map((value) => value.toFixed(2)).join(' / ')}${hasCpuCapacity ? ` on ${resources!.cpuCoreCount!} cores` : ''}`
+              : hasCpuCapacity
+                ? `${resources!.cpuCoreCount!} CPU cores detected`
+                : 'Run Test SSH to refresh'}
           </div>
         </div>
         <div className="rounded-2xl border border-(--border) bg-(--surface) p-5">
           <div className="text-xs uppercase tracking-[0.18em] text-(--text-muted)">Memory + Disk</div>
           <div className="mt-2 text-lg font-semibold text-(--text)">
-            {resources ? `${formatBytes(resources.memoryUsedBytes)} / ${formatBytes(resources.memoryTotalBytes)}` : 'n/a'}
+            {hasMemoryStats ? `${formatBytes(resources!.memoryUsedBytes!)} / ${formatBytes(resources!.memoryTotalBytes!)}` : 'n/a'}
           </div>
           <div className="mt-1 text-sm text-(--text-muted)">
-            {resources ? `${formatBytes(resources.diskUsedBytes)} / ${formatBytes(resources.diskTotalBytes)} disk` : 'Run Test SSH to refresh'}
+            {hasDiskStats ? `${formatBytes(resources!.diskUsedBytes!)} / ${formatBytes(resources!.diskTotalBytes!)} disk` : 'Run Test SSH to refresh'}
           </div>
         </div>
         <div className="rounded-2xl border border-(--border) bg-(--surface) p-5">
           <div className="text-xs uppercase tracking-[0.18em] text-(--text-muted)">Uptime + Inodes</div>
           <div className="mt-2 text-lg font-semibold text-(--text)">
-            {resources ? formatUptime(resources.uptimeSeconds) : 'n/a'}
+            {hasUptime ? formatUptime(resources!.uptimeSeconds!) : 'n/a'}
           </div>
           <div className="mt-1 text-sm text-(--text-muted)">
-            {resources ? `${formatPercent(resources.diskInodesUsedPercent)} inode use` : 'Run Test SSH to refresh'}
+            {hasInodeStats ? `${formatPercent(resources!.diskInodesUsedPercent!)} inode use` : 'Run Test SSH to refresh'}
           </div>
         </div>
         <div className="rounded-2xl border border-(--border) bg-(--surface) p-5">
           <div className="text-xs uppercase tracking-[0.18em] text-(--text-muted)">Containers</div>
           <div className="mt-2 text-lg font-semibold text-(--text)">
-            {resources ? resources.runningContainers : 'n/a'}
+            {containersAvailable && hasContainerStats ? resources!.runningContainers : 'n/a'}
           </div>
           <div className="mt-1 text-sm text-(--text-muted)">
-            {resources ? `${resources.exitedContainers} exited` : 'Run Test SSH to refresh'}
+            {containersAvailable
+              ? hasContainerStats
+                ? `${resources!.exitedContainers} exited`
+                : 'Run Test SSH to refresh'
+              : 'Docker unavailable on this host'}
           </div>
         </div>
       </section>

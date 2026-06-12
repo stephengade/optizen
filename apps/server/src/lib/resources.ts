@@ -1,65 +1,66 @@
 import type { Server, ServerResourceStatus } from '@launchpad/shared'
 import { execCommand, getConnection } from './ssh'
 
+function parseSingleNumber(value: string) {
+  const parsed = Number(value.trim())
+  return Number.isFinite(parsed) ? parsed : undefined
+}
+
+function parsePair(value: string) {
+  const parts = value.trim().split(/\s+/).map((item) => Number(item))
+  return parts.length >= 2 && parts.every((item) => Number.isFinite(item)) ? parts.slice(0, 2) as [number, number] : undefined
+}
+
+function parseTriple(value: string) {
+  const parts = value.trim().split(/\s+/).map((item) => Number(item))
+  return parts.length >= 3 && parts.slice(0, 3).every((item) => Number.isFinite(item)) ? parts.slice(0, 3) as [number, number, number] : undefined
+}
+
 function parseResourceSnapshot(output: string, serverId: string): ServerResourceStatus {
-  const [cpuLine = '', memoryLine = '', diskLine = '', loadLine = '', uptimeLine = '', inodeLine = '', containerLine = ''] = output
-    .trim()
-    .split('\n')
-    .map((line) => line.trim())
+  const values = Object.fromEntries(
+    output
+      .split('\n')
+      .map((line) => line.trim())
+      .filter(Boolean)
+      .map((line) => {
+        const separator = line.indexOf(':')
+        if (separator === -1) return [line, '']
+        return [line.slice(0, separator), line.slice(separator + 1).trim()]
+      })
+  )
 
-  const cpuUsagePercent = Number(cpuLine)
-  const [totalKbRaw, availableKbRaw] = memoryLine.split(/\s+/).map((value) => Number(value))
-  const [diskTotalRaw, diskUsedRaw] = diskLine.split(/\s+/).map((value) => Number(value))
-  const loadAverage = loadLine.split(/\s+/).map((value) => Number(value)) as [number, number, number]
-  const uptimeSeconds = Number(uptimeLine)
-  const inodeUsedPercent = Number(inodeLine)
-  const [runningContainersRaw, exitedContainersRaw] = containerLine.split(/\s+/).map((value) => Number(value))
+  const cpuUsagePercent = parseSingleNumber(values.cpu ?? '')
+  const memoryPair = parsePair(values.memory ?? '')
+  const diskPair = parsePair(values.disk ?? '')
+  const loadAverage = parseTriple(values.load ?? '')
+  const uptimeSeconds = parseSingleNumber(values.uptime ?? '')
+  const inodeUsedPercent = parseSingleNumber(values.inodes ?? '')
+  const cpuCoreCount = parseSingleNumber(values.cores ?? '')
+  const containerTriple = parseTriple(values.containers ?? '')
 
-  if (!Number.isFinite(cpuUsagePercent) || cpuUsagePercent < 0) {
-    throw new Error('Failed to parse server CPU usage')
-  }
-
-  if (!Number.isFinite(totalKbRaw) || !Number.isFinite(availableKbRaw) || totalKbRaw <= 0 || availableKbRaw < 0) {
-    throw new Error('Failed to parse server memory usage')
-  }
-
-  if (!Number.isFinite(diskTotalRaw) || !Number.isFinite(diskUsedRaw) || diskTotalRaw <= 0 || diskUsedRaw < 0) {
-    throw new Error('Failed to parse server disk usage')
-  }
-
-  if (loadAverage.some((value) => !Number.isFinite(value)) || loadAverage.length !== 3) {
-    throw new Error('Failed to parse load average')
-  }
-
-  if (!Number.isFinite(uptimeSeconds) || uptimeSeconds < 0) {
-    throw new Error('Failed to parse uptime')
-  }
-
-  if (!Number.isFinite(inodeUsedPercent) || inodeUsedPercent < 0) {
-    throw new Error('Failed to parse inode pressure')
-  }
-
-  if (!Number.isFinite(runningContainersRaw) || !Number.isFinite(exitedContainersRaw)) {
-    throw new Error('Failed to parse container status')
-  }
-
-  const memoryTotalBytes = totalKbRaw * 1024
-  const memoryUsedBytes = Math.max(0, (totalKbRaw - availableKbRaw) * 1024)
-  const diskTotalBytes = diskTotalRaw
-  const diskUsedBytes = Math.max(0, diskUsedRaw)
+  const memoryTotalBytes =
+    memoryPair && memoryPair[0] > 0 && memoryPair[1] >= 0 ? memoryPair[0] * 1024 : undefined
+  const memoryUsedBytes =
+    memoryPair && memoryPair[0] > 0 && memoryPair[1] >= 0 ? Math.max(0, (memoryPair[0] - memoryPair[1]) * 1024) : undefined
+  const diskTotalBytes =
+    diskPair && diskPair[0] > 0 && diskPair[1] >= 0 ? diskPair[0] : undefined
+  const diskUsedBytes =
+    diskPair && diskPair[0] > 0 && diskPair[1] >= 0 ? Math.max(0, diskPair[1]) : undefined
 
   return {
     serverId,
-    cpuUsagePercent,
+    cpuUsagePercent: cpuUsagePercent !== undefined && cpuUsagePercent >= 0 ? cpuUsagePercent : undefined,
+    cpuCoreCount: cpuCoreCount !== undefined && cpuCoreCount > 0 ? cpuCoreCount : undefined,
     memoryTotalBytes,
     memoryUsedBytes,
     diskTotalBytes,
     diskUsedBytes,
-    uptimeSeconds,
+    uptimeSeconds: uptimeSeconds !== undefined && uptimeSeconds >= 0 ? uptimeSeconds : undefined,
     loadAverage,
-    diskInodesUsedPercent: inodeUsedPercent,
-    runningContainers: runningContainersRaw,
-    exitedContainers: exitedContainersRaw,
+    diskInodesUsedPercent: inodeUsedPercent !== undefined && inodeUsedPercent >= 0 ? inodeUsedPercent : undefined,
+    runningContainers: containerTriple ? containerTriple[1] : undefined,
+    exitedContainers: containerTriple ? containerTriple[2] : undefined,
+    containersAvailable: containerTriple ? containerTriple[0] === 1 : undefined,
     checkedAt: new Date().toISOString(),
   }
 }
@@ -71,7 +72,7 @@ export async function fetchServerResources(server: Server): Promise<ServerResour
     ssh = await getConnection(server)
     const result = await execCommand(
       ssh,
-      "awk 'BEGIN { prevIdle=0; prevTotal=0 } /^cpu / { idle=$5; total=0; for (i=2; i<=8; i++) total+=$i; if (NR==1) { prevIdle=idle; prevTotal=total } } END { if (total > 0) printf \"%.2f\\n\", ((total-idle)/(total))*100; else print \"0\" }' /proc/stat && awk '/MemTotal:/ { total=$2 } /MemAvailable:/ { available=$2 } END { printf \"%s %s\\n\", total, available }' /proc/meminfo && df -B1 --output=size,used / | tail -n 1 && awk '{print $1, $2, $3}' /proc/loadavg && cut -d. -f1 /proc/uptime && df -i --output=pcent / | tail -n 1 | tr -dc '0-9\\n' && printf \"%s %s\\n\" \"$(docker ps -q | wc -l)\" \"$(docker ps -aq -f status=exited | wc -l)\""
+      "printf 'cpu:' && awk 'BEGIN { prevIdle=0; prevTotal=0 } /^cpu / { idle=$5; total=0; for (i=2; i<=8; i++) total+=$i } END { if (total > 0) printf \"%.2f\\n\", ((total-idle)/(total))*100; else print \"0\" }' /proc/stat && printf 'memory:' && awk '/MemTotal:/ { total=$2 } /MemAvailable:/ { available=$2 } END { printf \"%s %s\\n\", total, available }' /proc/meminfo && printf 'disk:' && df -B1 --output=size,used / | tail -n 1 && printf 'load:' && awk '{print $1, $2, $3}' /proc/loadavg && printf 'uptime:' && cut -d. -f1 /proc/uptime && printf 'inodes:' && df -i --output=pcent / | tail -n 1 | tr -dc '0-9\\n' && printf 'cores:' && nproc && if command -v docker >/dev/null 2>&1; then printf 'containers:1 %s %s\\n' \"$(docker ps -q 2>/dev/null | wc -l)\" \"$(docker ps -aq -f status=exited 2>/dev/null | wc -l)\"; elif [ -x /usr/bin/docker ]; then printf 'containers:1 %s %s\\n' \"$(/usr/bin/docker ps -q 2>/dev/null | wc -l)\" \"$(/usr/bin/docker ps -aq -f status=exited 2>/dev/null | wc -l)\"; else printf 'containers:0 0 0\\n'; fi"
     )
 
     if (result.code !== 0) {

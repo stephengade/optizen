@@ -43,9 +43,7 @@ export default function SetupPage() {
       </Link>
 
       <h1 className="text-xl font-semibold text-(--text)">Quick start</h1>
-      <p className="mt-1 text-sm text-(--text-muted)">
-        Six steps from zero to a working deploy.
-      </p>
+      <p className="mt-1 text-sm text-(--text-muted)">Six steps from zero to a working deploy.</p>
 
       <div className="mt-8 border border-(--border) divide-y divide-(--border)">
         {steps.map((step) => (
@@ -59,7 +57,6 @@ export default function SetupPage() {
         ))}
       </div>
 
-      {/* Deploy contract example */}
       <div className="mt-8">
         <h2 className="text-sm font-semibold text-(--text) mb-3">Example project config</h2>
         <pre className="border border-(--border) bg-(--surface) px-5 py-5 font-mono text-xs text-(--text-muted) overflow-x-auto leading-6">
@@ -76,10 +73,7 @@ deploy:
 
       <div className="mt-8 border-t border-(--border) pt-6 flex items-center justify-between">
         <p className="text-xs text-(--text-muted)">Next: understand project types</p>
-        <Link
-          href="/help/projects"
-          className="inline-flex items-center gap-1.5 text-xs text-(--text-muted) hover:text-(--text) border border-(--border) px-3 py-1.5 transition-colors"
-        >
+        <Link href="/help/projects" className="inline-flex items-center gap-1.5 text-xs text-(--text-muted) hover:text-(--text) border border-(--border) px-3 py-1.5 transition-colors">
           Project types
           <ArrowLeft size={11} className="rotate-180" />
         </Link>
