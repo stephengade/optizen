@@ -53,7 +53,12 @@ const app = new Elysia()
 
   // Future routes — each will use requireAuth() at the top of their handlers:
 
-  .listen(PORT)
+  .listen({
+    port: PORT,
+    // Storage audit and cleanup can take several minutes over slow SSH connections.
+    // Bun caps idleTimeout at 255 seconds.
+    idleTimeout: 255,
+  })
 
 console.log(`🚀 Launchpad server running at http://localhost:${PORT}`)
 

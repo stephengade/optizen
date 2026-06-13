@@ -94,6 +94,9 @@ const DEEP_CLEANUP_COMMANDS = [
   'apt-get clean',
 ] as const
 const STORAGE_AUDIT_TIMEOUT_SECONDS = 20
+// Overall deadline for the deep audit: 6 items × up to 2 passes × 20s + overhead.
+// If exceeded, a partial result is returned rather than keeping the connection open indefinitely.
+const STORAGE_AUDIT_OVERALL_TIMEOUT_MS = 240_000
 
 function createFallbackStorageAudit(message: string) {
   return {
@@ -116,6 +119,49 @@ function logServerRouteError(route: string, serverId: string, error: unknown, ex
 
 function shellEscape(value: string) {
   return `'${value.replace(/'/g, `'\"'\"'`)}'`
+}
+
+function parseKiBValue(value: string) {
+  return /^\d+$/.test(value.trim()) ? Number(value.trim()) : undefined
+}
+
+function parseHumanSizeToBytes(value: string) {
+  const match = value.trim().match(/^([\d.]+)\s*([kmgtp]?b)$/i)
+  if (!match) return undefined
+
+  const amount = Number(match[1])
+  if (!Number.isFinite(amount) || amount < 0) return undefined
+
+  const unit = match[2].toUpperCase()
+  const multipliers: Record<string, number> = {
+    B: 1,
+    KB: 1024,
+    MB: 1024 ** 2,
+    GB: 1024 ** 3,
+    TB: 1024 ** 4,
+    PB: 1024 ** 5,
+  }
+
+  const multiplier = multipliers[unit]
+  return multiplier ? Math.round(amount * multiplier) : undefined
+}
+
+function estimateDockerUsageFromSystemDf(output: string) {
+  let totalBytes = 0
+
+  for (const rawLine of output.split('\n')) {
+    const line = rawLine.trim()
+    if (!line || /^TYPE\s+/i.test(line)) continue
+
+    const match = line.match(/^(Images|Containers|Local Volumes|Build Cache)\s+\d+\s+\d+\s+(\S+)/i)
+    if (!match) continue
+
+    const bytes = parseHumanSizeToBytes(match[2])
+    if (bytes === undefined) continue
+    totalBytes += bytes
+  }
+
+  return totalBytes > 0 ? totalBytes : undefined
 }
 
 function buildTimedShell(command: string, useSudo = false) {
@@ -195,6 +241,7 @@ async function fetchServerStorageAudit(server: Server) {
     const items: StorageAuditItem[] = []
     const diagnostics: StorageAuditDiagnostic[] = []
     let dockerAvailable = false
+    const timedOutBuckets = new Set<string>()
 
     try {
       const dockerCheck = await execCommand(
@@ -264,6 +311,7 @@ async function fetchServerStorageAudit(server: Server) {
             }
 
             if (breakdownResult.code === 124) {
+              timedOutBuckets.add(metadata.key)
               diagnostics.push({
                 step: `breakdown:${metadata.key}`,
                 message: `Timed out after ${STORAGE_AUDIT_TIMEOUT_SECONDS}s while inspecting ${metadata.path}.`,
@@ -281,8 +329,30 @@ async function fetchServerStorageAudit(server: Server) {
         const sizeAttempt = await runAuditCommandWithSudoRetry(ssh, (useSudo = false) => buildSizeCommand(metadata.path, useSudo))
         const sizeResult = sizeAttempt.result
         const sizeOutput = sizeResult.stdout.trim()
-        const sizeKiB = Number(sizeOutput)
-        if (Number.isFinite(sizeKiB) && sizeKiB >= 0) {
+        const sizeKiB = parseKiBValue(sizeOutput)
+        if (sizeResult.code === 124) {
+          timedOutBuckets.add(metadata.key)
+          if (breakdown?.length) {
+            const estimatedSizeBytes = breakdown.reduce((sum, entry) => sum + entry.sizeBytes, 0)
+            items.push({
+              key: metadata.key,
+              label: metadata.label,
+              path: metadata.path,
+              note: `${metadata.note} Estimated from the largest children because the full scan timed out.`,
+              sizeBytes: estimatedSizeBytes,
+              breakdown,
+            })
+            diagnostics.push({
+              step: `size:${metadata.key}`,
+              message: `Timed out after ${STORAGE_AUDIT_TIMEOUT_SECONDS}s while scanning ${metadata.path}; showing an estimate from the largest children.`,
+            })
+          } else {
+            diagnostics.push({
+              step: `size:${metadata.key}`,
+              message: `Timed out after ${STORAGE_AUDIT_TIMEOUT_SECONDS}s while scanning ${metadata.path}.`,
+            })
+          }
+        } else if (sizeKiB !== undefined && sizeKiB >= 0) {
           items.push({
             key: metadata.key,
             label: metadata.label,
@@ -313,20 +383,6 @@ async function fetchServerStorageAudit(server: Server) {
           diagnostics.push({
             step: `size:${metadata.key}`,
             message: `${metadata.path} exists but is not a directory.`,
-          })
-        } else if (sizeResult.code === 124 && breakdown?.length) {
-          const estimatedSizeBytes = breakdown.reduce((sum, entry) => sum + entry.sizeBytes, 0)
-          items.push({
-            key: metadata.key,
-            label: metadata.label,
-            path: metadata.path,
-            note: `${metadata.note} Estimated from the largest children because the full scan timed out.`,
-            sizeBytes: estimatedSizeBytes,
-            breakdown,
-          })
-          diagnostics.push({
-            step: `size:${metadata.key}`,
-            message: `Timed out after ${STORAGE_AUDIT_TIMEOUT_SECONDS}s while scanning ${metadata.path}; showing an estimate from the largest children.`,
           })
         } else {
           diagnostics.push({
@@ -382,10 +438,38 @@ async function fetchServerStorageAudit(server: Server) {
       }
     }
 
+    const dockerRootItem = items.find((item) => item.key === 'docker_root')
+    if (
+      dockerSystemDf &&
+      !dockerSystemDf.startsWith('Docker disk details unavailable') &&
+      (!dockerRootItem || timedOutBuckets.has('docker_root') || dockerRootItem.sizeBytes === 0)
+    ) {
+      const estimatedDockerBytes = estimateDockerUsageFromSystemDf(dockerSystemDf)
+      if (estimatedDockerBytes !== undefined) {
+        if (dockerRootItem) {
+          dockerRootItem.sizeBytes = Math.max(dockerRootItem.sizeBytes, estimatedDockerBytes)
+          dockerRootItem.note = `${dockerRootItem.note} Estimated from docker system df because the directory scan was incomplete.`
+        } else {
+          items.push({
+            key: 'docker_root',
+            label: 'Docker data',
+            path: '/var/lib/docker',
+            note: 'Estimated from docker system df because the directory scan was incomplete.',
+            sizeBytes: estimatedDockerBytes,
+          })
+        }
+
+        diagnostics.push({
+          step: 'size:docker_root',
+          message: 'Estimated Docker usage from docker system df because the direct directory scan was incomplete.',
+        })
+      }
+    }
+
     return {
       checkedAt: new Date().toISOString(),
       dockerAvailable,
-      items,
+      items: items.sort((a, b) => b.sizeBytes - a.sizeBytes),
       dockerSystemDf,
       diagnostics,
       cleanupCommands: [...SAFE_CLEANUP_COMMANDS],
@@ -717,7 +801,14 @@ export const serverRoutes = new Elysia({ prefix: '/servers' })
     }
 
     try {
-      return await fetchServerStorageAudit(server)
+      const auditPromise = fetchServerStorageAudit(server)
+      const timeoutPromise = new Promise<ReturnType<typeof createFallbackStorageAudit>>((resolve) =>
+        setTimeout(
+          () => resolve(createFallbackStorageAudit(`Deep audit exceeded the ${STORAGE_AUDIT_OVERALL_TIMEOUT_MS / 1000}s overall deadline. The server may be under heavy load or the SSH connection is very slow.`)),
+          STORAGE_AUDIT_OVERALL_TIMEOUT_MS
+        )
+      )
+      return await Promise.race([auditPromise, timeoutPromise])
     } catch (error) {
       const message = error instanceof Error ? error.message : 'Failed to audit server storage'
       logServerRouteError('storage-audit', server.id, error, { message })
