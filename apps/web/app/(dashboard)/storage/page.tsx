@@ -39,6 +39,36 @@ type ServerStorageCleanupResult = {
   afterAudit: ServerStorageAudit
 }
 
+type DockerUsageImage = {
+  id: string
+  repository: string
+  tag: string
+  reference: string
+  createdSince: string
+  sizeText: string
+  sizeBytes: number
+  inUse: boolean
+  containerCount: number
+}
+
+type DockerUsageContainer = {
+  id: string
+  name: string
+  image: string
+  status: string
+  running: boolean
+}
+
+type DockerUsageReport = {
+  checkedAt: string
+  dockerAvailable: boolean
+  summaryText: string
+  reclaimableBytes: number
+  images: DockerUsageImage[]
+  containers: DockerUsageContainer[]
+  diagnostics: Array<{ step: string; message: string }>
+}
+
 const DEMO_AUDIT: ServerStorageAudit = {
   checkedAt: new Date().toISOString(),
   dockerAvailable: true,
@@ -132,8 +162,18 @@ export default function StoragePage() {
 
   const [cleaning, setCleaning] = useState(false)
   const [deepCleaning, setDeepCleaning] = useState(false)
+  const [dockerUsage, setDockerUsage] = useState<DockerUsageReport | null>(null)
+  const [dockerUsageLoading, setDockerUsageLoading] = useState(false)
+  const [runningMaintenancePrune, setRunningMaintenancePrune] = useState(false)
+  const [restartingService, setRestartingService] = useState<'docker' | 'containerd' | null>(null)
+  const [pruningVolumes, setPruningVolumes] = useState(false)
+  const [pruningExitedContainers, setPruningExitedContainers] = useState(false)
+  const [removingImageId, setRemovingImageId] = useState<string | null>(null)
+  const [removeImageTarget, setRemoveImageTarget] = useState<DockerUsageImage | null>(null)
   const [cleanupConfirmOpen, setCleanupConfirmOpen] = useState(false)
   const [deepCleanupConfirmOpen, setDeepCleanupConfirmOpen] = useState(false)
+  const [pruneExitedConfirmOpen, setPruneExitedConfirmOpen] = useState(false)
+  const [volumePruneConfirmOpen, setVolumePruneConfirmOpen] = useState(false)
   const [reauthOpen, setReauthOpen] = useState(false)
 
   // Load servers list
@@ -172,10 +212,19 @@ export default function StoragePage() {
     void loadOverview()
   }, [selectedId])
 
+  useEffect(() => {
+    if (!selectedId || demoMode) {
+      setDockerUsage(null)
+      return
+    }
+    void loadDockerUsage()
+  }, [selectedId, demoMode])
+
   function selectServer(id: string) {
     setSelectedId(id)
     setAudit(null)
     setAuditError(null)
+    setDockerUsage(null)
     setDeepAuditRan(false)
     router.replace(`/storage?server=${id}`, { scroll: false })
   }
@@ -247,12 +296,29 @@ export default function StoragePage() {
     }
   }
 
+  async function loadDockerUsage(showError = false) {
+    if (!selectedId || demoMode) return
+
+    setDockerUsageLoading(true)
+    try {
+      const data = await api.get<DockerUsageReport>(`/servers/${selectedId}/docker-usage`)
+      setDockerUsage(data)
+    } catch (error) {
+      if (showError) {
+        toast.error(error instanceof ApiError ? error.message : 'Failed to inspect Docker usage')
+      }
+    } finally {
+      setDockerUsageLoading(false)
+    }
+  }
+
   async function handleCleanup() {
     if (demoMode) { toast.success('Demo mode — read-only.'); return }
     setCleaning(true)
     try {
       const result = await api.post<ServerStorageCleanupResult>(`/servers/${selectedId}/storage-cleanup`)
       setAudit(result.afterAudit ?? audit)
+      void loadDockerUsage()
       toast.success(result.reclaimedBytes > 0 ? `Reclaimed ${formatBytes(result.reclaimedBytes)}.` : result.output || 'Cleanup completed')
       if (!deepAuditRan) {
         void loadOverview()
@@ -271,6 +337,7 @@ export default function StoragePage() {
     try {
       const result = await api.post<ServerStorageCleanupResult>(`/servers/${selectedId}/storage-deep-cleanup`)
       setAudit(result.afterAudit ?? audit)
+      void loadDockerUsage()
       toast.success(result.reclaimedBytes > 0 ? `Reclaimed ${formatBytes(result.reclaimedBytes)}.` : result.output || 'Deep cleanup completed')
       if (!deepAuditRan) {
         void loadOverview()
@@ -283,7 +350,88 @@ export default function StoragePage() {
     }
   }
 
+  async function handlePruneExitedContainers() {
+    if (demoMode || !selectedId) { toast.success('Demo mode — read-only.'); return }
+    setPruningExitedContainers(true)
+    try {
+      const result = await api.post<{ output: string }>(`/servers/${selectedId}/docker-prune-exited-containers`)
+      await Promise.all([loadDockerUsage(), loadDeepAudit()])
+      toast.success(result.output || 'Exited containers removed')
+    } catch (error) {
+      if (isReauthRequiredError(error)) { setReauthOpen(true); toast.error('Verify your session to prune exited containers.'); return }
+      toast.error(error instanceof ApiError ? error.message : 'Failed to prune exited containers')
+    } finally {
+      setPruningExitedContainers(false)
+    }
+  }
+
+  async function handleRemoveImage() {
+    if (demoMode || !selectedId || !removeImageTarget) { toast.success('Demo mode — read-only.'); return }
+    setRemovingImageId(removeImageTarget.id)
+    try {
+      const result = await api.post<{ output: string }>(`/servers/${selectedId}/docker-remove-image`, {
+        imageId: removeImageTarget.id,
+      })
+      setRemoveImageTarget(null)
+      await Promise.all([loadDockerUsage(), loadDeepAudit()])
+      toast.success(result.output || 'Docker image removed')
+    } catch (error) {
+      if (isReauthRequiredError(error)) { setReauthOpen(true); toast.error('Verify your session to remove this image.'); return }
+      toast.error(error instanceof ApiError ? error.message : 'Failed to remove Docker image')
+    } finally {
+      setRemovingImageId(null)
+    }
+  }
+
+  async function handleRunMaintenancePrune() {
+    if (demoMode || !selectedId) { toast.success('Demo mode — read-only.'); return }
+    setRunningMaintenancePrune(true)
+    try {
+      const result = await api.post<{ output: string }>(`/servers/${selectedId}/maintenance/run-safe-prune`)
+      await Promise.all([loadDockerUsage(), loadDeepAudit()])
+      toast.success(result.output || 'Safe prune completed')
+    } catch (error) {
+      if (isReauthRequiredError(error)) { setReauthOpen(true); toast.error('Verify your session to run maintenance prune.'); return }
+      toast.error(error instanceof ApiError ? error.message : 'Failed to run safe prune')
+    } finally {
+      setRunningMaintenancePrune(false)
+    }
+  }
+
+  async function handleRestartService(service: 'docker' | 'containerd') {
+    if (demoMode || !selectedId) { toast.success('Demo mode — read-only.'); return }
+    setRestartingService(service)
+    try {
+      const result = await api.post<{ output: string }>(`/servers/${selectedId}/restart-service`, { service })
+      await Promise.all([loadDockerUsage(), loadOverview()])
+      toast.success(result.output || `${service} restarted`)
+    } catch (error) {
+      if (isReauthRequiredError(error)) { setReauthOpen(true); toast.error(`Verify your session to restart ${service}.`); return }
+      toast.error(error instanceof ApiError ? error.message : `Failed to restart ${service}`)
+    } finally {
+      setRestartingService(null)
+    }
+  }
+
+  async function handleVolumePrune() {
+    if (demoMode || !selectedId) { toast.success('Demo mode — read-only.'); return }
+    setPruningVolumes(true)
+    try {
+      const result = await api.post<{ output: string }>(`/servers/${selectedId}/docker-volume-prune`)
+      await Promise.all([loadDockerUsage(), loadDeepAudit()])
+      toast.success(result.output || 'Docker volumes pruned')
+    } catch (error) {
+      if (isReauthRequiredError(error)) { setReauthOpen(true); toast.error('Verify your session to prune Docker volumes.'); return }
+      toast.error(error instanceof ApiError ? error.message : 'Failed to prune Docker volumes')
+    } finally {
+      setPruningVolumes(false)
+    }
+  }
+
   const selectedServer = servers.find((s) => s.id === selectedId)
+  const exitedContainers = dockerUsage?.containers.filter((container) => !container.running) ?? []
+  const runningContainers = dockerUsage?.containers.filter((container) => container.running) ?? []
+  const removableImages = dockerUsage?.images.filter((image) => !image.inUse) ?? []
 
   return (
     <div className="mx-auto w-full max-w-4xl px-6 py-8 lg:px-8 space-y-6">
@@ -303,10 +451,13 @@ export default function StoragePage() {
               Run deep audit
             </Button>
             <Button variant="ghost" size="sm" onClick={() => setCleanupConfirmOpen(true)} loading={cleaning}>
-              Safe cleanup
+              Safe prune
             </Button>
             <Button variant="ghost" size="sm" onClick={() => setDeepCleanupConfirmOpen(true)} loading={deepCleaning}>
-              Deep cleanup
+              System prune -a
+            </Button>
+            <Button variant="ghost" size="sm" onClick={() => void loadDockerUsage(true)} loading={dockerUsageLoading}>
+              Inspect Docker
             </Button>
           </div>
         )}
@@ -455,6 +606,171 @@ export default function StoragePage() {
                 </div>
               )}
 
+              {dockerUsage?.dockerAvailable ? (
+                <div className="space-y-4">
+                  <div className="border border-(--border) bg-(--surface)">
+                    <div className="border-b border-(--border) px-4 py-3">
+                      <div className="text-[10px] uppercase tracking-[0.16em] text-(--text-muted)">Maintenance</div>
+                      <div className="mt-1 text-sm text-(--text-muted)">
+                        Run maintenance actions on demand from Launchpad without leaving the app.
+                      </div>
+                    </div>
+                    <div className="flex flex-wrap gap-2 px-4 py-4">
+                      <Button variant="ghost" size="sm" onClick={() => void handleRunMaintenancePrune()} loading={runningMaintenancePrune}>
+                        Run safe prune now
+                      </Button>
+                      <Button variant="ghost" size="sm" onClick={() => void handleRestartService('docker')} loading={restartingService === 'docker'}>
+                        Restart docker
+                      </Button>
+                      <Button variant="ghost" size="sm" onClick={() => void handleRestartService('containerd')} loading={restartingService === 'containerd'}>
+                        Restart containerd
+                      </Button>
+                    </div>
+                  </div>
+
+                  <div className="border border-(--border) bg-(--surface)">
+                    <div className="flex flex-wrap items-start justify-between gap-3 border-b border-(--border) px-4 py-3">
+                      <div>
+                        <div className="text-[10px] uppercase tracking-[0.16em] text-(--text-muted)">Docker Cleanup</div>
+                        <div className="mt-1 text-sm text-(--text-muted)">
+                          Use this section to remove stopped-container references and delete old images directly from Launchpad.
+                        </div>
+                      </div>
+                      <div className="flex flex-wrap gap-2">
+                        <Button variant="ghost" size="sm" onClick={() => setPruneExitedConfirmOpen(true)} loading={pruningExitedContainers}>
+                          Prune exited containers
+                        </Button>
+                        <Button variant="ghost" size="sm" onClick={() => void loadDockerUsage(true)} loading={dockerUsageLoading}>
+                          Refresh Docker
+                        </Button>
+                      </div>
+                    </div>
+
+                    <div className="grid gap-px md:grid-cols-3 border-b border-(--border)">
+                      <div className="bg-(--surface) px-4 py-4">
+                        <div className="text-[10px] uppercase tracking-[0.16em] text-(--text-muted)">Reclaimable now</div>
+                        <div className="mt-1 text-xl font-semibold text-(--text)">{formatBytes(dockerUsage.reclaimableBytes)}</div>
+                        <div className="mt-0.5 text-xs text-(--text-muted)">From Docker&apos;s own reclaimable estimate.</div>
+                      </div>
+                      <div className="bg-(--surface) px-4 py-4">
+                        <div className="text-[10px] uppercase tracking-[0.16em] text-(--text-muted)">Exited containers</div>
+                        <div className="mt-1 text-xl font-semibold text-(--text)">{exitedContainers.length}</div>
+                        <div className="mt-0.5 text-xs text-(--text-muted)">Stopped containers can keep old images from being removable.</div>
+                      </div>
+                      <div className="bg-(--surface) px-4 py-4">
+                        <div className="text-[10px] uppercase tracking-[0.16em] text-(--text-muted)">Tracked images</div>
+                        <div className="mt-1 text-xl font-semibold text-(--text)">{dockerUsage.images.length}</div>
+                        <div className="mt-0.5 text-xs text-(--text-muted)">Largest image layers on this host, sorted by size.</div>
+                      </div>
+                    </div>
+
+                    {dockerUsage.images.length > 0 && removableImages.length === 0 ? (
+                      <div className="border-b border-(--border) bg-[rgba(245,158,11,0.08)] px-4 py-3 text-sm text-(--text-muted)">
+                        All currently tracked Docker images are still referenced by containers on this host. That is why prune can return <span className="font-mono text-(--text)">0 B removed</span> even when Docker data is large.
+                      </div>
+                    ) : null}
+
+                    <div className="divide-y divide-(--border)">
+                      {dockerUsage.images.length > 0 ? dockerUsage.images.map((image) => (
+                        <div key={image.id} className="grid gap-3 px-4 py-3 md:grid-cols-[minmax(0,1fr)_auto] md:items-start">
+                          <div className="min-w-0">
+                            <div className="flex flex-wrap items-center gap-2">
+                              <div className="text-sm font-medium text-(--text) break-all">{image.reference}</div>
+                              <span className={`text-[10px] uppercase tracking-[0.16em] ${image.inUse ? 'text-(--accent)' : 'text-(--yellow)'}`}>
+                                {image.inUse ? `In use by ${image.containerCount} container${image.containerCount === 1 ? '' : 's'}` : 'Unused'}
+                              </span>
+                            </div>
+                            <div className="mt-1 flex flex-wrap gap-x-4 gap-y-1 text-xs text-(--text-muted)">
+                              <span className="font-mono">{image.id}</span>
+                              <span>{image.sizeText}</span>
+                              <span>{image.createdSince}</span>
+                            </div>
+                          </div>
+                          <div className="flex items-center gap-3 md:justify-end">
+                            <div className="text-sm font-semibold text-(--text) whitespace-nowrap">{formatBytes(image.sizeBytes)}</div>
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              disabled={image.inUse}
+                              loading={removingImageId === image.id}
+                              onClick={() => setRemoveImageTarget(image)}
+                            >
+                              Remove
+                            </Button>
+                          </div>
+                        </div>
+                      )) : (
+                        <div className="px-4 py-4 text-sm text-(--text-muted)">
+                          No Docker images were returned for this host.
+                        </div>
+                      )}
+                    </div>
+                  </div>
+
+                  {exitedContainers.length > 0 ? (
+                    <div className="border border-(--border) bg-(--surface)">
+                      <div className="border-b border-(--border) px-4 py-2 text-[10px] uppercase tracking-[0.16em] text-(--text-muted)">
+                        Exited Containers
+                      </div>
+                      <div className="divide-y divide-(--border)">
+                        {exitedContainers.map((container) => (
+                          <div key={container.id} className="grid gap-2 px-4 py-3 md:grid-cols-[minmax(0,1fr)_auto] md:items-start">
+                            <div className="min-w-0">
+                              <div className="text-sm font-medium text-(--text)">{container.name}</div>
+                              <div className="mt-1 text-xs font-mono text-(--text-muted) break-all">{container.image}</div>
+                            </div>
+                            <div className="text-xs text-(--text-muted) md:text-right">
+                              <div>{container.status}</div>
+                              <div className="mt-1 font-mono">{container.id}</div>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  ) : null}
+
+                  {runningContainers.length > 0 ? (
+                    <div className="border border-(--border) bg-(--surface)">
+                      <div className="border-b border-(--border) px-4 py-2 text-[10px] uppercase tracking-[0.16em] text-(--text-muted)">
+                        Running Containers Holding Images
+                      </div>
+                      <div className="divide-y divide-(--border)">
+                        {runningContainers.map((container) => (
+                          <div key={container.id} className="grid gap-2 px-4 py-3 md:grid-cols-[minmax(0,1fr)_auto] md:items-start">
+                            <div className="min-w-0">
+                              <div className="text-sm font-medium text-(--text)">{container.name}</div>
+                              <div className="mt-1 text-xs font-mono text-(--text-muted) break-all">{container.image}</div>
+                            </div>
+                            <div className="text-xs text-(--text-muted) md:text-right">
+                              <div>{container.status}</div>
+                              <div className="mt-1 font-mono">{container.id}</div>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  ) : null}
+
+                  <div className="border border-(--red) bg-[rgba(239,68,68,0.05)]">
+                    <div className="border-b border-(--red) px-4 py-2 text-[10px] uppercase tracking-[0.16em] text-(--red)">
+                      Danger Zone
+                    </div>
+                    <div className="space-y-3 px-4 py-4">
+                      <p className="text-sm text-(--text-muted)">
+                        Volume pruning can delete detached Docker data volumes. Use this only when you understand which workloads store persistent data in volumes.
+                      </p>
+                      <Button variant="danger" size="sm" onClick={() => setVolumePruneConfirmOpen(true)} loading={pruningVolumes}>
+                        Prune Docker volumes
+                      </Button>
+                    </div>
+                  </div>
+                </div>
+              ) : selectedId && !demoMode ? (
+                <div className="border border-dashed border-(--border) px-4 py-4 text-sm text-(--text-muted)">
+                  {dockerUsageLoading ? 'Inspecting Docker images and containers…' : 'Docker inspection is unavailable for this host.'}
+                </div>
+              ) : null}
+
               {/* Diagnostics */}
               {audit.diagnostics?.length ? (
                 <div className="border border-(--yellow) bg-[rgba(245,158,11,0.08)] px-4 py-3">
@@ -478,12 +794,12 @@ export default function StoragePage() {
       {/* Confirm modals */}
       <ConfirmActionModal
         open={cleanupConfirmOpen}
-        title="Run safe cleanup"
-        description="Conservative cleanup targeting reclaimable Docker data and host caches. Preserves running containers and avoids volume removal."
-        confirmLabel="Run safe cleanup"
+        title="Run safe prune"
+        description="Conservative cleanup for reclaimable Docker data and host caches. Preserves running containers and avoids volume removal."
+        confirmLabel="Run safe prune"
         details={
           audit?.cleanupCommands?.length
-            ? [...audit.cleanupCommands.map((cmd) => `$ ${cmd}`), 'Preserves running containers and volumes.']
+            ? [...audit.cleanupCommands.map((cmd) => `$ ${cmd}`), 'Equivalent to a conservative prune pass. Running containers and volumes are preserved.']
             : ['$ docker image prune -f', '$ docker container prune -f', '$ docker builder prune -af', '$ journalctl --vacuum-time=7d', '$ apt-get clean']
         }
         loading={cleaning}
@@ -493,19 +809,68 @@ export default function StoragePage() {
 
       <ConfirmActionModal
         open={deepCleanupConfirmOpen}
-        title="Run inactive-only deep cleanup"
-        description="Stronger cleanup using Docker system pruning. Removes stopped containers, unused networks, unused images, and build cache. Running containers and attached volumes are preserved."
-        confirmLabel="Run deep cleanup"
+        title="Run docker system prune -a"
+        description="Runs the strongest safe Docker prune path in Launchpad. Removes stopped containers, unused networks, unused images, and build cache. Running containers and attached volumes are preserved."
+        confirmLabel="Run system prune -a"
         details={[
           '$ docker system prune -af',
           '$ docker builder prune -af',
           '$ journalctl --vacuum-time=7d',
           '$ apt-get clean',
+          'Matches docker system prune --all --force plus docker builder prune --all --force.',
           'No --volumes flag — attached data volumes are preserved.',
         ]}
         loading={deepCleaning}
         onClose={() => setDeepCleanupConfirmOpen(false)}
         onConfirm={async () => { await handleDeepCleanup(); setDeepCleanupConfirmOpen(false) }}
+      />
+
+      <ConfirmActionModal
+        open={pruneExitedConfirmOpen}
+        title="Prune exited containers"
+        description="This removes stopped containers so old image layers can be deleted more aggressively afterward. Running containers are preserved."
+        confirmLabel="Prune exited containers"
+        details={[
+          '$ docker container prune -f',
+          'Running containers are preserved.',
+          'This is often the first step before removing old images.',
+        ]}
+        loading={pruningExitedContainers}
+        onClose={() => setPruneExitedConfirmOpen(false)}
+        onConfirm={async () => { await handlePruneExitedContainers(); setPruneExitedConfirmOpen(false) }}
+      />
+
+      <ConfirmActionModal
+        open={Boolean(removeImageTarget)}
+        title="Remove Docker image"
+        description="This deletes a specific image from the server. Only images not currently referenced by containers should be removed here."
+        confirmLabel="Remove image"
+        confirmKeyword={removeImageTarget?.id.slice(0, 12)}
+        details={removeImageTarget ? [
+          removeImageTarget.reference,
+          `Image ID: ${removeImageTarget.id}`,
+          `Size: ${removeImageTarget.sizeText}`,
+          `Created: ${removeImageTarget.createdSince}`,
+        ] : []}
+        loading={Boolean(removingImageId)}
+        onClose={() => { if (!removingImageId) setRemoveImageTarget(null) }}
+        onConfirm={handleRemoveImage}
+      />
+
+      <ConfirmActionModal
+        open={volumePruneConfirmOpen}
+        title="Prune Docker volumes"
+        description="This removes unused Docker volumes. Detached data volumes can contain real application data, so treat this as a higher-risk cleanup action."
+        confirmLabel="Prune volumes"
+        confirmKeyword="DELETE VOLUMES"
+        details={[
+          '$ docker volume prune -f',
+          'Only unused volumes are targeted, but detached data volumes can still be important.',
+          'Do not run this unless you are confident the host is not relying on old detached volumes for recovery.',
+        ]}
+        loading={pruningVolumes}
+        onClose={() => { if (!pruningVolumes) setVolumePruneConfirmOpen(false) }}
+        onConfirm={async () => { await handleVolumePrune(); setVolumePruneConfirmOpen(false) }}
       />
 
       <ReauthModal open={reauthOpen} onClose={() => setReauthOpen(false)} />

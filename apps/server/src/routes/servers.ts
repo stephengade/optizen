@@ -8,6 +8,11 @@ import { getDb, saveDb } from '../lib/db'
 import { sendServerDiskWarningNotification } from '../lib/notifications'
 import { inferProjectRuntime, inferProjectSource, inferProxyTypeFromProject } from '../lib/projectInference'
 import { fetchServerResources } from '../lib/resources'
+import {
+  restartServerService,
+  runSafeServerPrune,
+  runVolumePrune,
+} from '../lib/serverMaintenance'
 import { execCommand, getConnection, testConnection } from '../lib/ssh'
 
 const serverBody = t.Object({
@@ -77,6 +82,36 @@ type StorageAuditItem = {
 type StorageAuditDiagnostic = {
   step: string
   message: string
+}
+
+type DockerUsageImage = {
+  id: string
+  repository: string
+  tag: string
+  reference: string
+  createdSince: string
+  sizeText: string
+  sizeBytes: number
+  inUse: boolean
+  containerCount: number
+}
+
+type DockerUsageContainer = {
+  id: string
+  name: string
+  image: string
+  status: string
+  running: boolean
+}
+
+type DockerUsageReport = {
+  checkedAt: string
+  dockerAvailable: boolean
+  summaryText: string
+  reclaimableBytes: number
+  images: DockerUsageImage[]
+  containers: DockerUsageContainer[]
+  diagnostics: StorageAuditDiagnostic[]
 }
 
 const SAFE_CLEANUP_COMMANDS = [
@@ -162,6 +197,73 @@ function estimateDockerUsageFromSystemDf(output: string) {
   }
 
   return totalBytes > 0 ? totalBytes : undefined
+}
+
+function estimateDockerReclaimableBytes(output: string) {
+  let totalBytes = 0
+
+  for (const rawLine of output.split('\n')) {
+    const line = rawLine.trim()
+    if (!line || /^TYPE\s+/i.test(line)) continue
+
+    const parts = line.split(/\s{2,}/).map((part) => part.trim()).filter(Boolean)
+    const reclaimable = parts.at(-1)?.split(/\s+/)[0] ?? ''
+    const bytes = parseHumanSizeToBytes(reclaimable)
+    if (bytes === undefined) continue
+    totalBytes += bytes
+  }
+
+  return totalBytes
+}
+
+function parseDockerImages(output: string, containers: DockerUsageContainer[]) {
+  const usageCounts = new Map<string, number>()
+  for (const container of containers) {
+    usageCounts.set(container.image, (usageCounts.get(container.image) ?? 0) + 1)
+  }
+
+  return output
+    .split('\n')
+    .map((line) => line.trim())
+    .filter(Boolean)
+    .map((line) => {
+      const [id, repository, tag, createdSince, sizeText] = line.split('\t')
+      if (!id || !repository || !tag || !sizeText) return null
+      const reference = repository === '<none>' ? id : `${repository}:${tag}`
+      const containerCount = usageCounts.get(reference) ?? 0
+      return {
+        id,
+        repository,
+        tag,
+        reference,
+        createdSince: createdSince ?? '',
+        sizeText,
+        sizeBytes: parseHumanSizeToBytes(sizeText) ?? 0,
+        inUse: containerCount > 0,
+        containerCount,
+      } satisfies DockerUsageImage
+    })
+    .filter((entry): entry is DockerUsageImage => Boolean(entry))
+    .sort((a, b) => b.sizeBytes - a.sizeBytes)
+}
+
+function parseDockerContainers(output: string) {
+  return output
+    .split('\n')
+    .map((line) => line.trim())
+    .filter(Boolean)
+    .map((line) => {
+      const [id, name, image, status] = line.split('\t')
+      if (!id || !name || !image || !status) return null
+      return {
+        id,
+        name,
+        image,
+        status,
+        running: /^up\b/i.test(status),
+      } satisfies DockerUsageContainer
+    })
+    .filter((entry): entry is DockerUsageContainer => Boolean(entry))
 }
 
 function buildTimedShell(command: string, useSudo = false) {
@@ -598,6 +700,80 @@ async function runServerStorageCleanup(server: Server, mode: 'safe' | 'deep' = '
   })
 }
 
+async function fetchDockerUsageReport(server: Server): Promise<DockerUsageReport> {
+  return withSsh(server, async (ssh) => {
+    const diagnostics: StorageAuditDiagnostic[] = []
+
+    const dockerCheck = await execCommand(
+      ssh,
+      'if command -v docker >/dev/null 2>&1; then echo 1; elif [ -x /usr/bin/docker ]; then echo 1; else echo 0; fi'
+    )
+
+    const dockerAvailable = dockerCheck.stdout.trim() === '1'
+    if (!dockerAvailable) {
+      return {
+        checkedAt: new Date().toISOString(),
+        dockerAvailable: false,
+        summaryText: '',
+        reclaimableBytes: 0,
+        images: [],
+        containers: [],
+        diagnostics: dockerCheck.code !== 0
+          ? [{
+              step: 'docker-check',
+              message: dockerCheck.stderr.trim() || dockerCheck.stdout.trim() || 'Docker availability check exited unexpectedly.',
+            }]
+          : [],
+      }
+    }
+
+    const dockerDfResult = await execCommand(
+      ssh,
+      'if command -v docker >/dev/null 2>&1; then DOCKER_BIN="$(command -v docker)"; elif [ -x /usr/bin/docker ]; then DOCKER_BIN="/usr/bin/docker"; else DOCKER_BIN=""; fi; if [ -n "$DOCKER_BIN" ]; then "$DOCKER_BIN" system df 2>/dev/null; fi'
+    )
+    const containersResult = await execCommand(
+      ssh,
+      'if command -v docker >/dev/null 2>&1; then DOCKER_BIN="$(command -v docker)"; elif [ -x /usr/bin/docker ]; then DOCKER_BIN="/usr/bin/docker"; else DOCKER_BIN=""; fi; if [ -n "$DOCKER_BIN" ]; then "$DOCKER_BIN" ps -a --format "{{.ID}}\t{{.Names}}\t{{.Image}}\t{{.Status}}" 2>/dev/null; fi'
+    )
+    const imagesResult = await execCommand(
+      ssh,
+      'if command -v docker >/dev/null 2>&1; then DOCKER_BIN="$(command -v docker)"; elif [ -x /usr/bin/docker ]; then DOCKER_BIN="/usr/bin/docker"; else DOCKER_BIN=""; fi; if [ -n "$DOCKER_BIN" ]; then "$DOCKER_BIN" image ls --format "{{.ID}}\t{{.Repository}}\t{{.Tag}}\t{{.CreatedSince}}\t{{.Size}}" 2>/dev/null; fi'
+    )
+
+    if (dockerDfResult.code !== 0) {
+      diagnostics.push({
+        step: 'docker-system-df',
+        message: dockerDfResult.stderr.trim() || dockerDfResult.stdout.trim() || 'Failed to inspect Docker disk usage.',
+      })
+    }
+    if (containersResult.code !== 0) {
+      diagnostics.push({
+        step: 'docker-containers',
+        message: containersResult.stderr.trim() || containersResult.stdout.trim() || 'Failed to inspect Docker containers.',
+      })
+    }
+    if (imagesResult.code !== 0) {
+      diagnostics.push({
+        step: 'docker-images',
+        message: imagesResult.stderr.trim() || imagesResult.stdout.trim() || 'Failed to inspect Docker images.',
+      })
+    }
+
+    const containers = parseDockerContainers(containersResult.stdout)
+    const images = parseDockerImages(imagesResult.stdout, containers)
+
+    return {
+      checkedAt: new Date().toISOString(),
+      dockerAvailable: true,
+      summaryText: dockerDfResult.stdout.trim(),
+      reclaimableBytes: estimateDockerReclaimableBytes(dockerDfResult.stdout),
+      images,
+      containers,
+      diagnostics,
+    }
+  })
+}
+
 export const serverRoutes = new Elysia({ prefix: '/servers' })
   .get('/', async (context: any) => {
     const { requireAuth, set } = context
@@ -929,6 +1105,202 @@ export const serverRoutes = new Elysia({ prefix: '/servers' })
       logServerRouteError('storage-deep-cleanup', server.id, error)
       set.status = 500
       return { message: error instanceof Error ? error.message : 'Failed to run inactive-only deep cleanup' }
+    }
+  })
+  .post('/:id/maintenance/run-safe-prune', async (context: any) => {
+    const { requireAuth, params, set } = context
+    await requireAuth()
+    requireCryptoReady(set)
+    const denied = await requireDangerousActionAuth(context)
+    if (denied) return denied
+
+    const db = await getDb()
+    const server = db.data.servers.find((item) => item.id === params.id)
+    if (!server) {
+      set.status = 404
+      return { message: 'Server not found' }
+    }
+
+    try {
+      const output = await runSafeServerPrune(server)
+      await recordActivity({
+        serverId: server.id,
+        type: 'server_storage_cleaned',
+        status: 'warning',
+        title: `Ran maintenance safe prune on ${server.name}`,
+        detail: output || 'Ran safe Docker and host-cache prune from the maintenance panel.',
+      })
+      return { success: true, output }
+    } catch (error) {
+      logServerRouteError('maintenance-run-safe-prune', server.id, error)
+      set.status = 500
+      return { message: error instanceof Error ? error.message : 'Failed to run safe prune' }
+    }
+  })
+  .post('/:id/restart-service', async (context: any) => {
+    const { requireAuth, params, body, set } = context
+    await requireAuth()
+    requireCryptoReady(set)
+    const denied = await requireDangerousActionAuth(context)
+    if (denied) return denied
+
+    const db = await getDb()
+    const server = db.data.servers.find((item) => item.id === params.id)
+    if (!server) {
+      set.status = 404
+      return { message: 'Server not found' }
+    }
+
+    try {
+      const output = await restartServerService(server, body.service)
+      await recordActivity({
+        serverId: server.id,
+        type: 'server_storage_cleaned',
+        status: 'warning',
+        title: `Restarted ${body.service} on ${server.name}`,
+        detail: output || `Restarted ${body.service} from Launchpad.`,
+      })
+      return { success: true, output }
+    } catch (error) {
+      logServerRouteError('restart-service', server.id, error, { service: body.service })
+      set.status = 500
+      return { message: error instanceof Error ? error.message : `Failed to restart ${body.service}` }
+    }
+  }, { body: t.Object({ service: t.Union([t.Literal('docker'), t.Literal('containerd')]) }) })
+  .post('/:id/docker-volume-prune', async (context: any) => {
+    const { requireAuth, params, set } = context
+    await requireAuth()
+    requireCryptoReady(set)
+    const denied = await requireDangerousActionAuth(context)
+    if (denied) return denied
+
+    const db = await getDb()
+    const server = db.data.servers.find((item) => item.id === params.id)
+    if (!server) {
+      set.status = 404
+      return { message: 'Server not found' }
+    }
+
+    try {
+      const output = await runVolumePrune(server)
+      await recordActivity({
+        serverId: server.id,
+        type: 'server_storage_cleaned',
+        status: 'warning',
+        title: `Pruned Docker volumes on ${server.name}`,
+        detail: output || 'Ran docker volume prune from Launchpad.',
+      })
+      return { success: true, output }
+    } catch (error) {
+      logServerRouteError('docker-volume-prune', server.id, error)
+      set.status = 500
+      return { message: error instanceof Error ? error.message : 'Failed to prune Docker volumes' }
+    }
+  })
+  .get('/:id/docker-usage', async (context: any) => {
+    const { requireAuth, params, set } = context
+    await requireAuth()
+    requireCryptoReady(set)
+
+    const db = await getDb()
+    const server = db.data.servers.find((item) => item.id === params.id)
+    if (!server) {
+      set.status = 404
+      return { message: 'Server not found' }
+    }
+
+    try {
+      return await fetchDockerUsageReport(server)
+    } catch (error) {
+      logServerRouteError('docker-usage', server.id, error)
+      set.status = 500
+      return { message: error instanceof Error ? error.message : 'Failed to inspect Docker usage' }
+    }
+  })
+  .post(
+    '/:id/docker-remove-image',
+    async (context: any) => {
+      const { requireAuth, params, body, set } = context
+      await requireAuth()
+      requireCryptoReady(set)
+      const denied = await requireDangerousActionAuth(context)
+      if (denied) return denied
+
+      const db = await getDb()
+      const server = db.data.servers.find((item) => item.id === params.id)
+      if (!server) {
+        set.status = 404
+        return { message: 'Server not found' }
+      }
+
+      try {
+        const result = await withSsh(server, async (ssh) =>
+          execCommand(ssh, `docker image rm ${shellEscape(body.imageId)}`)
+        )
+        if (result.code !== 0) {
+          set.status = 500
+          return { message: result.stderr || result.stdout || 'Failed to remove Docker image' }
+        }
+
+        await recordActivity({
+          serverId: server.id,
+          type: 'server_storage_cleaned',
+          status: 'warning',
+          title: `Removed Docker image on ${server.name}`,
+          detail: `Removed image ${body.imageId}.`,
+        })
+
+        return {
+          success: true,
+          output: [result.stdout.trim(), result.stderr.trim()].filter(Boolean).join('\n'),
+        }
+      } catch (error) {
+        logServerRouteError('docker-remove-image', server.id, error, { imageId: body.imageId })
+        set.status = 500
+        return { message: error instanceof Error ? error.message : 'Failed to remove Docker image' }
+      }
+    },
+    { body: t.Object({ imageId: t.String({ minLength: 1 }) }) }
+  )
+  .post('/:id/docker-prune-exited-containers', async (context: any) => {
+    const { requireAuth, params, set } = context
+    await requireAuth()
+    requireCryptoReady(set)
+    const denied = await requireDangerousActionAuth(context)
+    if (denied) return denied
+
+    const db = await getDb()
+    const server = db.data.servers.find((item) => item.id === params.id)
+    if (!server) {
+      set.status = 404
+      return { message: 'Server not found' }
+    }
+
+    try {
+      const result = await withSsh(server, async (ssh) =>
+        execCommand(ssh, 'docker container prune -f')
+      )
+      if (result.code !== 0) {
+        set.status = 500
+        return { message: result.stderr || result.stdout || 'Failed to prune exited containers' }
+      }
+
+      await recordActivity({
+        serverId: server.id,
+        type: 'server_storage_cleaned',
+        status: 'warning',
+        title: `Pruned exited containers on ${server.name}`,
+        detail: 'Removed stopped Docker containers to free image references and container metadata.',
+      })
+
+      return {
+        success: true,
+        output: [result.stdout.trim(), result.stderr.trim()].filter(Boolean).join('\n'),
+      }
+    } catch (error) {
+      logServerRouteError('docker-prune-exited-containers', server.id, error)
+      set.status = 500
+      return { message: error instanceof Error ? error.message : 'Failed to prune exited containers' }
     }
   })
   .post('/:id/reclassify-projects', async (context: any) => {
