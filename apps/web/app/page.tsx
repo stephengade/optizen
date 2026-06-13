@@ -163,7 +163,7 @@ export default function Home() {
       <section className="mx-auto max-w-6xl px-6 py-24 lg:py-32">
         <div className="inline-flex items-center gap-2 border border-(--border) px-3 py-1 text-xs text-(--text-muted) mb-6">
           <span className="h-1.5 w-1.5 bg-(--accent)" />
-          Open source · MIT · Self-hosted
+          Open source · AGPL-3.0 · Self-hosted
         </div>
         <h1 className="max-w-3xl text-5xl font-semibold tracking-tight text-(--text) lg:text-6xl leading-[1.06]">
           A control plane for your<br />self-hosted VPS fleet.
@@ -451,8 +451,9 @@ export default function Home() {
             <OptizenMark />
             <div>
               <div className="text-sm font-semibold text-(--text)">Optizen</div>
-              <div className="text-xs text-(--text-subtle) mt-0.5">Ops + Kaizen — continuous improvement for your ops.</div>
+             
             </div>
+            
           </div>
           <div className="flex flex-wrap items-center gap-x-6 gap-y-2 text-xs text-(--text-muted)">
             <Link href="/help" className="hover:text-(--text) transition-colors">Docs</Link>
@@ -469,9 +470,10 @@ export default function Home() {
             </a>
           </div>
         </div>
+         <div className="text-xs max-w-6xl  mx-auto text-(--text-subtle) mt-1">Continuous improvement for your ops.</div>
         <div className="mx-auto max-w-6xl mt-6 pt-6 border-t border-(--border) flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
           <p className="text-xs text-(--text-subtle)">
-            MIT License · Free and open source · Self-hosted, your infrastructure.
+            AGPL-3.0 License · Free and open source · Self-hosted, your infrastructure.
           </p>
           <p className="text-xs text-(--text-subtle)">
             Built by{' '}

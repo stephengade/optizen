@@ -175,7 +175,7 @@ export function ServerForm({
           min={1}
           max={100}
           error={thresholdError}
-          hint="Launchpad sends a disk warning when root disk usage reaches this percentage. Defaults to 50%."
+          hint="Optizen sends a disk warning when root disk usage reaches this percentage. Defaults to 50%."
         />
 
         <div className="flex flex-wrap gap-3">

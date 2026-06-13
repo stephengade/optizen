@@ -57,7 +57,7 @@ export default function ContributePage() {
 
       <h1 className="text-xl font-semibold text-(--text)">Contribute</h1>
       <p className="mt-1 text-sm text-(--text-muted)">
-        A lightweight guide for making Launchpad better without increasing review or operational risk.
+        A lightweight guide for making Optizen better without increasing review or operational risk.
       </p>
 
       <div className="mt-8 border border-(--border) bg-(--surface) p-5">

@@ -6,7 +6,7 @@ const steps = [
     n: '01',
     title: 'Fork the repository',
     body: 'Create your own fork on GitHub first if you plan to make changes or keep a private working branch. If you only want to explore locally, you can clone the main repository directly.',
-    code: `# in GitHub:\n# click Fork on the Launchpad repository`,
+    code: `# in GitHub:\n# click Fork on the Optizen repository`,
   },
   {
     n: '02',
@@ -17,7 +17,7 @@ const steps = [
   {
     n: '03',
     title: 'Install Bun and dependencies',
-    body: 'Launchpad uses Bun workspaces in a monorepo. Install Bun first, then install repo dependencies once from the root.',
+    body: 'Optizen uses Bun workspaces in a monorepo. Install Bun first, then install repo dependencies once from the root.',
     code: `bun install`,
   },
   {
@@ -35,7 +35,7 @@ const steps = [
   {
     n: '06',
     title: 'Open the app and complete first-run setup',
-    body: 'Visit the local web app, create the master password, then add a server record and test SSH. Launchpad stores encrypted config locally, so your first run sets up that trust boundary.',
+    body: 'Visit the local web app, create the master password, then add a server record and test SSH. Optizen stores encrypted config locally, so your first run sets up that trust boundary.',
     code: `# typical local web URL\nhttp://localhost:3000`,
   },
 ]
@@ -50,7 +50,7 @@ export default function GetStartedPage() {
 
       <h1 className="text-xl font-semibold text-(--text)">Get started</h1>
       <p className="mt-1 text-sm text-(--text-muted)">
-        From fork to a running local Launchpad workspace.
+        From fork to a running local Optizen workspace.
       </p>
 
       <div className="mt-8 border border-(--border) divide-y divide-(--border)">
@@ -80,7 +80,7 @@ export default function GetStartedPage() {
       </div>
 
       <div className="mt-8 border-t border-(--border) pt-6 flex items-center justify-between">
-        <p className="text-xs text-(--text-muted)">Next: complete product setup inside Launchpad</p>
+        <p className="text-xs text-(--text-muted)">Next: complete product setup inside Optizen</p>
         <Link href="/help/setup" className="inline-flex items-center gap-1.5 text-xs text-(--text-muted) hover:text-(--text) border border-(--border) px-3 py-1.5 transition-colors">
           Quick start
           <ArrowLeft size={11} className="rotate-180" />

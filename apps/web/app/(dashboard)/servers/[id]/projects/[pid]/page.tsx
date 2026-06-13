@@ -719,7 +719,7 @@ export default function ProjectDetailPage() {
       <ConfirmActionModal
         open={deployConfirmOpen}
         title="Review deploy"
-        description="Check the commands and target tag before Launchpad starts this deploy."
+        description="Check the commands and target tag before Optizen starts this deploy."
         confirmLabel="Start deploy"
         tone="primary"
         details={[
@@ -774,7 +774,7 @@ export default function ProjectDetailPage() {
       <ConfirmActionModal
         open={deleteConfirmOpen}
         title="Delete project"
-        description="This removes the Launchpad project record, deploy history context, and health configuration from the dashboard. It does not delete the remote app by itself."
+        description="This removes the Optizen project record, deploy history context, and health configuration from the dashboard. It does not delete the remote app by itself."
         confirmLabel="Delete project"
         confirmKeyword={project.name}
         details={[

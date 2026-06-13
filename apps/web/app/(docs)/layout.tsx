@@ -28,7 +28,7 @@ export default function DocsLayout({ children }: { children: React.ReactNode }) 
       {/* Footer */}
       <footer className="border-t border-(--border) px-6 py-6 mt-16">
         <div className="mx-auto max-w-4xl flex items-center justify-between gap-4">
-          <p className="text-xs text-(--text-subtle)">Optizen · MIT License · Self-hosted</p>
+          <p className="text-xs text-(--text-subtle)">Optizen · AGPL-3.0 License · Self-hosted</p>
           <div className="flex items-center gap-4 text-xs text-(--text-muted)">
             <Link href="/help/setup" className="hover:text-(--text) transition-colors">Quick start</Link>
             <Link href="/help/projects" className="hover:text-(--text) transition-colors">Projects</Link>

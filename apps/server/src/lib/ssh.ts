@@ -28,6 +28,30 @@ function shellEscape(value: string): string {
   return `'${value.replace(/'/g, `'\"'\"'`)}'`
 }
 
+const SSH_CONNECT_ATTEMPTS = [20_000, 40_000] as const
+
+function isRetryableHandshakeError(error: unknown) {
+  const message = error instanceof Error ? error.message.toLowerCase() : ''
+  return (
+    message.includes('timed out while waiting for handshake') ||
+    message.includes('connection lost before handshake') ||
+    message.includes('handshake failed')
+  )
+}
+
+function describeConnectionFailure(error: unknown) {
+  if (!(error instanceof Error)) {
+    return 'SSH connection failed'
+  }
+
+  const message = error.message.trim()
+  if (isRetryableHandshakeError(error)) {
+    return `${message}. The SSH server did not complete the handshake in time. Check the host, port, firewall, and whether the server is reachable from Launchpad.`
+  }
+
+  return message
+}
+
 /**
  * Get an authenticated SSH connection for a server.
  * Private keys are read from disk at runtime — never stored in the DB.
@@ -40,29 +64,52 @@ export async function getConnection(server: Server): Promise<NodeSSH> {
 
   async function connectWithTimeout(readyTimeout: number) {
     const ssh = new NodeSSH()
-    await ssh.connect({
-      host: server.host,
-      port: server.port,
-      username: server.user,
-      privateKey,
-      passphrase,
-      readyTimeout,
-      keepaliveInterval: 10_000,
-      keepaliveCountMax: 3,
-    })
-    return ssh
-  }
+    let timer: NodeJS.Timeout | undefined
 
-  try {
-    return await connectWithTimeout(30_000)
-  } catch (error) {
-    const message = error instanceof Error ? error.message : ''
-    if (!message.toLowerCase().includes('timed out while waiting for handshake')) {
+    try {
+      await Promise.race([
+        ssh.connect({
+          host: server.host,
+          port: server.port,
+          username: server.user,
+          privateKey,
+          passphrase,
+          readyTimeout,
+          keepaliveInterval: 10_000,
+          keepaliveCountMax: 3,
+        }),
+        new Promise<never>((_, reject) => {
+          timer = setTimeout(() => {
+            reject(new Error(`SSH connection timed out after ${Math.round(readyTimeout / 1000)}s before the session became ready`))
+          }, readyTimeout + 5_000)
+        }),
+      ])
+
+      return ssh
+    } catch (error) {
+      ssh.dispose()
       throw error
+    } finally {
+      if (timer) {
+        clearTimeout(timer)
+      }
     }
-
-    return connectWithTimeout(60_000)
   }
+
+  let lastError: unknown
+
+  for (let index = 0; index < SSH_CONNECT_ATTEMPTS.length; index += 1) {
+    try {
+      return await connectWithTimeout(SSH_CONNECT_ATTEMPTS[index])
+    } catch (error) {
+      lastError = error
+      if (!isRetryableHandshakeError(error) || index === SSH_CONNECT_ATTEMPTS.length - 1) {
+        break
+      }
+    }
+  }
+
+  throw new Error(describeConnectionFailure(lastError))
 }
 
 /**

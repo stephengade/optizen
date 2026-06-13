@@ -21,7 +21,7 @@ export default function DashboardError({
         <p className="text-xs uppercase tracking-[0.24em] text-(--yellow)">Recovery</p>
         <h1 className="mt-2 text-3xl font-semibold text-(--text)">This workspace hit an unexpected state</h1>
         <p className="mt-3 max-w-2xl text-sm text-(--text-muted)">
-          Launchpad keeps your server and project records intact. Try the action again, or step back to a stable view and continue from there.
+          Optizen keeps your server and project records intact. Try the action again, or step back to a stable view and continue from there.
         </p>
         <div className="mt-6 flex flex-wrap gap-3">
           <Button onClick={reset}>Retry this view</Button>

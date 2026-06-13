@@ -5,7 +5,7 @@ const sections = [
   {
     href: '/help/get-started',
     title: 'Get started',
-    description: 'Fork, clone, install dependencies, configure env files, and run Launchpad locally.',
+    description: 'Fork, clone, install dependencies, configure env files, and run Optizen locally.',
   },
   {
     href: '/help/contribute',

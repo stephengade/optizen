@@ -1,5 +1,5 @@
 /**
- * Launchpad API Client
+ * Optizen API Client
  * Typed fetch wrapper for the Elysia server
  * All routes proxied through Next.js /api/* rewrite
  */

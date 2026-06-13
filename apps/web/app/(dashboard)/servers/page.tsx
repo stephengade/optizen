@@ -197,7 +197,7 @@ export default function ServersPage() {
           <div className="px-5 py-5">
             <div className="text-xs uppercase tracking-[0.16em] text-(--text-muted) mb-2">Managed projects</div>
             <div className="text-lg font-semibold text-(--text)">{totalProjects}</div>
-            <p className="mt-1 text-xs text-(--text-muted)">Launchpad-managed apps only — not every container on the host.</p>
+            <p className="mt-1 text-xs text-(--text-muted)">Optizen-managed apps only — not every container on the host.</p>
           </div>
           <div className="px-5 py-5">
             <div className="text-xs uppercase tracking-[0.16em] text-(--text-muted) mb-2">Recommended order</div>

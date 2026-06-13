@@ -70,7 +70,7 @@ export default function ServerMetricsPage() {
 
       <h1 className="text-xl font-semibold text-(--text)">Server metrics</h1>
       <p className="mt-1 text-sm text-(--text-muted)">
-        A quick guide to what Launchpad shows on server cards and detail pages, and how to interpret those numbers without overreacting.
+        A quick guide to what Optizen shows on server cards and detail pages, and how to interpret those numbers without overreacting.
       </p>
 
       <div className="mt-8 border border-(--border) divide-y divide-(--border)">

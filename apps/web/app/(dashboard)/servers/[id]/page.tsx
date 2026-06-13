@@ -355,7 +355,7 @@ export default function ServerDetailPage() {
       <Modal
         open={editOpen}
         title="Edit server"
-        description="Update connection details. Deleting removes all attached projects from Launchpad."
+        description="Update connection details. Deleting removes all attached projects from Optizen."
         onClose={() => setEditOpen(false)}
       >
         <ServerForm
@@ -396,12 +396,12 @@ export default function ServerDetailPage() {
       <ConfirmActionModal
         open={confirmDeleteOpen}
         title="Delete server"
-        description="Removes the server record and all Launchpad projects attached to it. Remote containers and files are unaffected."
+        description="Removes the server record and all Optizen projects attached to it. Remote containers and files are unaffected."
         confirmLabel="Delete server"
         confirmKeyword={server.name}
         details={[
           `Server: ${server.name}`,
-          `Projects removed from Launchpad: ${projects.length}`,
+          `Projects removed from Optizen: ${projects.length}`,
           'Remote containers and files stay on the server.',
         ]}
         onClose={() => setConfirmDeleteOpen(false)}
