@@ -69,7 +69,7 @@ function renderDeployEmail(options: {
   const logLines = record.logSnapshot.slice(-20).join('\n')
 
   return {
-    subject: `[Launchpad] ${title}: ${project.name}`,
+    subject: `[Optizen] ${title}: ${project.name}`,
     text: `${summary}\nTrigger: ${record.trigger}\nDuration: ${record.durationMs ?? 0}ms\n\n${logLines}`,
     html: `
       <div style="font-family: Inter, Arial, sans-serif; color: #111;">
@@ -95,7 +95,7 @@ function renderDiskWarningEmail(options: {
   const { server, usedPercent, thresholdPercent } = options
 
   return {
-    subject: `[Launchpad] Disk warning: ${server.name}`,
+    subject: `[Optizen] Disk warning: ${server.name}`,
     text: `Disk usage on ${server.name} (${server.host}) is at ${usedPercent.toFixed(1)}%, above the ${thresholdPercent}% threshold.`,
     html: `
       <div style="font-family: Inter, Arial, sans-serif; color: #111;">

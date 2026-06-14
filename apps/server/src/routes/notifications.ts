@@ -74,9 +74,9 @@ export const notificationRoutes = new Elysia({ prefix: '/notifications' })
       try {
         await sendEmail({
           smtp: body.smtp,
-          subject: '[Launchpad] Test email',
-          text: 'Launchpad SMTP test succeeded.',
-          html: '<p>Launchpad SMTP test succeeded.</p>',
+          subject: '[Optizen] Test email',
+          text: 'Optizen SMTP test succeeded.',
+          html: '<p>Optizen SMTP test succeeded.</p>',
         })
         return { success: true }
       } catch (error) {
