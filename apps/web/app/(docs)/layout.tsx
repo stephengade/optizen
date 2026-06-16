@@ -12,6 +12,7 @@ export default function DocsLayout({ children }: { children: React.ReactNode }) 
             Optizen
           </Link>
           <div className="flex items-center gap-4">
+            <Link href="/contribute" className="text-xs text-(--text-muted) hover:text-(--text) transition-colors">Contribute</Link>
             <Link href="/help" className="text-xs text-(--text-muted) hover:text-(--text) transition-colors">Docs</Link>
             <Link
               href="/login"
@@ -27,14 +28,15 @@ export default function DocsLayout({ children }: { children: React.ReactNode }) 
 
       {/* Footer */}
       <footer className="border-t border-(--border) px-6 py-6 mt-16">
-        <div className="mx-auto max-w-4xl flex items-center justify-between gap-4">
-          <p className="text-xs text-(--text-subtle)">Optizen · AGPL-3.0 License · Self-hosted</p>
-          <div className="flex items-center gap-4 text-xs text-(--text-muted)">
-            <Link href="/about" className="hover:text-(--text) transition-colors">About</Link>
-            <Link href="/help/setup" className="hover:text-(--text) transition-colors">Quick start</Link>
-            <Link href="/help/projects" className="hover:text-(--text) transition-colors">Projects</Link>
-            <Link href="/help/workflows" className="hover:text-(--text) transition-colors">Workflows</Link>
-            <Link href="/help/security" className="hover:text-(--text) transition-colors">Security</Link>
+        <div className="mx-auto max-w-4xl flex flex-col sm:flex-row items-start sm:items-center justify-between gap-6">
+          <p className="text-xs text-(--text-subtle) whitespace-nowrap">Optizen · AGPL-3.0 License · Self-hosted</p>
+          <div className="flex flex-wrap items-center gap-x-4 gap-y-2 text-xs text-(--text-muted)">
+            <Link href="/about" className="hover:text-(--text) transition-colors whitespace-nowrap">About</Link>
+            <Link href="/contribute" className="hover:text-(--text) transition-colors whitespace-nowrap">Contribute</Link>
+            <Link href="/help/setup" className="hover:text-(--text) transition-colors whitespace-nowrap">Quick start</Link>
+            <Link href="/help/projects" className="hover:text-(--text) transition-colors whitespace-nowrap">Projects</Link>
+            <Link href="/help/workflows" className="hover:text-(--text) transition-colors whitespace-nowrap">Workflows</Link>
+            <Link href="/help/security" className="hover:text-(--text) transition-colors whitespace-nowrap">Security</Link>
           </div>
         </div>
       </footer>

@@ -144,6 +144,12 @@ export default function Home() {
               Star on GitHub
             </a>
             <Link
+              href="/contribute"
+              className="text-xs text-(--text-muted) hover:text-(--text) transition-colors"
+            >
+              Contribute
+            </Link>
+            <Link
               href="/help"
               className="text-xs text-(--text-muted) hover:text-(--text) transition-colors"
             >
@@ -503,6 +509,7 @@ export default function Home() {
           </div>
           <div className="flex flex-wrap items-center gap-x-6 gap-y-2 text-xs text-(--text-muted)">
             <Link href="/about" className="hover:text-(--text) transition-colors">About</Link>
+            <Link href="/contribute" className="hover:text-(--text) transition-colors">Contribute</Link>
             <Link href="/help" className="hover:text-(--text) transition-colors">Docs</Link>
             <Link href="/help/setup" className="hover:text-(--text) transition-colors">Quick start</Link>
             <Link href="/help/security" className="hover:text-(--text) transition-colors">Security</Link>
