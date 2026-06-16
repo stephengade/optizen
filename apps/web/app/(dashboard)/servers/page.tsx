@@ -2,8 +2,8 @@
 
 import { useEffect, useState } from 'react'
 import Link from 'next/link'
-import type { Server, ServerConnectionStatus, ServerResourceStatus } from '@launchpad/shared'
-import { Plus } from 'lucide-react'
+import type { Server, ServerConnectionStatus, ServerResourceStatus, SmtpConfig } from '@launchpad/shared'
+import { Mail, Plus, X } from 'lucide-react'
 import { toast } from 'sonner'
 import { ServerCard } from '@/components/dashboard/ServerCard'
 import { ServerForm } from '@/components/dashboard/ServerForm'
@@ -23,6 +23,13 @@ export default function ServersPage() {
   const [loading, setLoading] = useState(true)
   const [testingId, setTestingId] = useState<string | null>(null)
   const [showForm, setShowForm] = useState(false)
+  const [smtpConfigured, setSmtpConfigured] = useState(true)
+  const [showNotificationBanner, setShowNotificationBanner] = useState(false)
+
+  function handleDismissBanner() {
+    localStorage.setItem('optizen_dismiss_smtp_alert', 'true')
+    setShowNotificationBanner(false)
+  }
 
   async function loadServers() {
     if (demoMode) {
@@ -34,18 +41,29 @@ export default function ServersPage() {
             .map((s) => [s.id, s.lastResourceStatus!])
         )
       )
+      setSmtpConfigured(false)
+      const isDismissed = localStorage.getItem('optizen_dismiss_smtp_alert') === 'true'
+      setShowNotificationBanner(!isDismissed)
       setLoading(false)
       return
     }
 
     try {
-      const data = await api.get<ServerSummary[]>('/servers')
+      const [data, notificationsData] = await Promise.all([
+        api.get<ServerSummary[]>('/servers'),
+        api.get<{ email: SmtpConfig | null }>('/notifications/settings').catch(() => ({ email: null }))
+      ])
       setServers(data)
       setResources(
         Object.fromEntries(
           data.filter((s) => s.lastResourceStatus).map((s) => [s.id, s.lastResourceStatus!])
         )
       )
+
+      const isConfigured = !!notificationsData?.email
+      setSmtpConfigured(isConfigured)
+      const isDismissed = localStorage.getItem('optizen_dismiss_smtp_alert') === 'true'
+      setShowNotificationBanner(!isConfigured && !isDismissed)
 
       const snapshots = await Promise.allSettled(
         data.map(async (s) => {
@@ -131,6 +149,36 @@ export default function ServersPage() {
           Add server
         </button>
       </div>
+
+      {showNotificationBanner && (
+        <div className="flex items-center justify-between border border-(--border) bg-(--bg-subtle) px-5 py-3 mb-8 text-sm gap-4 transition-all animate-in fade-in slide-in-from-top-2 duration-200">
+          <div className="flex items-center gap-3">
+            <span className="flex items-center justify-center h-8 w-8 bg-(--accent-dim) text-(--accent) shrink-0">
+              <Mail size={15} />
+            </span>
+            <div>
+              <span className="font-semibold text-(--text)">Email notifications are inactive.</span>{' '}
+              <span className="text-(--text-muted)">Configure SMTP settings to get notified when deployments fail or server disks run low.</span>
+            </div>
+          </div>
+          <div className="flex items-center gap-3 shrink-0">
+            <Link
+              href="/settings"
+              className="text-xs font-semibold text-(--accent) hover:underline underline-offset-4"
+            >
+              Configure settings →
+            </Link>
+            <button
+              type="button"
+              onClick={handleDismissBanner}
+              className="text-(--text-muted) hover:text-(--text) p-1 transition-colors"
+              aria-label="Dismiss banner"
+            >
+              <X size={15} />
+            </button>
+          </div>
+        </div>
+      )}
 
       {/* Stats */}
       <div className="grid grid-cols-3 border border-(--border) divide-x divide-(--border) mb-8">

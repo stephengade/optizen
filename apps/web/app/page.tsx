@@ -352,6 +352,50 @@ export default function Home() {
         </div>
       </section>
 
+      {/* ── Notifications ── */}
+      <section className="border-t border-(--border)">
+        <div className="mx-auto max-w-6xl px-6 py-16 grid gap-12 lg:grid-cols-2 lg:items-start">
+          <div>
+            <p className="text-xs uppercase tracking-[0.2em] text-(--text-muted)">Email alerts</p>
+            <h2 className="mt-3 text-2xl font-semibold text-(--text)">Stay informed on deploy outcomes</h2>
+            <p className="mt-3 text-sm leading-6 text-(--text-muted)">
+              Connect your own SMTP server to receive instant email notifications. Get notified automatically when deploys succeed or fail, and when your servers experience critical disk storage pressure.
+            </p>
+            <div className="mt-6 border border-(--border) bg-(--surface) p-5 font-mono text-xs text-(--text-muted) leading-6">
+              <div className="text-(--accent)">[Optizen] Deploy failed: api-service</div>
+              <div className="mt-2 text-(--text-subtle)">From: ops@yourdomain.com</div>
+              <div className="mt-1 text-(--text-subtle)">To: team@yourdomain.com</div>
+              <div className="mt-3 border-t border-(--border) pt-3">
+                <span className="text-(--red)">✗ api-service on prod-01 finished with status failed</span>
+                <div className="mt-2 text-(--text-muted)">Last 3 lines of logs:</div>
+                <div className="text-(--text-subtle)">&gt; npm run build</div>
+                <div className="text-(--text-subtle)">&gt; Error: Cannot find module './src/index.ts'</div>
+                <div className="text-(--text-subtle)">&gt; Process exited with code 1</div>
+              </div>
+            </div>
+          </div>
+          <div>
+            <p className="text-xs uppercase tracking-[0.2em] text-(--text-muted)">Webhooks</p>
+            <h2 className="mt-3 text-2xl font-semibold text-(--text)">Outbound webhook integrations</h2>
+            <p className="mt-3 text-sm leading-6 text-(--text-muted)">
+              Trigger external workflows in Slack, Discord, or your own microservices. Outbound webhooks send rich JSON payloads and support HMAC signature verification for security.
+            </p>
+            <div className="mt-6 border border-(--border) bg-(--surface) p-5 font-mono text-xs text-(--text-muted) leading-6">
+              <div className="text-(--accent)">POST https://api.slack.com/services/...</div>
+              <div className="mt-2 text-(--text-subtle)">Headers:</div>
+              <div className="mt-1 text-(--text-muted)">  Content-Type: application/json</div>
+              <div className="mt-1 text-(--text-muted)">  X-Launchpad-Signature: sha256=a8f3...</div>
+              <div className="mt-3 text-(--text-subtle)">Payload:</div>
+              <div className="mt-1 text-(--text-muted)">{"{"}</div>
+              <div className="mt-1 text-(--text-muted)">  "event": "deploy.failed",</div>
+              <div className="mt-1 text-(--text-muted)">  "project": {"{"} "name": "api-service" {"}"},</div>
+              <div className="mt-1 text-(--text-muted)">  "triggeredBy": "github-actions"</div>
+              <div className="mt-1 text-(--text-muted)">{"}"}</div>
+            </div>
+          </div>
+        </div>
+      </section>
+
       {/* ── Trust ── */}
       <section className="border-t border-(--border)">
         <div className="mx-auto max-w-6xl px-6 py-16">
@@ -387,6 +431,7 @@ export default function Home() {
                   '"Is it healthy?" means checking container state and hoping',
                   'Shell history is the only audit trail',
                   'Rollback means digging through git and guessing',
+                  'No alerts when deployments fail or disks fill up',
                 ].map((item) => (
                   <li key={item} className="flex items-start gap-2 text-sm text-(--text-muted)">
                     <span className="mt-2 block h-1 w-1 shrink-0 bg-(--text-subtle)" />
@@ -405,6 +450,7 @@ export default function Home() {
                   'Health checks run automatically after every deploy',
                   'Every dangerous action appears in the audit trail',
                   'Rollback picks a previous deploy record and re-runs it',
+                  'Instant email and webhook alerts for failures and disk pressure',
                 ].map((item) => (
                   <li key={item} className="flex items-start gap-2 text-sm text-(--text-muted)">
                     <span className="mt-2 block h-1 w-1 shrink-0 bg-(--accent)" />
