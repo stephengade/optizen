@@ -502,6 +502,7 @@ export default function Home() {
             
           </div>
           <div className="flex flex-wrap items-center gap-x-6 gap-y-2 text-xs text-(--text-muted)">
+            <Link href="/about" className="hover:text-(--text) transition-colors">About</Link>
             <Link href="/help" className="hover:text-(--text) transition-colors">Docs</Link>
             <Link href="/help/setup" className="hover:text-(--text) transition-colors">Quick start</Link>
             <Link href="/help/security" className="hover:text-(--text) transition-colors">Security</Link>

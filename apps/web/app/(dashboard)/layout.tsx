@@ -3,7 +3,7 @@
 import { useEffect, useState } from 'react'
 import Link from 'next/link'
 import { usePathname, useRouter } from 'next/navigation'
-import { BookOpen, Command, HardDrive, LogOut, Search, Server, Settings } from 'lucide-react'
+import { BookOpen, Command, HardDrive, Info, LogOut, Search, Server, Settings } from 'lucide-react'
 import { useAuth } from '@/lib/auth-context'
 import { CommandPalette } from '@/components/dashboard/CommandPalette'
 import { cn } from '@/lib/utils'
@@ -83,6 +83,13 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
             <BookOpen size={15} />
             Docs
           </a>
+          <Link
+            href="/about"
+            className="w-full flex items-center gap-3 px-3 py-2 text-sm text-(--text-muted) hover:text-(--text) hover:bg-(--surface) transition-colors"
+          >
+            <Info size={15} />
+            About
+          </Link>
           <button
             type="button"
             onClick={() => setPaletteOpen(true)}

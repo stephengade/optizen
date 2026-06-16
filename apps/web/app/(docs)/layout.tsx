@@ -30,6 +30,7 @@ export default function DocsLayout({ children }: { children: React.ReactNode }) 
         <div className="mx-auto max-w-4xl flex items-center justify-between gap-4">
           <p className="text-xs text-(--text-subtle)">Optizen · AGPL-3.0 License · Self-hosted</p>
           <div className="flex items-center gap-4 text-xs text-(--text-muted)">
+            <Link href="/about" className="hover:text-(--text) transition-colors">About</Link>
             <Link href="/help/setup" className="hover:text-(--text) transition-colors">Quick start</Link>
             <Link href="/help/projects" className="hover:text-(--text) transition-colors">Projects</Link>
             <Link href="/help/workflows" className="hover:text-(--text) transition-colors">Workflows</Link>
