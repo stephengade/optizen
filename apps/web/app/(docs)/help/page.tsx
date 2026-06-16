@@ -8,7 +8,7 @@ const sections = [
     description: 'Fork, clone, install dependencies, configure env files, and run Optizen locally.',
   },
   {
-    href: '/help/contribute',
+    href: '/contribute',
     title: 'Contribute',
     description: 'How to make changes, test them, and keep contributions easy to review.',
   },
