@@ -2,7 +2,7 @@
 
 import { useEffect, useMemo, useState } from 'react'
 import Link from 'next/link'
-import { useParams } from 'next/navigation'
+import { useParams, useSearchParams } from 'next/navigation'
 import type { FileRevision, Project } from '@launchpad/shared'
 import { toast } from 'sonner'
 import { FileRevisionList } from '@/components/dashboard/FileRevisionList'
@@ -37,6 +37,8 @@ interface NginxSites {
 
 export default function ServerProxyPage() {
   const params = useParams<{ id: string }>()
+  const searchParams = useSearchParams()
+  const initialPath = searchParams.get('path') || undefined
   const [status, setStatus] = useState<ProxyStatus | null>(null)
   const [config, setConfig] = useState<ProxyConfig | null>(null)
   const [projects, setProjects] = useState<Project[]>([])
@@ -102,8 +104,8 @@ export default function ServerProxyPage() {
   }
 
   useEffect(() => {
-    void loadData()
-  }, [params.id])
+    void loadData(initialPath)
+  }, [params.id, initialPath])
 
   const suggestedPaths = useMemo(() => {
     const values = new Set<string>()

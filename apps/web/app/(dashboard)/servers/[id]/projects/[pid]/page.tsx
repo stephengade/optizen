@@ -92,6 +92,20 @@ export default function ProjectDetailPage() {
       ].join('\n')
     : ''
 
+  const likelyProxyPath = (() => {
+    if (!project || !project.workingDir) return undefined
+    const workingDir = project.workingDir.replace(/\/$/, '')
+    const haystack = `${project.name} ${project.repoImage} ${project.workingDir}`.toLowerCase()
+    
+    if (project.proxyType === 'caddy' || haystack.includes('caddy')) {
+      return `${workingDir}/Caddyfile`
+    }
+    if (project.proxyType === 'nginx' || haystack.includes('nginx')) {
+      return `${workingDir}/nginx.conf`
+    }
+    return undefined
+  })()
+
   function handleDangerousActionError(error: unknown, fallbackMessage: string) {
     if (isReauthRequiredError(error)) {
       setReauthOpen(true)
@@ -513,6 +527,14 @@ export default function ProjectDetailPage() {
           >
             Open env editor
           </Link>
+          {project.proxyType && project.proxyType !== 'none' && (
+            <Link
+              href={`/servers/${params.id}/proxy${likelyProxyPath ? `?path=${encodeURIComponent(likelyProxyPath)}` : ''}`}
+              className="inline-flex h-9 items-center rounded border border-(--border) px-3 text-sm text-(--text) transition-colors hover:bg-(--surface-2)"
+            >
+              Open proxy editor
+            </Link>
+          )}
           <Button variant="ghost" size="sm" onClick={() => void handleHealthCheck()} loading={checkingHealth}>
             Run heartbeat
           </Button>
