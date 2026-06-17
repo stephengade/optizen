@@ -29,8 +29,9 @@ function buildLogCommand(project: {
   }
 
   if (source === 'container') {
+    const escapedImage = shellEscape(project.repoImage)
     return {
-      command: `docker logs --tail ${lines} $(docker ps --filter ancestor=${shellEscape(project.repoImage)} --format "{{.ID}}" | head -n 1)`,
+      command: `container_id=$(docker ps --filter ancestor=${escapedImage} --format "{{.ID}}" | head -n 1); if [ -z "$container_id" ]; then container_id=$(docker ps -a --filter ancestor=${escapedImage} --format "{{.ID}}" | head -n 1); fi; if [ -z "$container_id" ]; then echo "No container found running image ${escapedImage}" >&2; exit 1; fi; docker logs --tail ${lines} "$container_id"`,
       cwd: project.workingDir,
       label: 'Container logs',
     }
