@@ -3,7 +3,6 @@ import localFont from 'next/font/local'
 import { AuthProvider } from '@/lib/auth-context'
 import { DemoPrivacyProvider } from '@/lib/demo-privacy-context'
 import { AuthGate } from '@/components/ui/AuthGate'
-import { isPublicSite } from '@/lib/site'
 import { Toaster } from 'sonner'
 import './globals.css'
 
@@ -27,13 +26,11 @@ export const metadata: Metadata = {
   description: 'Self-hosted VPS operations. Servers, deploys, and infra files — clear and under control.',
 }
 
-export default async function RootLayout({ children }: { children: React.ReactNode }) {
-  const publicSite = await isPublicSite()
-
+export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     <html lang="en" className={`${geist.variable} ${geistMono.variable}`}>
       <body>
-        <AuthProvider disabled={publicSite}>
+        <AuthProvider>
           <DemoPrivacyProvider>
             <AuthGate>
               {children}

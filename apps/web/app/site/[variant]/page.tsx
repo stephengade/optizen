@@ -1,6 +1,5 @@
 import Link from 'next/link'
 import { ArrowRight, Star } from 'lucide-react'
-import { isPublicSite } from '@/lib/site'
 
 // ─── Data ────────────────────────────────────────────────────────────────────
 
@@ -123,9 +122,9 @@ const telemetry = [
 
 // ─── Component ───────────────────────────────────────────────────────────────
 
-export default async function Home() {
-  // On the public host there is no dashboard: CTAs point to the self-hosting guide instead.
-  const publicSite = await isPublicSite()
+export default async function Home({ params }: { params: Promise<{ variant: string }> }) {
+  // On the public host there is no dashboard: CTAs point to the install guide instead.
+  const publicSite = (await params).variant === 'public'
   const startHref = publicSite ? '/help/install' : '/setup'
 
   return (
@@ -314,7 +313,7 @@ export default async function Home() {
             <p className="text-xs uppercase tracking-[0.2em] text-(--text-muted)">Infra file editing</p>
             <h2 className="mt-3 text-2xl font-semibold text-(--text)">Edit env files and proxy config safely</h2>
             <p className="mt-3 text-sm leading-6 text-(--text-muted)">
-              Stop editing .env files over raw SSH with no undo. Optizen's built-in editors give you guardrails
+              Stop editing .env files over raw SSH with no undo. Optizen’s built-in editors give you guardrails
               for every write — including Caddy and Nginx config with live reload.
             </p>
             <div className="mt-6 border border-(--border) divide-y divide-(--border)">
@@ -382,7 +381,7 @@ export default async function Home() {
                 <span className="text-(--red)">✗ api-service on prod-01 finished with status failed</span>
                 <div className="mt-2 text-(--text-muted)">Last 3 lines of logs:</div>
                 <div className="text-(--text-subtle)">&gt; npm run build</div>
-                <div className="text-(--text-subtle)">&gt; Error: Cannot find module './src/index.ts'</div>
+                <div className="text-(--text-subtle)">{"> Error: Cannot find module './src/index.ts'"}</div>
                 <div className="text-(--text-subtle)">&gt; Process exited with code 1</div>
               </div>
             </div>
@@ -400,9 +399,9 @@ export default async function Home() {
               <div className="mt-1 text-(--text-muted)">  X-Launchpad-Signature: sha256=a8f3...</div>
               <div className="mt-3 text-(--text-subtle)">Payload:</div>
               <div className="mt-1 text-(--text-muted)">{"{"}</div>
-              <div className="mt-1 text-(--text-muted)">  "event": "deploy.failed",</div>
-              <div className="mt-1 text-(--text-muted)">  "project": {"{"} "name": "api-service" {"}"},</div>
-              <div className="mt-1 text-(--text-muted)">  "triggeredBy": "github-actions"</div>
+              <div className="mt-1 text-(--text-muted)">{'  "event": "deploy.failed",'}</div>
+              <div className="mt-1 text-(--text-muted)">{'  "project": { "name": "api-service" },'}</div>
+              <div className="mt-1 text-(--text-muted)">{'  "triggeredBy": "github-actions"'}</div>
               <div className="mt-1 text-(--text-muted)">{"}"}</div>
             </div>
           </div>
@@ -480,7 +479,7 @@ export default async function Home() {
       <section className="border-t border-(--border)">
         <div className="mx-auto max-w-6xl px-6 py-20 flex flex-col lg:flex-row items-start lg:items-center justify-between gap-8">
           <div>
-            <h2 className="text-2xl font-semibold text-(--text)">Ready to stop guessing what's running in production?</h2>
+            <h2 className="text-2xl font-semibold text-(--text)">Ready to stop guessing what’s running in production?</h2>
             <p className="mt-3 text-sm text-(--text-muted) max-w-lg">
               Optizen is free, open source, and runs entirely on your own infrastructure. No SaaS, no subscription, no vendor lock-in.
             </p>

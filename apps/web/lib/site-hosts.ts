@@ -22,8 +22,25 @@ export function isPublicPath(pathname: string): boolean {
   return pathname === '/' || /^\/(about|contribute|help)(\/|$)/.test(pathname)
 }
 
+/**
+ * Landing/docs pages as React sees them. While pre-building, usePathname() returns the internal
+ * /site/<variant>/... path, so those count as public too (in the browser it is the visible URL).
+ */
+export function isMarketingPath(pathname: string): boolean {
+  return isPublicPath(pathname) || pathname.startsWith('/site/')
+}
+
 /** The host the visitor asked for. Caddy sets X-Forwarded-Host (and drops client-sent values). */
 export function requestHost(headers: { get(name: string): string | null }): string | null {
   const host = headers.get('x-forwarded-host') ?? headers.get('host')
   return host ? host.split(',')[0].trim() : null
 }
+
+/**
+ * The landing page and docs are pre-built twice (app/site/[variant]); proxy.ts rewrites each
+ * request to the right copy. "public": the marketing host (no sign-in, CTAs go to the install
+ * guide). "full": the dashboard host, or a single-domain install.
+ */
+export const SITE_VARIANTS = ['full', 'public'] as const
+export type SiteVariant = (typeof SITE_VARIANTS)[number]
+export const SITE_PREFIX = '/site'

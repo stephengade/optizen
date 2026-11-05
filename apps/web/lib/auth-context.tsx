@@ -1,7 +1,9 @@
 'use client'
 
 import { createContext, useContext, useEffect, useState, useCallback } from 'react'
+import { usePathname } from 'next/navigation'
 import { api, ApiError } from '@/lib/api'
+import { isMarketingPath } from '@/lib/site-hosts'
 
 interface AuthState {
   isSetup: boolean
@@ -18,26 +20,44 @@ interface AuthContextValue extends AuthState {
 
 const AuthContext = createContext<AuthContextValue | null>(null)
 
-/** `disabled`: public marketing host, where the API does not exist — skip the status call. */
-export function AuthProvider({ children, disabled = false }: { children: React.ReactNode; disabled?: boolean }) {
-  const [state, setState] = useState<AuthState>({
-    isSetup: false,
-    authenticated: false,
-    loading: !disabled,
-  })
+type AuthStatus = { isSetup: boolean; authenticated: boolean }
+
+async function fetchStatus(): Promise<AuthStatus> {
+  try {
+    return await api.get<AuthStatus>('/auth/status')
+  } catch {
+    return { isSetup: false, authenticated: false }
+  }
+}
+
+export function AuthProvider({ children }: { children: React.ReactNode }) {
+  // The landing page and docs never need the session, and on the public marketing host the API
+  // does not exist. Ask for it only once the visitor reaches a dashboard or auth page; keeping
+  // the check out of the server render also lets those pages be pre-built.
+  const pathname = usePathname()
+  const needsAuth = !isMarketingPath(pathname)
+  const [status, setStatus] = useState<AuthStatus | null>(null)
 
   const refresh = useCallback(async () => {
-    try {
-      const data = await api.get<{ isSetup: boolean; authenticated: boolean }>('/auth/status')
-      setState({ ...data, loading: false })
-    } catch {
-      setState({ isSetup: false, authenticated: false, loading: false })
-    }
+    setStatus(await fetchStatus())
   }, [])
 
   useEffect(() => {
-    if (!disabled) void refresh()
-  }, [disabled, refresh])
+    if (!needsAuth || status !== null) return
+    let cancelled = false
+    void fetchStatus().then((next) => {
+      if (!cancelled) setStatus(next)
+    })
+    return () => {
+      cancelled = true
+    }
+  }, [needsAuth, status])
+
+  const state: AuthState = {
+    isSetup: status?.isSetup ?? false,
+    authenticated: status?.authenticated ?? false,
+    loading: needsAuth && status === null,
+  }
 
   const login = async (password: string) => {
     try {

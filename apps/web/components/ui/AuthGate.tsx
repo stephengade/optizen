@@ -5,6 +5,7 @@ import { useRouter, usePathname } from 'next/navigation'
 import { useAuth } from '@/lib/auth-context'
 import { Loader2 } from 'lucide-react'
 import { rememberReturnTo, takeReturnTo } from '@/lib/return-to'
+import { isMarketingPath } from '@/lib/site-hosts'
 
 export function AuthGate({ children }: { children: React.ReactNode }) {
   const { isSetup, authenticated, loading } = useAuth()
@@ -15,7 +16,7 @@ export function AuthGate({ children }: { children: React.ReactNode }) {
     if (loading) return
 
     const isAuthRoute = pathname.startsWith('/login') || pathname.startsWith('/setup')
-    const isPublicRoute = pathname === '/' || pathname.startsWith('/help') || pathname.startsWith('/about') || pathname.startsWith('/contribute')
+    const isPublicRoute = isMarketingPath(pathname)
 
     if (!isSetup) {
       if (!isAuthRoute && !isPublicRoute) router.replace('/setup')

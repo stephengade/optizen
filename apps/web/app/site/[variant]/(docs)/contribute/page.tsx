@@ -1,7 +1,7 @@
 'use client'
 
 import Link from 'next/link'
-import { ArrowLeft, GitPullRequest, Code, Terminal, Heart } from 'lucide-react'
+import { ArrowLeft, GitPullRequest, Terminal, Heart } from 'lucide-react'
 
 const principles = [
   {

@@ -1,9 +1,14 @@
 import Link from 'next/link'
 import { ArrowLeft } from 'lucide-react'
-import { isPublicSite } from '@/lib/site'
 
-export default async function DocsLayout({ children }: { children: React.ReactNode }) {
-  const publicSite = await isPublicSite()
+export default async function DocsLayout({
+  children,
+  params,
+}: {
+  children: React.ReactNode
+  params: Promise<{ variant: string }>
+}) {
+  const publicSite = (await params).variant === 'public'
 
   return (
     <div className="min-h-screen bg-(--bg)">
