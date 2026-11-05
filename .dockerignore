@@ -13,3 +13,5 @@ ssh
 **/node_modules
 **/dist
 error.txt
+apps/server/backups
+**/launchpad.db.json

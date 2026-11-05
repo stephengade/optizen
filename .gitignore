@@ -19,6 +19,8 @@ build
 
 # Launchpad encrypted DB — never commit this
 launchpad.db.json
+# Backups of it (dev default: apps/server/backups; Docker: ./data/backups)
+/apps/server/backups/
 
 # OS
 .DS_Store

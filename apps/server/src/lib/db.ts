@@ -16,6 +16,7 @@ import type {
   DeployRecord,
   NotificationSettings,
   RateLimitState,
+  BackupSettings,
 } from '@launchpad/shared'
 
 export interface DbSchema {
@@ -28,9 +29,10 @@ export interface DbSchema {
   notifications: NotificationSettings
   activity: ActivityEvent[]
   fileHistory: FileRevision[]
+  backupSettings: BackupSettings
 }
 
-const DB_PATH = process.env.DB_PATH ?? join(process.cwd(), 'launchpad.db.json')
+export const DB_PATH = process.env.DB_PATH ?? join(process.cwd(), 'launchpad.db.json')
 
 const defaultData: DbSchema = {
   auth: null,
@@ -45,6 +47,7 @@ const defaultData: DbSchema = {
   },
   activity: [],
   fileHistory: [],
+  backupSettings: { autoEnabled: true, retainDaily: 14 },
 }
 
 let _db: Low<DbSchema> | null = null
@@ -64,5 +67,12 @@ export async function getDb(): Promise<Low<DbSchema>> {
 
 export async function saveDb(): Promise<void> {
   const db = await getDb()
+  await db.write()
+}
+
+/** Replace everything in the store (used by backup restore), filling in any missing keys. */
+export async function replaceDb(data: Partial<DbSchema>): Promise<void> {
+  const db = await getDb()
+  db.data = { ...structuredClone(defaultData), ...data }
   await db.write()
 }

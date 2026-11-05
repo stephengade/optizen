@@ -12,21 +12,31 @@ interface ModalProps {
 
 export function Modal({ open, title, description, onClose, children }: ModalProps) {
   const closeButtonRef = useRef<HTMLButtonElement | null>(null)
+  const dialogRef = useRef<HTMLDivElement | null>(null)
+  // Callers usually pass a new onClose on every render. Keep the latest in a ref so the effect
+  // below runs only when the modal opens; otherwise it would steal focus on each keystroke.
+  const onCloseRef = useRef(onClose)
+  useEffect(() => {
+    onCloseRef.current = onClose
+  })
 
   useEffect(() => {
     if (!open) return
 
-    closeButtonRef.current?.focus()
+    // Respect a field inside the dialog that asked for focus (autoFocus); otherwise focus Close.
+    if (!dialogRef.current?.contains(document.activeElement)) {
+      closeButtonRef.current?.focus()
+    }
 
     function handleKeyDown(event: KeyboardEvent) {
       if (event.key === 'Escape') {
-        onClose()
+        onCloseRef.current()
       }
     }
 
     window.addEventListener('keydown', handleKeyDown)
     return () => window.removeEventListener('keydown', handleKeyDown)
-  }, [open, onClose])
+  }, [open])
 
   if (!open) return null
 
@@ -41,6 +51,7 @@ export function Modal({ open, title, description, onClose, children }: ModalProp
       }}
     >
       <div
+        ref={dialogRef}
         role="dialog"
         aria-modal="true"
         aria-label={title}

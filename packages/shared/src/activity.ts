@@ -20,6 +20,10 @@ export type ActivityType =
   | 'session_elevated'
   | 'security_settings_updated'
   | 'secret_revealed'
+  | 'backup_created'
+  | 'backup_deleted'
+  | 'backup_restored'
+  | 'backup_downloaded'
 
 export interface ActivityEvent {
   id: string

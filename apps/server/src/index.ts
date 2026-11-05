@@ -17,6 +17,8 @@ import { notificationRoutes } from './routes/notifications'
 import { fileRoutes } from './routes/files'
 import { logRoutes } from './routes/logs'
 import { memoryRoutes } from './routes/memory'
+import { backupRoutes } from './routes/backups'
+import { startBackupScheduler } from './lib/backups'
 
 assertSecureConfig()
 
@@ -57,6 +59,7 @@ const app = new Elysia()
   .use(fileRoutes)
   .use(logRoutes)
   .use(memoryRoutes)
+  .use(backupRoutes)
 
   // Future routes — each will use requireAuth() at the top of their handlers:
 
@@ -70,5 +73,6 @@ const app = new Elysia()
 console.log(`🚀 Launchpad server running at http://localhost:${PORT}`)
 
 if (!(await getDb()).data.auth?.isSetup) printSetupCode()
+startBackupScheduler()
 
 export type App = typeof app

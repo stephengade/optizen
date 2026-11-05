@@ -88,7 +88,7 @@ Deployment artifacts: [apps/server/Dockerfile](apps/server/Dockerfile), [apps/we
 Notes:
 
 - Caddy terminates HTTPS and proxies to the Next.js app; Next rewrites `/api/*` to the internal Elysia service. The API address is baked in at build time (`NEXT_PUBLIC_API_URL` build arg).
-- Data persists in `./data/launchpad.db.json`. Back it up; without your master password it cannot be decrypted.
+- Data persists in `./data/launchpad.db.json`. Optizen backs it up daily to `./data/backups` (keeps 14 by default; change it, back up now, download, upload and restore under Settings → Backups). Copy that folder off the server too. Secrets in a backup stay encrypted, so you also need the master password. A backup has the same format as the data file, so if the dashboard won't start you can stop the stack and copy one over `./data/launchpad.db.json`. Set `BACKUP_DIR` to use another folder.
 - The encryption key lives only in memory. After the API container restarts, sign in once before webhook-triggered deploys can run (they return 503 until then).
 - Security: the API refuses to start in production without a strong `SESSION_SECRET` (32+ characters) and an `https://` `WEB_URL`. The master password is hashed with scrypt (older SHA-256 hashes upgrade on the next sign-in). Failed sign-ins lock out the offending IP for 15 minutes after 5 tries, not the whole instance. Caddy adds HSTS, nosniff, no-framing and referrer headers. Only Caddy publishes ports; the web and API containers are reachable only on the internal Docker network.
 - Deploy webhooks are public at `https://<DOMAIN>/api/webhooks/deploy/<projectId>/<secret>`.

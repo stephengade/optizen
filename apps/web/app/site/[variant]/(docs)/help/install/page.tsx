@@ -74,7 +74,7 @@ export default function InstallPage() {
       <div className="mt-8 border border-(--border) bg-(--surface) p-5">
         <h2 className="text-sm font-semibold text-(--text)">Good to know</h2>
         <div className="mt-3 space-y-2 text-sm leading-6 text-(--text-muted)">
-          <p>Back up ./data/launchpad.db.json. Without the master password it cannot be decrypted, so keep both safe.</p>
+          <p>Optizen backs up its data once a day to ./data/backups (Settings → Backups, where you can also download and restore). Those copies live on the same server, so download one now and then or sync the folder elsewhere. Secrets in a backup stay encrypted: keep the master password safe too.</p>
           <p>The encryption key lives only in memory. After the API container restarts, sign in once before webhook deploys can run.</p>
           <p>Never commit .env, ./ssh, or ./data. All three are already in .gitignore.</p>
           <p>Want to work on Optizen itself instead? See <Link href="/help/get-started" className="text-(--text) underline underline-offset-2">Get started</Link> for local development.</p>

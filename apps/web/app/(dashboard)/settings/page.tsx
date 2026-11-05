@@ -1,6 +1,7 @@
 'use client'
 
 import { useEffect, useState } from 'react'
+import Link from 'next/link'
 import type { ActivityEvent, AuthSecuritySettings, GlobalWebhook, NotificationEvent, SmtpConfig } from '@launchpad/shared'
 import { toast } from 'sonner'
 import { ActivityTimeline } from '@/components/dashboard/ActivityTimeline'
@@ -147,7 +148,7 @@ export default function SettingsPage() {
     <div className="max-w-3xl mx-auto px-6 py-8">
       <div className="mb-8">
         <h1 className="text-xl font-semibold text-(--text)">Settings</h1>
-        <p className="mt-1 text-sm text-(--text-muted)">Session security, notifications, and display preferences.</p>
+        <p className="mt-1 text-sm text-(--text-muted)">Session security, backups, notifications, and display preferences.</p>
       </div>
 
       <div className="space-y-px">
@@ -181,6 +182,16 @@ export default function SettingsPage() {
               </label>
             </div>
           </div>
+        </Section>
+
+        {/* Backups */}
+        <Section title="Backups" description="Daily copies of all Optizen data, plus download and restore.">
+          <Link
+            href="/settings/backups"
+            className="inline-flex items-center gap-2 border border-(--border) px-3 py-1.5 text-xs font-medium text-(--text) transition-colors hover:border-(--border-strong)"
+          >
+            Manage backups
+          </Link>
         </Section>
 
         {/* Session security */}
