@@ -1,19 +1,24 @@
 import type { Metadata } from 'next'
-import { Geist, Geist_Mono } from 'next/font/google'
+import localFont from 'next/font/local'
 import { AuthProvider } from '@/lib/auth-context'
 import { DemoPrivacyProvider } from '@/lib/demo-privacy-context'
 import { AuthGate } from '@/components/ui/AuthGate'
 import { Toaster } from 'sonner'
 import './globals.css'
 
-const geist = Geist({
-  subsets: ['latin'],
+// Fonts are vendored (Geist, SIL OFL) so builds don't depend on reaching Google Fonts.
+const geist = localFont({
+  src: './fonts/Geist-Variable.woff2',
   variable: '--font-sans',
+  weight: '100 900',
+  display: 'swap',
 })
 
-const geistMono = Geist_Mono({
-  subsets: ['latin'],
+const geistMono = localFont({
+  src: './fonts/GeistMono-Variable.woff2',
   variable: '--font-mono',
+  weight: '100 900',
+  display: 'swap',
 })
 
 export const metadata: Metadata = {

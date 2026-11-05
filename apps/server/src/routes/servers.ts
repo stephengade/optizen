@@ -2,7 +2,7 @@ import { randomUUID } from 'crypto'
 import { Elysia, t } from 'elysia'
 import type { Server, ServerConnectionStatus } from '@launchpad/shared'
 import { recordActivity } from '../lib/activity'
-import { encrypt, hasKey } from '../lib/crypto'
+import { decrypt, encrypt, hasKey } from '../lib/crypto'
 import { requireDangerousActionAuth } from '../lib/dangerousAction'
 import { getDb, saveDb } from '../lib/db'
 import { sendServerDiskWarningNotification } from '../lib/notifications'
@@ -13,7 +13,7 @@ import {
   runSafeServerPrune,
   runVolumePrune,
 } from '../lib/serverMaintenance'
-import { execCommand, getConnection, testConnection } from '../lib/ssh'
+import { execCommand, getConnection, testConnection, testConnectionConfig } from '../lib/ssh'
 
 const serverBody = t.Object({
   name: t.String({ minLength: 1 }),
@@ -22,7 +22,19 @@ const serverBody = t.Object({
   user: t.String({ minLength: 1 }),
   sshKeyPath: t.String({ minLength: 1 }),
   sshPassphrase: t.Optional(t.String()),
+  clearSshPassphrase: t.Optional(t.Boolean()),
   diskAlertThresholdPercent: t.Optional(t.Number({ minimum: 1, maximum: 100 })),
+})
+
+const testConnectionBody = t.Object({
+  host: t.String({ minLength: 1 }),
+  port: t.Number({ minimum: 1, maximum: 65535 }),
+  user: t.String({ minLength: 1 }),
+  sshKeyPath: t.String({ minLength: 1 }),
+  sshPassphrase: t.Optional(t.String()),
+  /** When editing, reuse the stored passphrase if no new one is typed */
+  serverId: t.Optional(t.String()),
+  clearSshPassphrase: t.Optional(t.Boolean()),
 })
 
 function requireCryptoReady(set: { status?: number | string }) {
@@ -36,6 +48,7 @@ function serializeServer(server: Server) {
   return {
     ...server,
     sshPassphrase: server.sshPassphrase ? '••••••••' : '',
+    hasSshPassphrase: Boolean(server.sshPassphrase),
   }
 }
 
@@ -803,9 +816,8 @@ export const serverRoutes = new Elysia({ prefix: '/servers' })
         port: body.port,
         user: body.user.trim(),
         sshKeyPath: body.sshKeyPath.trim(),
-        sshPassphrase: body.sshPassphrase?.trim()
-          ? encrypt(body.sshPassphrase.trim())
-          : undefined,
+        // Passphrases are used verbatim: leading/trailing spaces can be part of them.
+        sshPassphrase: body.sshPassphrase ? encrypt(body.sshPassphrase) : undefined,
         diskAlertThresholdPercent: body.diskAlertThresholdPercent,
         createdAt: now,
         updatedAt: now,
@@ -819,6 +831,32 @@ export const serverRoutes = new Elysia({ prefix: '/servers' })
       return serializeServer(server)
     },
     { body: serverBody }
+  )
+  .post(
+    '/test-connection',
+    async (context: any) => {
+      const { requireAuth, body, set } = context
+      await requireAuth()
+      requireCryptoReady(set)
+
+      let passphrase: string | undefined = body.sshPassphrase || undefined
+      if (!passphrase && body.serverId && !body.clearSshPassphrase) {
+        const db = await getDb()
+        const existing = db.data.servers.find((item) => item.id === body.serverId)
+        if (existing?.sshPassphrase) {
+          passphrase = decrypt(existing.sshPassphrase)
+        }
+      }
+
+      return testConnectionConfig({
+        host: body.host.trim(),
+        port: body.port,
+        user: body.user.trim(),
+        sshKeyPath: body.sshKeyPath.trim(),
+        passphrase,
+      })
+    },
+    { body: testConnectionBody }
   )
   .get('/:id', async (context: any) => {
     const { requireAuth, params, set } = context
@@ -858,9 +896,11 @@ export const serverRoutes = new Elysia({ prefix: '/servers' })
       server.user = body.user.trim()
       server.sshKeyPath = body.sshKeyPath.trim()
       server.diskAlertThresholdPercent = body.diskAlertThresholdPercent
-      if (Object.prototype.hasOwnProperty.call(body, 'sshPassphrase')) {
-        const passphrase = body.sshPassphrase?.trim() ?? ''
-        server.sshPassphrase = passphrase ? encrypt(passphrase) : undefined
+      // Blank passphrase keeps the stored one; clearSshPassphrase removes it explicitly.
+      if (body.sshPassphrase) {
+        server.sshPassphrase = encrypt(body.sshPassphrase)
+      } else if (body.clearSshPassphrase) {
+        server.sshPassphrase = undefined
       }
       server.updatedAt = new Date().toISOString()
 

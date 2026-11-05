@@ -3,10 +3,14 @@ services:
     build:
       context: .
       dockerfile: apps/web/Dockerfile
+      args:
+        # Baked into the Next.js build: /api/* is proxied here (internal Docker network).
+        NEXT_PUBLIC_API_URL: http://server:3001
     environment:
-      NEXT_PUBLIC_API_URL: http://server:3001
+      API_URL: http://server:3001
     depends_on:
       - server
+    restart: unless-stopped
 
   server:
     build:
@@ -14,12 +18,15 @@ services:
       dockerfile: apps/server/Dockerfile
     environment:
       PORT: 3001
-      WEB_URL: http://web:3000
+      WEB_URL: https://${DOMAIN}
       DB_PATH: /app/data/launchpad.db.json
-      SESSION_SECRET: ${SESSION_SECRET}
+      SESSION_SECRET: ${SESSION_SECRET:?Set SESSION_SECRET in .env}
       NODE_ENV: production
     volumes:
       - ./data:/app/data
+      # SSH private keys for the servers Launchpad manages. In the UI, use paths like /app/ssh/id_ed25519
+      - ${SSH_KEYS_DIR:-./ssh}:/app/ssh:ro
+    restart: unless-stopped
 
   caddy:
     image: caddy:2-alpine
@@ -28,13 +35,15 @@ services:
     ports:
       - "80:80"
       - "443:443"
+      - "443:443/udp"
     environment:
-      DOMAIN: ${DOMAIN}
-      ACME_EMAIL: ${ACME_EMAIL}
+      DOMAIN: ${DOMAIN:?Set DOMAIN in .env}
+      ACME_EMAIL: ${ACME_EMAIL:?Set ACME_EMAIL in .env}
     volumes:
       - ./Caddyfile:/etc/caddy/Caddyfile:ro
       - caddy_data:/data
       - caddy_config:/config
+    restart: unless-stopped
 
 volumes:
   caddy_data:

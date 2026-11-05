@@ -59,34 +59,32 @@ cp apps/web/.env.example apps/web/.env.local
 
 ### Production deployment
 
-Phase 10 now includes first-pass self-host deployment artifacts:
+Deployment artifacts: [apps/server/Dockerfile](apps/server/Dockerfile), [apps/web/Dockerfile](apps/web/Dockerfile), [docker-compose.yml](docker-compose.yml), [Caddyfile](Caddyfile).
 
-- [apps/server/Dockerfile](C:\Users\gade0x\Documents\xpx\peak\launchpad\apps\server\Dockerfile)
-- [apps/web/Dockerfile](C:\Users\gade0x\Documents\xpx\peak\launchpad\apps\web\Dockerfile)
-- [docker-compose.yml](C:\Users\gade0x\Documents\xpx\peak\launchpad\docker-compose.yml)
-- [Caddyfile](C:\Users\gade0x\Documents\xpx\peak\launchpad\Caddyfile)
+1. Point a DNS record for your Launchpad domain at the host.
+2. Create a root `.env` for Docker Compose:
 
-Create a root `.env` file for Docker Compose with:
+   ```bash
+   DOMAIN=launchpad.example.com
+   ACME_EMAIL=ops@example.com
+   SESSION_SECRET=<output of: openssl rand -hex 32>
+   # Optional: directory holding SSH private keys (default ./ssh)
+   SSH_KEYS_DIR=./ssh
+   ```
 
-```bash
-DOMAIN=launchpad.example.com
-ACME_EMAIL=ops@example.com
-SESSION_SECRET=replace-with-a-long-random-secret
-```
+3. Put the private keys for the servers you manage in `./ssh` (it is git- and docker-ignored). They are mounted read-only into the API container at `/app/ssh`, so in the UI use paths like `/app/ssh/id_ed25519`. Encrypted keys are supported: enter the key passphrase on the server form (it is stored encrypted, and “Test connection” checks it before saving).
+4. Build and start:
 
-Then build and run:
-
-```bash
-docker compose build
-docker compose up -d
-```
+   ```bash
+   docker compose up -d --build
+   ```
 
 Notes:
 
-- Caddy terminates HTTPS and proxies public traffic to the Next.js app.
-- The Next.js app rewrites `/api/*` to the internal Elysia service.
-- Launchpad data persists in `./data/launchpad.db.json`.
-- SSH key paths referenced in Launchpad still need to exist inside the running server container or be mounted in.
+- Caddy terminates HTTPS and proxies to the Next.js app; Next rewrites `/api/*` to the internal Elysia service. The API address is baked in at build time (`NEXT_PUBLIC_API_URL` build arg).
+- Data persists in `./data/launchpad.db.json`. Back it up; without your master password it cannot be decrypted.
+- The encryption key lives only in memory. After the API container restarts, sign in once before webhook-triggered deploys can run (they return 503 until then).
+- Deploy webhooks are public at `https://<DOMAIN>/api/webhooks/deploy/<projectId>/<secret>`.
 
 ### Type checking
 
@@ -107,7 +105,8 @@ bun run type-check
 | 7 | ✅ Done | Docker image manager |
 | 8 | ✅ Done | Reverse proxy manager (Caddy + Nginx) |
 | 9 | ✅ Done | Notifications (email + outbound webhooks) |
-| 10 | ⏳ In Progress | Security hardening + self-host deployment |
+| 10 | ✅ Done | Security hardening + self-host deployment |
+| 10.1 | ✅ Done | SSH key passphrases, memory inspector (top processes, containers, free-up actions) |
 | 11 | — | AI security scanner |
 
 ## Security

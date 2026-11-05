@@ -4,7 +4,8 @@ const DEFAULT_API_BASE_URL = 'http://127.0.0.1:3001'
 const SESSION_COOKIE = 'lp_session'
 
 function getApiBaseUrl() {
-  const configured = process.env.NEXT_PUBLIC_API_URL?.trim()
+  // API_URL is read at runtime; NEXT_PUBLIC_API_URL is inlined at build time.
+  const configured = (process.env.API_URL ?? process.env.NEXT_PUBLIC_API_URL)?.trim()
   if (!configured) {
     return DEFAULT_API_BASE_URL
   }

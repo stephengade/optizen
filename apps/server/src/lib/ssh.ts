@@ -49,7 +49,47 @@ function describeConnectionFailure(error: unknown) {
     return `${message}. The SSH server did not complete the handshake in time. Check the host, port, firewall, and whether the server is reachable from Launchpad.`
   }
 
+  const lower = message.toLowerCase()
+  if (lower.includes('no passphrase given')) {
+    return 'This SSH key is protected by a passphrase. Edit the server and enter the key passphrase.'
+  }
+  if (lower.includes('bad passphrase') || lower.includes('bad decrypt') || lower.includes('failed to decrypt')) {
+    return 'The SSH key passphrase is incorrect. Edit the server and re-enter the key passphrase.'
+  }
+  if (lower.includes('cannot parse privatekey') || lower.includes('unsupported key format')) {
+    return `${message}. The key file is not a supported private key, or the passphrase is wrong.`
+  }
+  if (lower.includes('all configured authentication methods failed')) {
+    return 'The server rejected the SSH key. Check the SSH user and that the matching public key is in ~/.ssh/authorized_keys on the server.'
+  }
+
   return message
+}
+
+export interface SshConnectionConfig {
+  host: string
+  port: number
+  user: string
+  sshKeyPath: string
+  /** Plaintext passphrase (already decrypted) */
+  passphrase?: string
+}
+
+function readPrivateKey(keyPath: string) {
+  try {
+    return readFileSync(keyPath, 'utf8')
+  } catch (error) {
+    const code = (error as NodeJS.ErrnoException)?.code
+    if (code === 'ENOENT') {
+      throw new Error(
+        `SSH key file not found at ${keyPath}. The path is read on the machine running the Launchpad API (inside its container when deployed with Docker).`
+      )
+    }
+    if (code === 'EACCES') {
+      throw new Error(`Launchpad cannot read the SSH key at ${keyPath} (permission denied).`)
+    }
+    throw error
+  }
 }
 
 /**
@@ -57,10 +97,18 @@ function describeConnectionFailure(error: unknown) {
  * Private keys are read from disk at runtime — never stored in the DB.
  */
 export async function getConnection(server: Server): Promise<NodeSSH> {
-  const privateKey = readFileSync(server.sshKeyPath, 'utf8')
-  const passphrase = server.sshPassphrase
-    ? decrypt(server.sshPassphrase)
-    : undefined
+  return getConnectionFromConfig({
+    host: server.host,
+    port: server.port,
+    user: server.user,
+    sshKeyPath: server.sshKeyPath,
+    passphrase: server.sshPassphrase ? decrypt(server.sshPassphrase) : undefined,
+  })
+}
+
+export async function getConnectionFromConfig(config: SshConnectionConfig): Promise<NodeSSH> {
+  const privateKey = readPrivateKey(config.sshKeyPath)
+  const passphrase = config.passphrase || undefined
 
   async function connectWithTimeout(readyTimeout: number) {
     const ssh = new NodeSSH()
@@ -69,9 +117,9 @@ export async function getConnection(server: Server): Promise<NodeSSH> {
     try {
       await Promise.race([
         ssh.connect({
-          host: server.host,
-          port: server.port,
-          username: server.user,
+          host: config.host,
+          port: config.port,
+          username: config.user,
           privateKey,
           passphrase,
           readyTimeout,
@@ -199,11 +247,28 @@ export async function execCommands(
  * Test SSH connectivity to a server. Returns latency in ms.
  */
 export async function testConnection(server: Server): Promise<{ connected: boolean; latencyMs?: number; error?: string }> {
+  let passphrase: string | undefined
+  try {
+    passphrase = server.sshPassphrase ? decrypt(server.sshPassphrase) : undefined
+  } catch (err) {
+    return { connected: false, error: err instanceof Error ? err.message : 'Failed to decrypt the stored passphrase' }
+  }
+
+  return testConnectionConfig({
+    host: server.host,
+    port: server.port,
+    user: server.user,
+    sshKeyPath: server.sshKeyPath,
+    passphrase,
+  })
+}
+
+export async function testConnectionConfig(config: SshConnectionConfig): Promise<{ connected: boolean; latencyMs?: number; error?: string }> {
   const start = Date.now()
   let ssh: NodeSSH | null = null
 
   try {
-    ssh = await getConnection(server)
+    ssh = await getConnectionFromConfig(config)
     const result = await execCommand(ssh, 'echo ok')
     const latencyMs = Date.now() - start
 

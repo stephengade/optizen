@@ -16,6 +16,7 @@ export type ActivityType =
   | 'health_check_passed'
   | 'health_check_failed'
   | 'server_storage_cleaned'
+  | 'server_memory_freed'
   | 'session_elevated'
   | 'security_settings_updated'
   | 'secret_revealed'

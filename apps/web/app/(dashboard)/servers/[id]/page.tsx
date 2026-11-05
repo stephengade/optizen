@@ -4,7 +4,7 @@ import { useEffect, useState } from 'react'
 import Link from 'next/link'
 import { useParams, useRouter } from 'next/navigation'
 import type { ActivityEvent, DeployRecord, Project, Server, ServerConnectionStatus, ServerResourceStatus } from '@launchpad/shared'
-import { HardDrive, Plus } from 'lucide-react'
+import { HardDrive, MemoryStick, Plus } from 'lucide-react'
 import { toast } from 'sonner'
 import { ActivityTimeline } from '@/components/dashboard/ActivityTimeline'
 import { ConnectionBadge } from '@/components/dashboard/ConnectionBadge'
@@ -97,6 +97,7 @@ export default function ServerDetailPage() {
     user: string
     sshKeyPath: string
     sshPassphrase?: string
+    clearSshPassphrase?: boolean
     diskAlertThresholdPercent?: number
   }) {
     if (demoMode) {
@@ -249,6 +250,13 @@ export default function ServerDetailPage() {
             className="inline-flex h-8 items-center border border-(--border) px-3 text-xs text-(--text-muted) hover:text-(--text) hover:border-(--border-strong) transition-colors"
           >
             Proxy
+          </Link>
+          <Link
+            href={`/servers/${params.id}/memory`}
+            className="inline-flex h-8 items-center gap-1.5 border border-(--border) px-3 text-xs text-(--text-muted) hover:text-(--text) hover:border-(--border-strong) transition-colors"
+          >
+            <MemoryStick size={12} />
+            Memory
           </Link>
           <Link
             href={`/storage?server=${params.id}`}

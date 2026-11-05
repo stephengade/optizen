@@ -44,3 +44,6 @@ bun-debug.log*
 
 error.txt
 /error.txt
+# SSH keys mounted into the Docker deployment — never commit
+ssh/
+data/

@@ -5,7 +5,7 @@
   "module": "src/index.ts",
   "scripts": {
     "dev": "bun run --watch src/index.ts",
-    "build": "bun build src/index.ts --outdir dist --target bun",
+    "build": "bun build src/index.ts --outdir dist --target bun --external cpu-features",
     "start": "bun run dist/index.js",
 
     "dev:web":      "turbo dev --filter=@launchpad/web",

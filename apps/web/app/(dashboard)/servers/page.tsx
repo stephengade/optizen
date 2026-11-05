@@ -89,7 +89,7 @@ export default function ServersPage() {
   useEffect(() => { void loadServers() }, [demoMode])
 
   async function handleCreate(payload: {
-    name: string; host: string; port: number; user: string; sshKeyPath: string; sshPassphrase?: string
+    name: string; host: string; port: number; user: string; sshKeyPath: string; sshPassphrase?: string; clearSshPassphrase?: boolean
   }) {
     if (demoMode) {
       toast.success('Demo mode is active — data stays read-only.')

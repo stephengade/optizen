@@ -1,3 +1,4 @@
+import { createHash, timingSafeEqual } from 'crypto'
 import { Elysia, t } from 'elysia'
 import { decrypt, hasKey } from '../lib/crypto'
 import { getDb } from '../lib/db'
@@ -8,6 +9,13 @@ const webhookBody = t.Object({
   ref: t.Optional(t.String()),
   workflow: t.Optional(t.String()),
 })
+
+/** Constant-time compare (hash first so lengths always match). */
+function secretsMatch(provided: string, expected: string) {
+  const a = createHash('sha256').update(provided).digest()
+  const b = createHash('sha256').update(expected).digest()
+  return timingSafeEqual(a, b)
+}
 
 export const webhookRoutes = new Elysia({ prefix: '/webhooks' })
   .post(
@@ -27,7 +35,7 @@ export const webhookRoutes = new Elysia({ prefix: '/webhooks' })
       }
 
       const actualSecret = decrypt(expectedSecret)
-      if (params.secret !== actualSecret) {
+      if (!secretsMatch(String(params.secret), actualSecret)) {
         set.status = 404
         return { message: 'Webhook not found' }
       }

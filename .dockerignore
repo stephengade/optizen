@@ -7,3 +7,9 @@ data
 apps/*/.env
 apps/*/.env.local
 *.log
+.turbo
+ssh
+**/.next
+**/node_modules
+**/dist
+error.txt

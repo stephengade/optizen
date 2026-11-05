@@ -5,7 +5,9 @@ export interface Server {
   port: number
   user: string
   sshKeyPath: string
-  sshPassphrase?: string // stored encrypted
+  sshPassphrase?: string // stored encrypted; API responses return a mask
+  /** Set on API responses: true when a passphrase is stored */
+  hasSshPassphrase?: boolean
   diskAlertThresholdPercent?: number
   lastDiskAlertAt?: string
   lastConnectionStatus?: ServerConnectionStatus

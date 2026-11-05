@@ -80,7 +80,9 @@ export default function ProjectDetailPage() {
   const [reauthOpen, setReauthOpen] = useState(false)
 
   const webhookUrl = project?.webhookSecret
-    ? `${process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:3001'}/webhooks/deploy/${params.pid}/${project.webhookSecret}`
+    ? // Public URL: the browser's origin + /api (Next.js rewrites /api/* to the API). The internal
+      // API address (NEXT_PUBLIC_API_URL) is not reachable from GitHub in a Docker deployment.
+      `${typeof window !== 'undefined' ? window.location.origin : ''}/api/webhooks/deploy/${params.pid}/${project.webhookSecret}`
     : ''
   const workflowSnippet = webhookUrl
     ? [
