@@ -112,7 +112,17 @@ The landing page and docs (`/`, `/about`, `/contribute`, `/help/*`) can be serve
 
 On `PUBLIC_DOMAIN` the dashboard, sign-in, setup and API do not exist (404; `/login` and `/setup` redirect to the install guide at `/help/install`). There is no sign-in link on the public site; that spot and the landing page's main buttons say "Get it on GitHub", and the install guide opens with the same prompt, since Optizen is self-hosted with no accounts. On `DOMAIN`, `/` goes straight to the dashboard. Without `PUBLIC_DOMAIN`, one domain serves everything as before.
 
-### Type checking
+### Behind an existing reverse proxy
+
+If the server already runs a shared Caddy (or another proxy) on ports 80/443 for other apps, skip the bundled Caddy and join that proxy's Docker network instead:
+
+```bash
+docker compose -f docker-compose.yml -f docker-compose.gateway.yml up -d --build
+```
+
+The web container is then reachable on the proxy's network (default name `gateway`, change with `GATEWAY_NETWORK`) as `optizen_web:3000`; the API container is not on that network. Copy the site blocks from [deploy/gateway.Caddyfile.example](deploy/gateway.Caddyfile.example) into your proxy's Caddyfile (they include the security headers and block `/api` on the public domain), then reload the proxy. `PUBLIC_DOMAIN` works the same as above.
+
+
 
 ```bash
 bun run type-check

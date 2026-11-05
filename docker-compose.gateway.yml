@@ -1,0 +1,29 @@
+# Run Optizen behind a reverse proxy you already have (a shared Caddy, Traefik or nginx container
+# that owns ports 80/443 for several apps). The bundled Caddy is not started; the web container
+# joins your proxy's Docker network instead, reachable there as optizen_web:3000.
+#
+#   docker compose -f docker-compose.yml -f docker-compose.gateway.yml up -d --build
+#
+# .env needs DOMAIN (dashboard) and SESSION_SECRET as usual. ACME_EMAIL is unused here but still
+# required by the base file; any value works. Optional:
+#   PUBLIC_DOMAIN=example.com     public landing site + docs (see deploy/gateway.Caddyfile.example)
+#   GATEWAY_NETWORK=gateway       name of your proxy's Docker network (default: gateway)
+# Then add the site blocks from deploy/gateway.Caddyfile.example to your proxy and reload it.
+services:
+  caddy:
+    # Only started with --profile own-proxy, i.e. never in this setup.
+    profiles: ["own-proxy"]
+
+  web:
+    environment:
+      PUBLIC_SITE_HOST: ${PUBLIC_DOMAIN:-}
+    networks:
+      default:
+      gateway:
+        aliases:
+          - optizen_web
+
+networks:
+  gateway:
+    external: true
+    name: ${GATEWAY_NETWORK:-gateway}

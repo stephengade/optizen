@@ -1,0 +1,33 @@
+# Site blocks for a shared Caddy gateway (used with docker-compose.gateway.yml).
+# Replace the two hostnames, paste into your gateway's Caddyfile, then reload it:
+#   docker exec <caddy-container> caddy reload --config /etc/caddy/Caddyfile
+# Only the web container is on the gateway network; the API stays private behind it.
+
+(optizen_headers) {
+	header {
+		Strict-Transport-Security "max-age=31536000"
+		X-Content-Type-Options "nosniff"
+		X-Frame-Options "DENY"
+		Referrer-Policy "strict-origin-when-cross-origin"
+		Permissions-Policy "camera=(), microphone=(), geolocation=(), payment=()"
+		Content-Security-Policy "frame-ancestors 'none'; base-uri 'self'; form-action 'self'; object-src 'none'"
+		-Server
+		-X-Powered-By
+	}
+}
+
+# Dashboard (DOMAIN). Keep this hostname to yourself.
+ops.example.com {
+	import optizen_headers
+	encode gzip zstd
+	reverse_proxy optizen_web:3000
+}
+
+# Public landing page and docs (PUBLIC_DOMAIN). Leave this block out for a single-domain setup.
+example.com {
+	import optizen_headers
+	encode gzip zstd
+	respond /api/* 404
+	respond /internal/* 404
+	reverse_proxy optizen_web:3000
+}
