@@ -2,6 +2,7 @@
 
 import Link from 'next/link'
 import { FileText, Shield, Info, Heart } from 'lucide-react'
+import { GITHUB_REPO_URL } from '@/lib/links'
 
 export default function AboutPage() {
   return (
@@ -103,7 +104,7 @@ export default function AboutPage() {
               Read Full License Text
             </a>
             <a
-              href="https://github.com/stephengade/optizen"
+              href={GITHUB_REPO_URL}
               target="_blank"
               rel="noopener noreferrer"
               className="text-xs text-(--text-muted) hover:underline"

@@ -1,5 +1,6 @@
 import Link from 'next/link'
-import { ArrowLeft } from 'lucide-react'
+import { ArrowLeft, ArrowUpRight } from 'lucide-react'
+import { GITHUB_REPO_URL } from '@/lib/links'
 
 export default async function DocsLayout({
   children,
@@ -22,7 +23,17 @@ export default async function DocsLayout({
           <div className="flex items-center gap-4">
             <Link href="/contribute" className="text-xs text-(--text-muted) hover:text-(--text) transition-colors">Contribute</Link>
             <Link href="/help" className="text-xs text-(--text-muted) hover:text-(--text) transition-colors">Docs</Link>
-            {publicSite ? null : (
+            {publicSite ? (
+              <a
+                href={GITHUB_REPO_URL}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="inline-flex h-7 items-center gap-1.5 border border-(--accent) px-3 text-xs font-medium text-(--accent) hover:bg-(--accent-dim) transition-colors"
+              >
+                Get it on GitHub
+                <ArrowUpRight size={12} />
+              </a>
+            ) : (
               <Link
                 href="/login"
                 className="inline-flex h-7 items-center gap-1.5 border border-(--border) px-3 text-xs text-(--text-muted) hover:text-(--text) hover:border-(--border-strong) transition-colors"

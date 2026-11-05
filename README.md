@@ -110,7 +110,7 @@ The landing page and docs (`/`, `/about`, `/contribute`, `/help/*`) can be serve
    docker compose -f docker-compose.yml -f docker-compose.public-site.yml up -d --build
    ```
 
-On `PUBLIC_DOMAIN` the dashboard, sign-in, setup and API do not exist (404; `/login` and `/setup` redirect to the install guide at `/help/install`). On every domain, the landing page's "Get started" buttons open that install guide, since Optizen is self-hosted. On `DOMAIN`, `/` goes straight to the dashboard. Without `PUBLIC_DOMAIN`, one domain serves everything as before.
+On `PUBLIC_DOMAIN` the dashboard, sign-in, setup and API do not exist (404; `/login` and `/setup` redirect to the install guide at `/help/install`). There is no sign-in link on the public site; that spot and the landing page's main buttons say "Get it on GitHub", and the install guide opens with the same prompt, since Optizen is self-hosted with no accounts. On `DOMAIN`, `/` goes straight to the dashboard. Without `PUBLIC_DOMAIN`, one domain serves everything as before.
 
 ### Type checking
 

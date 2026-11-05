@@ -1,5 +1,6 @@
 import Link from 'next/link'
-import { ArrowLeft } from 'lucide-react'
+import { ArrowLeft, ArrowUpRight } from 'lucide-react'
+import { GITHUB_REPO_URL } from '@/lib/links'
 
 const steps = [
   {
@@ -12,7 +13,7 @@ const steps = [
     n: '02',
     title: 'Get the code',
     body: 'Clone the repository onto the server and move into it.',
-    code: `git clone https://github.com/stephengade/optizen.git\ncd optizen`,
+    code: `git clone ${GITHUB_REPO_URL}.git\ncd optizen`,
   },
   {
     n: '03',
@@ -53,6 +54,24 @@ export default function InstallPage() {
       <p className="mt-1 text-sm text-(--text-muted)">
         Run your own Optizen with Docker. Each install is private: its own data, password, and SSH keys.
       </p>
+
+      <div className="mt-6 flex flex-col gap-4 border border-(--accent) bg-(--accent-dim) p-5 sm:flex-row sm:items-center sm:justify-between">
+        <div>
+          <div className="text-sm font-semibold text-(--text)">Free and open source. No sign-up, no sign-in.</div>
+          <p className="mt-1 text-sm text-(--text-muted)">
+            There are no accounts on this site. Get Optizen from GitHub and run your own copy: you sign in to your own dashboard, on your own server.
+          </p>
+        </div>
+        <a
+          href={GITHUB_REPO_URL}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="inline-flex h-9 shrink-0 items-center gap-2 bg-(--accent) px-5 text-sm font-semibold text-(--bg) transition-opacity hover:opacity-90"
+        >
+          Get it on GitHub
+          <ArrowUpRight size={14} />
+        </a>
+      </div>
 
       <div className="mt-8 border border-(--border) divide-y divide-(--border)">
         {steps.map((step) => (

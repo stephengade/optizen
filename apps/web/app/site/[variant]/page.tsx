@@ -1,5 +1,6 @@
 import Link from 'next/link'
-import { ArrowRight, Star } from 'lucide-react'
+import { ArrowRight, ArrowUpRight, Star } from 'lucide-react'
+import { GITHUB_REPO_URL } from '@/lib/links'
 
 // ─── Data ────────────────────────────────────────────────────────────────────
 
@@ -123,10 +124,11 @@ const telemetry = [
 // ─── Component ───────────────────────────────────────────────────────────────
 
 export default async function Home({ params }: { params: Promise<{ variant: string }> }) {
-  // Optizen is self-hosted: "Get started" always means "install your own copy", never this
-  // instance's setup page. Only the Sign in link differs (hidden on the public host).
+  // Optizen is self-hosted: there is no sign-up. Every call to action sends people to GitHub (or
+  // the install guide), never to this instance's setup page. The public host also never links to
+  // sign-in; it offers the GitHub download in that spot instead.
   const publicSite = (await params).variant === 'public'
-  const startHref = '/help/install'
+  const installHref = '/help/install'
 
   return (
     <main className="min-h-screen bg-(--bg)">
@@ -140,7 +142,7 @@ export default async function Home({ params }: { params: Promise<{ variant: stri
           </div>
           <div className="flex items-center gap-3">
             <a
-              href="https://github.com/stephengade/optizen"
+              href={GITHUB_REPO_URL}
               target="_blank"
               rel="noopener noreferrer"
               className="hidden sm:inline-flex items-center gap-1.5 text-xs text-(--text-muted) hover:text-(--text) transition-colors"
@@ -160,7 +162,17 @@ export default async function Home({ params }: { params: Promise<{ variant: stri
             >
               Docs
             </Link>
-            {publicSite ? null : (
+            {publicSite ? (
+              <a
+                href={GITHUB_REPO_URL}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="inline-flex h-7 items-center gap-1.5 border border-(--accent) px-3 text-xs font-medium text-(--accent) hover:bg-(--accent-dim) transition-colors"
+              >
+                Get it on GitHub
+                <ArrowUpRight size={12} />
+              </a>
+            ) : (
               <Link
                 href="/login"
                 className="inline-flex h-7 items-center gap-1.5 border border-(--border) px-3 text-xs text-(--text-muted) hover:text-(--text) hover:border-(--border-strong) transition-colors"
@@ -187,11 +199,20 @@ export default async function Home({ params }: { params: Promise<{ variant: stri
           No cloud dependency. Runs on your own machine.
         </p>
         <div className="mt-8 flex flex-wrap items-center gap-3">
-          <Link
-            href={startHref}
+          <a
+            href={GITHUB_REPO_URL}
+            target="_blank"
+            rel="noopener noreferrer"
             className="inline-flex h-9 items-center gap-2 bg-(--accent) px-5 text-sm font-semibold text-(--bg) transition-opacity hover:opacity-90"
           >
-            Get started free
+            Get it free on GitHub
+            <ArrowUpRight size={14} />
+          </a>
+          <Link
+            href={installHref}
+            className="inline-flex h-9 items-center gap-2 border border-(--border) px-5 text-sm text-(--text-muted) transition-colors hover:text-(--text) hover:border-(--border-strong)"
+          >
+            How to install
             <ArrowRight size={14} />
           </Link>
           <Link
@@ -200,17 +221,8 @@ export default async function Home({ params }: { params: Promise<{ variant: stri
           >
             Read the docs
           </Link>
-          <a
-            href="https://github.com/stephengade/optizen"
-            target="_blank"
-            rel="noopener noreferrer"
-            className="inline-flex h-9 items-center gap-2 border border-(--border) px-5 text-sm text-(--text-muted) transition-colors hover:text-(--text) hover:border-(--border-strong)"
-          >
-            <Star size={13} />
-            GitHub
-          </a>
         </div>
-        <p className="mt-4 text-xs text-(--text-subtle)">No account needed. Self-hosted on your own server.</p>
+        <p className="mt-4 text-xs text-(--text-subtle)">No account or sign-up. Clone it and run it on your own server.</p>
       </section>
 
       {/* ── 4-layer model ── */}
@@ -486,18 +498,20 @@ export default async function Home({ params }: { params: Promise<{ variant: stri
             </p>
           </div>
           <div className="flex flex-wrap items-center gap-3 shrink-0">
-            <Link
-              href={startHref}
+            <a
+              href={GITHUB_REPO_URL}
+              target="_blank"
+              rel="noopener noreferrer"
               className="inline-flex h-9 items-center gap-2 bg-(--accent) px-5 text-sm font-semibold text-(--bg) transition-opacity hover:opacity-90"
             >
-              Get started
-              <ArrowRight size={14} />
-            </Link>
+              Get it free on GitHub
+              <ArrowUpRight size={14} />
+            </a>
             <Link
-              href="/help"
+              href={installHref}
               className="inline-flex h-9 items-center border border-(--border) px-5 text-sm text-(--text-muted) transition-colors hover:text-(--text)"
             >
-              Read docs
+              How to install
             </Link>
           </div>
         </div>
@@ -521,7 +535,7 @@ export default async function Home({ params }: { params: Promise<{ variant: stri
             <Link href="/help/setup" className="hover:text-(--text) transition-colors">Quick start</Link>
             <Link href="/help/security" className="hover:text-(--text) transition-colors">Security</Link>
             <a
-              href="https://github.com/stephengade/optizen"
+              href={GITHUB_REPO_URL}
               target="_blank"
               rel="noopener noreferrer"
               className="hover:text-(--text) transition-colors flex items-center gap-1"
