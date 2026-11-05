@@ -40,6 +40,17 @@ const COLORS: Record<NonNullable<Token['kind']>, string> = {
   ident: 'text-[#7dd3fc]',
 }
 
+/** Read-only SQL with the editor's colours (used by the landing page demo). */
+export function HighlightedSql({ sql }: { sql: string }) {
+  return (
+    <>
+      {tokenize(sql).map((token, index) =>
+        token.kind ? <span key={index} className={COLORS[token.kind]}>{token.text}</span> : token.text
+      )}
+    </>
+  )
+}
+
 /**
  * A textarea with SQL highlighting drawn underneath it. The textarea is transparent and on top,
  * so selection, undo, IME and spellcheck all behave like a normal field.

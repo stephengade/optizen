@@ -1,5 +1,8 @@
 import Link from 'next/link'
 import { ArrowLeft } from 'lucide-react'
+import { pageMetadata } from '@/lib/site-meta'
+
+export const metadata = pageMetadata('/help/server-metrics')
 
 const metrics = [
   {

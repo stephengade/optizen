@@ -3,6 +3,7 @@ import {
   ArrowRight,
   CircleCheck,
   Container,
+  Database,
   Eye,
   FileCode2,
   Globe,
@@ -22,6 +23,12 @@ import { Meter } from '@/components/ui/Meter'
 import { CopyCommand } from '@/components/site/CopyCommand'
 import { GithubIcon } from '@/components/site/GithubIcon'
 import { StatusPill } from '@/components/ui/StatusPill'
+import { ProductTour } from '@/components/site/ProductTour'
+import { SqlDemo } from '@/components/site/SqlDemo'
+import { EngineMark } from '@/components/databases/engine'
+import { pageMetadata, SITE_DESCRIPTION, SITE_NAME, SITE_URL } from '@/lib/site-meta'
+
+export const metadata = pageMetadata('/')
 
 // ─── Content ─────────────────────────────────────────────────────────────────
 
@@ -31,6 +38,9 @@ const stack = [
   { icon: Globe, label: 'Caddy' },
   { icon: Globe, label: 'Nginx' },
   { icon: SquareTerminal, label: 'Shell scripts' },
+  { icon: Database, label: 'PostgreSQL' },
+  { icon: Database, label: 'MySQL & MariaDB' },
+  { icon: Database, label: 'SQLite' },
   { icon: Lock, label: 'Any Linux server over SSH' },
 ]
 
@@ -55,10 +65,18 @@ const steps = [
   { title: 'Deploy calmly', copy: 'Review, run, watch the log, roll back if needed.' },
 ]
 
+const databasePoints = [
+  'No exposed ports and nothing to install: it uses the SSH connection',
+  'Read-only by default, enforced by the database itself',
+  'Writes need a toggle, a confirmation and your password',
+  'Sort, page through and copy rows, or download results as CSV',
+]
+
 const faqs = [
   { q: 'Is Optizen really free?', a: "Yes. It's open source under AGPL-3.0. There's no paid tier, no account and no usage limit." },
   { q: 'Where does it run?', a: 'On any Linux server with Docker, including the same VPS you manage. It reaches your other servers over SSH.' },
   { q: 'Do I need an agent on my servers?', a: 'No. Optizen uses plain SSH and the tools already on the box, like Docker and your proxy.' },
+  { q: 'Can I look inside my databases?', a: 'Yes. Optizen reaches Postgres, MySQL, MariaDB and SQLite over the same SSH connection, inside a Docker container or on the host, so you never open a database port. Queries are read-only unless you turn on writes and confirm with your password.' },
   { q: 'How are my credentials protected?', a: 'Secrets are encrypted at rest with your master password, sign-in is rate-limited, and risky actions can ask for your password again.' },
   { q: 'Can I contribute?', a: 'Please do. Issues, docs and pull requests are all welcome on GitHub.' },
 ]
@@ -74,6 +92,22 @@ const deployLog: { t: string; line: React.ReactNode }[] = [
   { t: '20:41:13', line: <><span className="text-(--green)">✓ healthy</span> 200 in 84 ms <span className="blink inline-block h-3.5 w-[7px] translate-y-0.5 bg-(--accent)" /></> },
 ]
 
+// Structured data for search engines: a free, open-source app.
+const jsonLd = {
+  '@context': 'https://schema.org',
+  '@type': 'SoftwareApplication',
+  name: SITE_NAME,
+  url: SITE_URL,
+  description: SITE_DESCRIPTION,
+  applicationCategory: 'DeveloperApplication',
+  operatingSystem: 'Linux',
+  license: 'https://www.gnu.org/licenses/agpl-3.0.html',
+  isAccessibleForFree: true,
+  offers: { '@type': 'Offer', price: '0', priceCurrency: 'USD' },
+  sameAs: [GITHUB_REPO_URL],
+  image: `${SITE_URL}/og.png`,
+}
+
 // ─── Page ────────────────────────────────────────────────────────────────────
 
 export default async function Home({ params }: { params: Promise<{ variant: string }> }) {
@@ -84,6 +118,7 @@ export default async function Home({ params }: { params: Promise<{ variant: stri
 
   return (
     <main className="min-h-screen bg-(--bg)">
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }} />
       <SiteHeader publicSite={publicSite} />
 
       {/* ── Hero ── */}
@@ -99,7 +134,7 @@ export default async function Home({ params }: { params: Promise<{ variant: stri
             The control plane for your self-hosted servers.
           </h1>
           <p className="mx-auto mt-5.5 max-w-145 text-[17px] leading-relaxed text-(--text-muted)">
-            Servers, deploys, env files and proxy configs in one calm dashboard. Runs on your own VPS. No cloud account, no lock-in.
+            Servers, deploys, databases, env files and proxy configs in one calm dashboard. Runs on your own VPS. No cloud account, no lock-in.
           </p>
           <div className="mt-8.5 flex flex-wrap justify-center gap-3">
             <a href={GITHUB_REPO_URL} target="_blank" rel="noopener noreferrer" className="btn-primary inline-flex h-10 items-center gap-2 rounded-(--radius-sm) px-4.5 text-[13.5px] font-medium">
@@ -135,11 +170,58 @@ export default async function Home({ params }: { params: Promise<{ variant: stri
         </div>
       </section>
 
+      {/* ── Product tour ── */}
+      <Section id="tour">
+        <div className="text-center [&_h2]:mx-auto [&_p]:mx-auto">
+          <Eyebrow>Product tour</Eyebrow>
+          <H2>One dashboard for everything on your servers.</H2>
+          <Sub>Connect a server over SSH and Optizen shows you what runs on it, lets you deploy it, query its databases and edit its config, and keeps a record of every change.</Sub>
+        </div>
+        <div className="mt-12">
+          <ProductTour />
+        </div>
+      </Section>
+
+      {/* ── Databases showcase ── */}
+      <Section id="databases">
+        <div className="grid gap-10 lg:grid-cols-[1.1fr_1fr] lg:items-end lg:gap-16">
+          <div>
+            <Eyebrow>Databases</Eyebrow>
+            <H2>Look inside your databases from the browser.</H2>
+            <Sub>Optizen finds the Postgres, MySQL and MariaDB containers on a server and connects through SSH. Browse any table page by page, or open the SQL console and query it.</Sub>
+          </div>
+          <ul className="grid gap-3">
+            {databasePoints.map((p) => (
+              <li key={p} className="flex gap-3 text-[14.5px] text-(--text-muted)">
+                <CircleCheck size={16} className="mt-0.5 shrink-0 text-(--accent)" />
+                {p}
+              </li>
+            ))}
+          </ul>
+        </div>
+        <div className="mt-12">
+          <Visual title="Databases · shop-db · prod-lagos-01" badge={<StatusPill tone="ok">PostgreSQL 17.2</StatusPill>}>
+            <div className="overflow-hidden rounded-(--radius) border border-(--border) bg-(--bg)">
+              <SqlDemo />
+            </div>
+          </Visual>
+          <div className="mt-5 flex flex-wrap items-center justify-center gap-2">
+            {(['postgres', 'mysql', 'sqlite'] as const).map((engine) => (
+              <span key={engine} className="inline-flex items-center gap-2 rounded-full border border-(--border) bg-white/[0.02] py-1 pr-3 pl-1 text-[12.5px] text-(--text-muted)">
+                <EngineMark engine={engine} size={22} className="rounded-full" />
+                {engine === 'postgres' ? 'PostgreSQL' : engine === 'mysql' ? 'MySQL / MariaDB' : 'SQLite'}
+              </span>
+            ))}
+            <span className="text-[12.5px] text-(--text-subtle)">· in Docker or on the host</span>
+          </div>
+        </div>
+      </Section>
+
       {/* ── Feature bento ── */}
       <Section id="features">
         <Eyebrow>What it does</Eyebrow>
         <H2>Everything you SSH in for, without SSHing in.</H2>
-        <Sub>Four layers, each with a clear job: servers, projects, deploys and infra files.</Sub>
+        <Sub>Five layers, each with a clear job: servers, projects, deploys, databases and infra files.</Sub>
         <div className="mt-12 grid gap-3.5 md:grid-cols-6">
           <Card className="md:col-span-4" icon={Rocket} title="Reviewable deploys" copy="See the exact commands before they run, watch the live log, and keep every run on record with its health result.">
             <pre className="mt-5.5 overflow-x-auto rounded-(--radius) border border-(--border) bg-(--code-bg) px-4.5 py-4 text-[12.5px] leading-[1.75] text-(--text-muted)">
@@ -151,8 +233,15 @@ export default async function Home({ params }: { params: Promise<{ variant: stri
           </Card>
           <Card className="md:col-span-2" icon={Server} title="Fleet at a glance" copy="CPU, memory, disk, load and uptime for every host, with a heartbeat you can trust." />
           <Card className="md:col-span-2" icon={FileCode2} title="Safe infra edits" copy="Edit .env and Caddy or Nginx config with a diff preview, remote backup and revision history." />
-          <Card className="md:col-span-2" icon={ShieldCheck} title="Built for trust" copy="Re-auth before risky actions, encrypted secrets, rate-limited sign-in and a full audit trail." />
-          <Card className="md:col-span-2" icon={ScanSearch} title="Discover what's running" copy="Scan a server to find Docker workloads and import them as projects in a click." />
+          <Card className="md:col-span-4" icon={Database} title="Databases, without opening a port" copy="Browse tables and run SQL on Postgres, MySQL, MariaDB and SQLite through the SSH connection you already have. Read-only unless you say otherwise.">
+            <pre className="mt-5.5 overflow-x-auto rounded-(--radius) border border-(--border) bg-(--code-bg) px-4.5 py-4 text-[12.5px] leading-[1.75] text-(--text-muted)">
+              <span className="text-(--text-subtle)"># shop-db · postgres · read-only</span>{'\n'}
+              <span className="text-[#a9adff]">select</span> <span className="text-[#a9adff]">count</span>(*) <span className="text-[#a9adff]">from</span> orders <span className="text-[#a9adff]">where</span> status = <span className="text-[#86e0a5]">&apos;failed&apos;</span>;{'\n'}
+              <span className="text-(--green)">✓ 1 row</span> count = <span className="text-(--yellow)">3</span> in 9 ms
+            </pre>
+          </Card>
+          <Card className="md:col-span-3" icon={ShieldCheck} title="Built for trust" copy="Re-auth before risky actions, encrypted secrets, rate-limited sign-in and a full audit trail." />
+          <Card className="md:col-span-3" icon={ScanSearch} title="Discover what's running" copy="Scan a server to find Docker workloads and import them as projects in a click." />
         </div>
       </Section>
 

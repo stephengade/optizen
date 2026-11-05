@@ -16,6 +16,7 @@ export function SiteHeader({ publicSite, wide = true }: { publicSite: boolean; w
           <OptizenLogo />
         </Link>
         <nav className="flex items-center gap-6 text-[13.5px] text-(--text-muted)">
+          <Link href="/#tour" className="hidden transition-colors hover:text-(--text) md:inline">Tour</Link>
           <Link href="/#features" className="hidden transition-colors hover:text-(--text) md:inline">Features</Link>
           <Link href="/help" className="hidden transition-colors hover:text-(--text) sm:inline">Docs</Link>
           <Link href="/contribute" className="hidden transition-colors hover:text-(--text) md:inline">Contribute</Link>

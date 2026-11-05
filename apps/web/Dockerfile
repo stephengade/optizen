@@ -13,7 +13,12 @@ COPY packages/shared packages/shared
 COPY apps/web apps/web
 # Rewrites (/api/* → API) are baked in at build time, so the API address must be known here.
 ARG NEXT_PUBLIC_API_URL=http://server:3001
+# The site's own address, for canonical URLs and social preview images (see lib/site-meta.ts).
+ARG PUBLIC_DOMAIN=
+ARG DOMAIN=
 ENV NEXT_PUBLIC_API_URL=$NEXT_PUBLIC_API_URL \
+    PUBLIC_DOMAIN=$PUBLIC_DOMAIN \
+    DOMAIN=$DOMAIN \
     NEXT_TELEMETRY_DISABLED=1
 RUN bun run --cwd apps/web build
 

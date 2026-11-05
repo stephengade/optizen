@@ -1,6 +1,9 @@
 import Link from 'next/link'
 import { ArrowLeft, ArrowUpRight } from 'lucide-react'
 import { GITHUB_REPO_URL } from '@/lib/links'
+import { pageMetadata } from '@/lib/site-meta'
+
+export const metadata = pageMetadata('/help/install')
 
 const steps = [
   {

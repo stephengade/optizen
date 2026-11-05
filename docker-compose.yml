@@ -6,6 +6,9 @@ services:
       args:
         # Baked into the Next.js build: /api/* is proxied here (internal Docker network).
         NEXT_PUBLIC_API_URL: http://server:3001
+        # Absolute links in page metadata (canonical URLs, social preview images).
+        PUBLIC_DOMAIN: ${PUBLIC_DOMAIN:-}
+        DOMAIN: ${DOMAIN:-}
     environment:
       API_URL: http://server:3001
     depends_on:

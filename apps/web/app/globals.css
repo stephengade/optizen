@@ -235,3 +235,22 @@
 @media (prefers-reduced-motion: reduce) {
   .page-enter, .fade-in { animation: none; }
 }
+
+/* Landing page tour: the active tab's bar fills, then the next tab opens (see ProductTour.tsx). */
+@keyframes tour-progress {
+  from { transform: scaleX(0); }
+  to { transform: scaleX(1); }
+}
+
+.tour-progress {
+  animation: tour-progress 7s linear forwards;
+}
+
+.group\/tour:hover .tour-progress,
+.group\/tour:focus-within .tour-progress {
+  animation-play-state: paused;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .tour-progress { animation: none; }
+}
