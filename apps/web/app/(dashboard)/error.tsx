@@ -17,7 +17,7 @@ export default function DashboardError({
 
   return (
     <div className="mx-auto flex min-h-[60vh] w-full max-w-3xl flex-col items-start justify-center gap-6 px-6 py-12 lg:px-8">
-      <div className="rounded-[24px] border border-(--border) bg-(--surface) p-8">
+      <div className="border border-(--border) bg-(--surface) p-8">
         <p className="text-xs uppercase tracking-[0.24em] text-(--yellow)">Recovery</p>
         <h1 className="mt-2 text-3xl font-semibold text-(--text)">This workspace hit an unexpected state</h1>
         <p className="mt-3 max-w-2xl text-sm text-(--text-muted)">
@@ -27,13 +27,13 @@ export default function DashboardError({
           <Button onClick={reset}>Retry this view</Button>
           <Link
             href="/servers"
-            className="inline-flex h-10 items-center rounded-[14px] border border-(--border) px-4 text-sm text-(--text) transition-colors hover:bg-(--surface-2)"
+            className="inline-flex h-10 items-center border border-(--border) px-4 text-sm text-(--text) transition-colors hover:bg-(--surface-2)"
           >
             Back to servers
           </Link>
           <Link
             href="/help"
-            className="inline-flex h-10 items-center rounded-[14px] border border-(--border) px-4 text-sm text-(--text) transition-colors hover:bg-(--surface-2)"
+            className="inline-flex h-10 items-center border border-(--border) px-4 text-sm text-(--text) transition-colors hover:bg-(--surface-2)"
           >
             Open help
           </Link>

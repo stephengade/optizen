@@ -51,7 +51,7 @@ export function ImagePanel({
   onRollback,
 }: ImagePanelProps) {
   return (
-    <section className="rounded-2xl border border-(--border) bg-(--surface) p-6">
+    <section className="border border-(--border) bg-(--surface) p-6">
       <div className="flex flex-wrap items-start justify-between gap-4">
         <div>
                     <h2 className="mt-2 text-lg font-semibold text-(--text)">Docker image manager</h2>
@@ -88,7 +88,7 @@ export function ImagePanel({
               <select
                 value={selectedTag}
                 onChange={(event) => onTagChange(event.target.value)}
-                className="h-10 w-full rounded border border-(--border) bg-(--surface) px-3 text-sm text-(--text) outline-none focus:border-(--border-strong)"
+                className="h-10 w-full border border-(--border) bg-(--surface) px-3 text-sm text-(--text) outline-none focus:border-(--border-strong)"
               >
                 <option value="">latest</option>
                 {tags.map((tag) => (
@@ -109,7 +109,7 @@ export function ImagePanel({
               <select
                 value={selectedRollbackId}
                 onChange={(event) => onRollbackChange(event.target.value)}
-                className="h-10 w-full rounded border border-(--border) bg-(--surface) px-3 text-sm text-(--text) outline-none focus:border-(--border-strong)"
+                className="h-10 w-full border border-(--border) bg-(--surface) px-3 text-sm text-(--text) outline-none focus:border-(--border-strong)"
               >
                 <option value="">Select successful deploy</option>
                 {rollbackCandidates.map((record) => (

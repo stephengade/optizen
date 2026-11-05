@@ -67,6 +67,7 @@ export default function ServerMemoryPage() {
   const [server, setServer] = useState<Server | null>(null)
   const [report, setReport] = useState<MemoryReport | null>(null)
   const [error, setError] = useState<string | null>(null)
+  const [showAllProcesses, setShowAllProcesses] = useState(false)
   const [loading, setLoading] = useState(true)
   const [refreshing, setRefreshing] = useState(false)
   const [pending, setPending] = useState<PendingAction | null>(null)
@@ -199,7 +200,7 @@ export default function ServerMemoryPage() {
 
       {b ? (
         <section className="space-y-4">
-          <div className="grid grid-cols-2 divide-x divide-(--border) border border-(--border) md:grid-cols-4">
+          <div className="cell-grid grid-cols-2 md:grid-cols-4">
             <Stat label="Used by programs" value={formatBytes(b.usedBytes)} sub={`of ${formatBytes(b.totalBytes)}`} />
             <Stat label="Available" value={formatBytes(b.availableBytes)} sub={pressure !== null ? formatPercent(pressure * 100) + ' of total' : ''} />
             <Stat label="Cache / buffers" value={formatBytes(b.cacheBytes)} sub="freed automatically when needed" />
@@ -271,17 +272,18 @@ export default function ServerMemoryPage() {
           <div className="divide-y divide-(--border) border border-(--border)">
             {report.groups.slice(0, 10).map((group) => (
               <div key={group.command} className="flex items-center gap-4 px-4 py-2 text-sm">
-                <div className="w-48 truncate text-(--text)">{group.command}</div>
+                <div className="w-32 truncate text-(--text) sm:w-48">{group.command}</div>
                 <div className="flex-1">
                   <div className="h-1.5 bg-(--surface-2)">
                     <div
                       className="h-1.5 bg-(--accent)"
-                      style={{ width: `${b && b.totalBytes ? Math.min(100, (group.rssBytes / b.totalBytes) * 100) : 0}%` }}
+                      style={{ width: `${Math.max(1, (group.rssBytes / (report.groups[0]?.rssBytes || 1)) * 100)}%` }}
+                      title={b && b.totalBytes ? `${formatPercent((group.rssBytes / b.totalBytes) * 100, 1)} of RAM` : undefined}
                     />
                   </div>
                 </div>
                 <div className="w-24 text-right text-(--text)">{formatBytes(group.rssBytes)}</div>
-                <div className="w-20 text-right text-xs text-(--text-muted)">
+                <div className="hidden w-20 text-right text-xs text-(--text-muted) sm:block">
                   {group.processCount} proc{group.processCount === 1 ? '' : 's'}
                 </div>
               </div>
@@ -296,55 +298,53 @@ export default function ServerMemoryPage() {
           <p className="mb-3 text-xs text-(--text-muted)">
             Sorted by resident memory. System processes (sshd, systemd, dockerd…) are protected and cannot be stopped from here.
           </p>
-          <div className="overflow-x-auto border border-(--border)">
-            <table className="w-full text-sm">
-              <thead className="text-left text-[10px] uppercase tracking-[0.16em] text-(--text-muted)">
-                <tr className="border-b border-(--border)">
-                  <th className="px-4 py-2 font-normal">Process</th>
-                  <th className="px-4 py-2 font-normal">Memory</th>
-                  <th className="px-4 py-2 font-normal">CPU</th>
-                  <th className="px-4 py-2" />
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-(--border)">
-                {report.topProcesses.map((process) => (
-                  <tr key={process.pid}>
-                    <td className="max-w-md px-4 py-2">
-                      <div className="text-(--text)">
-                        {process.command}
-                        <span className="ml-2 text-xs text-(--text-muted)">
-                          pid {process.pid} · {process.user}
-                          {process.containerName ? ` · container ${process.containerName}` : ''}
-                        </span>
-                      </div>
-                      <div className="truncate font-mono text-xs text-(--text-muted)" title={process.args}>
-                        <SensitiveText value={process.args} />
-                      </div>
-                    </td>
-                    <td className="px-4 py-2 whitespace-nowrap text-(--text)">
-                      {formatBytes(process.rssBytes)}
-                      <span className="ml-2 text-xs text-(--text-muted)">{formatPercent(process.memPercent, 1)}</span>
-                    </td>
-                    <td className="px-4 py-2 whitespace-nowrap text-(--text-muted)">{formatPercent(process.cpuPercent, 1)}</td>
-                    <td className="px-4 py-2 text-right whitespace-nowrap">
-                      {process.protected ? (
-                        <span className="text-xs text-(--text-subtle)">protected</span>
-                      ) : (
-                        <div className="flex justify-end gap-1">
-                          <Button variant="ghost" size="sm" onClick={() => setPending({ kind: 'kill-process', process, signal: 'TERM' })}>
-                            Stop
-                          </Button>
-                          <Button variant="danger" size="sm" onClick={() => setPending({ kind: 'kill-process', process, signal: 'KILL' })}>
-                            Force kill
-                          </Button>
-                        </div>
-                      )}
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
+          <ul className="divide-y divide-(--border) border border-(--border)">
+            {(showAllProcesses ? report.topProcesses : report.topProcesses.slice(0, 15)).map((process) => (
+              <li key={process.pid} className="flex flex-wrap items-center gap-x-4 gap-y-2 px-4 py-3 text-sm">
+                <div className="min-w-0 flex-1 basis-56">
+                  <div className="flex min-w-0 items-baseline gap-2">
+                    <span className="truncate text-(--text)">{process.command}</span>
+                    <span className="shrink-0 text-xs text-(--text-muted)">
+                      pid {process.pid} · {process.user}
+                      {process.containerName ? ` · ${process.containerName}` : ''}
+                    </span>
+                  </div>
+                  <div className="truncate font-mono text-xs text-(--text-muted)" title={process.args}>
+                    <SensitiveText value={process.args} />
+                  </div>
+                </div>
+                <div className="w-28 shrink-0 text-right whitespace-nowrap">
+                  <div className="text-(--text)">{formatBytes(process.rssBytes)}</div>
+                  <div className="text-xs text-(--text-muted)">
+                    {formatPercent(process.memPercent, 1)} mem · {formatPercent(process.cpuPercent, 1)} cpu
+                  </div>
+                </div>
+                <div className="flex w-full shrink-0 justify-end gap-1 sm:w-44">
+                  {process.protected ? (
+                    <span className="text-xs text-(--text-muted)">protected</span>
+                  ) : (
+                    <>
+                      <Button variant="ghost" size="sm" onClick={() => setPending({ kind: 'kill-process', process, signal: 'TERM' })}>
+                        Stop
+                      </Button>
+                      <Button variant="danger" size="sm" onClick={() => setPending({ kind: 'kill-process', process, signal: 'KILL' })}>
+                        Force kill
+                      </Button>
+                    </>
+                  )}
+                </div>
+              </li>
+            ))}
+          </ul>
+          {report.topProcesses.length > 15 ? (
+            <button
+              type="button"
+              onClick={() => setShowAllProcesses((v) => !v)}
+              className="mt-2 text-xs text-(--text-muted) transition-colors hover:text-(--text)"
+            >
+              {showAllProcesses ? 'Show fewer' : `Show all ${report.topProcesses.length} processes`}
+            </button>
+          ) : null}
         </section>
       ) : null}
 
@@ -383,15 +383,18 @@ function MemoryBar({ breakdown }: { breakdown: MemoryReport['breakdown'] }) {
   // Cache that is not already counted as used (available includes reclaimable cache)
   const cache = Math.max(0, Math.min(100 - used, ((breakdown.availableBytes - breakdown.freeBytes) / total) * 100))
   const free = Math.max(0, 100 - used - cache)
+  // Colour "used" by pressure: only alarming when little memory is actually available.
+  const availablePercent = (breakdown.availableBytes / total) * 100
+  const usedColor = availablePercent < 10 ? 'bg-(--red)' : availablePercent < 25 ? 'bg-(--yellow)' : 'bg-(--accent)'
   return (
     <div>
       <div className="flex h-3 w-full overflow-hidden border border-(--border)">
-        <div className="bg-(--red)" style={{ width: `${used}%` }} title="Used by programs" />
+        <div className={usedColor} style={{ width: `${used}%` }} title="Used by programs" />
         <div className="bg-(--blue)" style={{ width: `${cache}%` }} title="Reclaimable cache" />
         <div className="bg-(--surface-2)" style={{ width: `${free}%` }} title="Free" />
       </div>
       <div className="mt-2 flex flex-wrap gap-4 text-xs text-(--text-muted)">
-        <Legend color="bg-(--red)" label="Used by programs" />
+        <Legend color={usedColor} label="Used by programs" />
         <Legend color="bg-(--blue)" label="Reclaimable cache" />
         <Legend color="bg-(--surface-2) border border-(--border)" label="Free" />
       </div>

@@ -20,7 +20,7 @@ export function ConnectionBadge({ connected, latencyMs, error }: ConnectionBadge
     connected === undefined
       ? 'unknown'
       : connected
-        ? latencyMs ? `${latencyMs}ms` : 'online'
+        ? latencyMs ? `online · ${latencyMs}ms` : 'online'
         : 'offline'
 
   return (

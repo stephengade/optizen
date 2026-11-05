@@ -143,7 +143,7 @@ export default function ProjectEnvPage() {
           </section>
         </>
       ) : (
-        <div className="rounded-2xl border border-(--border) bg-(--surface) p-6 text-sm text-(--text-muted)">
+        <div className="border border-(--border) bg-(--surface) p-6 text-sm text-(--text-muted)">
           No env path configured for this project yet.
         </div>
       )}

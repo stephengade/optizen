@@ -12,7 +12,7 @@ export function LoadingState({ label, detail, compact = false }: LoadingStatePro
   return (
     <div
       className={`border border-(--border) bg-(--surface) text-(--text-muted) ${
-        compact ? 'px-5 py-6' : 'rounded-2xl p-6'
+        compact ? 'px-5 py-6' : 'p-6'
       }`}
     >
       <div className="flex items-center gap-3">

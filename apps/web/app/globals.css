@@ -14,8 +14,8 @@
 
   /* Text */
   --text: #f0f0f0;
-  --text-muted: #6b6b6b;
-  --text-subtle: #3d3d3d;
+  --text-muted: #8a8a8a;
+  --text-subtle: #5c5c5c;
 
   /* Accent — single sharp lime */
   --accent: #c8ff57;
@@ -76,6 +76,11 @@
     text-decoration: none;
   }
 
+  input[type="checkbox"],
+  input[type="radio"] {
+    accent-color: var(--accent);
+  }
+
   html[data-demo-privacy="on"] [data-sensitive="true"] {
     filter: blur(6px);
     user-select: none;
@@ -96,6 +101,19 @@
   .dashboard-shell {
     position: relative;
     background: var(--bg);
+  }
+
+  /* Grid of stat cells separated by 1px hairlines. Works for any column count and
+     partial last rows (unlike divide-x). Set --cell-bg when the parent is not --bg. */
+  .cell-grid {
+    display: grid;
+    gap: 1px;
+    background: var(--border);
+    border: 1px solid var(--border);
+  }
+
+  .cell-grid > * {
+    background: var(--cell-bg, var(--bg));
   }
 
   .divider {

@@ -1,7 +1,6 @@
 'use client'
 
 import { useState, FormEvent } from 'react'
-import { useRouter } from 'next/navigation'
 import { Eye, EyeOff } from 'lucide-react'
 import { useAuth } from '@/lib/auth-context'
 import { Button } from '@/components/ui/Button'
@@ -9,7 +8,6 @@ import { Input } from '@/components/ui/Input'
 
 export default function LoginPage() {
   const { login } = useAuth()
-  const router = useRouter()
 
   const [password, setPassword] = useState('')
   const [showPassword, setShowPassword] = useState(false)
@@ -25,9 +23,8 @@ export default function LoginPage() {
 
     const result = await login(password)
 
-    if (result.success) {
-      router.push('/servers')
-    } else {
+    // On success AuthGate sends the user back to where they were (or /servers).
+    if (!result.success) {
       setError(result.error ?? 'Invalid password')
       setPassword('')
     }

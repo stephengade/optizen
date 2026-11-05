@@ -55,11 +55,13 @@ export const REPORT_SCRIPT = [
   'cat /proc/meminfo',
   'echo "@@elevate"',
   'if [ "$(id -u)" = 0 ]; then echo root; elif sudo -n true 2>/dev/null; then echo sudo; else echo none; fi',
+  // This script and its helpers (ps, sort, awk…) run in their own session (sid = $$); hide them from the report.
+  'ME=$$',
   'echo "@@ps"',
   // pid, user, rss(kB), %mem, %cpu, then args last (may contain spaces); comm + container id resolved per pid
-  `ps -eo pid=,user:32=,rss=,pmem=,pcpu=,args= --sort=-rss 2>/dev/null | head -n 40 | while read -r pid user rss pmem pcpu args; do comm=$(cat /proc/$pid/comm 2>/dev/null); cid=$(grep -m1 -oE '[0-9a-f]{64}' /proc/$pid/cgroup 2>/dev/null | head -n 1); printf '%s\\t%s\\t%s\\t%s\\t%s\\t%s\\t%s\\t%s\\n' "$pid" "$user" "$rss" "$pmem" "$pcpu" "$comm" "$cid" "$args"; done`,
+  `ps -eo pid=,sid=,user:32=,rss=,pmem=,pcpu=,args= --sort=-rss 2>/dev/null | awk -v me="$ME" '$2 != me' | head -n 40 | while read -r pid sid user rss pmem pcpu args; do comm=$(cat /proc/$pid/comm 2>/dev/null); cid=$(grep -m1 -oE '[0-9a-f]{64}' /proc/$pid/cgroup 2>/dev/null | head -n 1); printf '%s\\t%s\\t%s\\t%s\\t%s\\t%s\\t%s\\t%s\\n' "$pid" "$user" "$rss" "$pmem" "$pcpu" "$comm" "$cid" "$args"; done`,
   'echo "@@groups"',
-  `ps -eo rss=,comm= 2>/dev/null | awk '{ r=$1; $1=""; sub(/^ +/, ""); a[$0]+=r; c[$0]++ } END { for (k in a) printf "%d\\t%d\\t%s\\n", a[k], c[k], k }' | sort -t "$(printf '\\t')" -k1,1 -rn | head -n 15`,
+  `ps -eo sid=,rss=,comm= 2>/dev/null | awk -v me="$ME" '$1 != me { r=$2; $1=""; $2=""; sub(/^ +/, ""); a[$0]+=r; c[$0]++ } END { for (k in a) printf "%d\\t%d\\t%s\\n", a[k], c[k], k }' | sort -t "$(printf '\\t')" -k1,1 -rn | head -n 15`,
   DOCKER_BIN,
   'echo "@@docker"',
   'if [ -n "$D" ]; then echo available; "$D" stats --no-stream --format "{{.ID}}\\t{{.Name}}\\t{{.MemUsage}}\\t{{.MemPerc}}\\t{{.CPUPerc}}" 2>/dev/null; else echo unavailable; fi',

@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import Link from 'next/link'
 import type { Server, ServerConnectionStatus, ServerResourceStatus, SmtpConfig } from '@launchpad/shared'
 import { Mail, Plus, X } from 'lucide-react'
@@ -23,6 +23,12 @@ export default function ServersPage() {
   const [loading, setLoading] = useState(true)
   const [testingId, setTestingId] = useState<string | null>(null)
   const [showForm, setShowForm] = useState(false)
+  const formRef = useRef<HTMLDivElement>(null)
+
+  // The form opens below the stats; bring it into view so the click visibly does something.
+  useEffect(() => {
+    if (showForm) formRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' })
+  }, [showForm])
   const [smtpConfigured, setSmtpConfigured] = useState(true)
   const [showNotificationBanner, setShowNotificationBanner] = useState(false)
 
@@ -99,6 +105,8 @@ export default function ServersPage() {
     setServers((cur) => [created, ...cur])
     setShowForm(false)
     toast.success('Server added')
+    // Fill in status + telemetry right away instead of leaving the new card blank.
+    void handleTest(created.id)
   }
 
   async function handleTest(serverId: string) {
@@ -200,7 +208,7 @@ export default function ServersPage() {
 
       {/* Add form */}
       {showForm && (
-        <div className="border border-(--border) bg-(--surface) mb-8">
+        <div ref={formRef} className="mb-8 scroll-mt-20 border border-(--border) bg-(--surface)">
           <div className="px-5 py-4 border-b border-(--border)">
             <h2 className="text-sm font-semibold text-(--text)">Add server</h2>
             <p className="mt-1 text-xs text-(--text-muted)">Use a dedicated deploy user. Sensitive fields are encrypted at rest.</p>
@@ -210,7 +218,9 @@ export default function ServersPage() {
               title=""
               description=""
               submitLabel="Create server"
+              inModal
               onSubmit={handleCreate}
+              onCancel={() => setShowForm(false)}
             />
           </div>
         </div>

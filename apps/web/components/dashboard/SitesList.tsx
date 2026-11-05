@@ -15,7 +15,7 @@ interface SitesListProps {
 
 export function SitesList({ sites, togglingSite, onToggle }: SitesListProps) {
   return (
-    <section className="rounded-2xl border border-(--border) bg-(--surface) p-6">
+    <section className="border border-(--border) bg-(--surface) p-6">
       <h2 className="text-lg font-semibold text-(--text)">Nginx sites</h2>
       <p className="mt-1 text-sm text-(--text-muted)">
         Enable or disable files from `/etc/nginx/sites-available`.

@@ -32,7 +32,7 @@ export function ServerCard({ server, status, resources, onTest, testing }: Serve
   const hasInodeStats = Number.isFinite(resources?.diskInodesUsedPercent)
 
   return (
-    <article className="border border-(--border) bg-(--surface) p-5">
+    <article className="border border-(--border) bg-(--surface) p-5 [--cell-bg:var(--surface)]">
       {/* Header */}
       <div className="flex items-start justify-between gap-4">
         <div>
@@ -45,7 +45,7 @@ export function ServerCard({ server, status, resources, onTest, testing }: Serve
       </div>
 
       {/* Metrics */}
-      <div className="mt-4 grid grid-cols-2 md:grid-cols-4 border border-(--border) divide-x divide-(--border)">
+      <div className="cell-grid mt-4 grid-cols-2 md:grid-cols-4">
         <Metric
           label="CPU"
           value={
@@ -62,7 +62,7 @@ export function ServerCard({ server, status, resources, onTest, testing }: Serve
       </div>
 
       {/* Secondary metrics */}
-      <div className="mt-px grid grid-cols-2 md:grid-cols-3 border border-(--border) border-t-0 divide-x divide-(--border)">
+      <div className="cell-grid grid-cols-2 border-t-0 md:grid-cols-3">
         <Metric label="Load avg" value={loadAvg ? loadAvg.map((v) => v.toFixed(2)).join(' / ') : '—'} />
         <Metric label="Inodes" value={hasInodeStats ? formatPercent(resources!.diskInodesUsedPercent!) : '—'} />
         <div className="col-span-2 md:col-span-1 px-4 py-3">

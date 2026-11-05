@@ -32,7 +32,7 @@ export function ProjectLogsPanel({
   onAutoRefreshToggle,
 }: ProjectLogsPanelProps) {
   return (
-    <section className="rounded-2xl border border-(--border) bg-(--surface) p-6">
+    <section className="border border-(--border) bg-(--surface) p-6">
       <div className="flex flex-wrap items-start justify-between gap-4">
         <div>
           <h2 className="text-lg font-semibold text-(--text)">Project logs</h2>
@@ -54,7 +54,7 @@ export function ProjectLogsPanel({
         <select
           value={selectedSource}
           onChange={(event) => onSourceChange(event.target.value)}
-          className="h-10 rounded border border-(--border) bg-(--surface-2) px-3 text-sm text-(--text) outline-none focus:border-(--border-strong)"
+          className="h-10 border border-(--border) bg-(--surface-2) px-3 text-sm text-(--text) outline-none focus:border-(--border-strong)"
         >
           {sources.map((source) => (
             <option key={source.id} value={source.id}>

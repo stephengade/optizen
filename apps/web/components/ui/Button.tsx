@@ -22,7 +22,7 @@ export function Button({
     <button
       disabled={disabled || loading}
       className={cn(
-        'inline-flex items-center justify-center gap-2 font-medium transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-(--accent) disabled:opacity-40 disabled:cursor-not-allowed',
+        'inline-flex shrink-0 items-center justify-center gap-2 whitespace-nowrap font-medium transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-(--accent) disabled:opacity-40 disabled:cursor-not-allowed',
         size === 'md' && 'h-9 px-4 text-sm',
         size === 'sm' && 'h-7 px-3 text-xs',
         variant === 'primary' && 'bg-(--accent) text-(--bg) hover:opacity-90',

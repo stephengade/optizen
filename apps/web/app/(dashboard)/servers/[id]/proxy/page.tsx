@@ -217,8 +217,8 @@ export default function ServerProxyPage() {
   return (
     <div className="mx-auto flex w-full max-w-7xl flex-col gap-8 px-6 py-8 lg:px-8">
       <section>
-        <Link href={`/servers/${params.id}`} className="text-xs uppercase tracking-[0.24em] text-(--text-muted)">
-          Back to server
+        <Link href={`/servers/${params.id}`} className="text-xs uppercase tracking-[0.24em] text-(--text-muted) transition-colors hover:text-(--text)">
+          ← Back to server
         </Link>
         <h1 className="mt-2 text-3xl font-semibold text-(--text)">Reverse proxy</h1>
         <p className="mt-2 text-sm text-(--text-muted)">
@@ -230,22 +230,22 @@ export default function ServerProxyPage() {
         <LoadingState label="Loading proxy state" detail="Inspecting host services and likely proxy configuration files." />
       ) : (
         <>
-          <section className="rounded-2xl border border-(--border) bg-(--surface) p-6">
+          <section className="border border-(--border) bg-(--surface) p-6">
             <h2 className="text-lg font-semibold text-(--text)">Proxy status</h2>
             <p className="mt-2 text-sm text-(--text-muted)">
               This page manages both host-level proxies and Docker-managed proxy config files. If Optizen cannot detect
               a host Caddy or Nginx service, you can still load and edit a known config file path below.
             </p>
-            <div className="mt-4 grid gap-4 md:grid-cols-4">
-              <div className="rounded-xl border border-(--border) bg-(--surface-2) p-4">
+            <div className="cell-grid mt-4 grid-cols-3 [--cell-bg:var(--surface-2)]">
+              <div className="p-4">
                 <div className="text-xs uppercase tracking-[0.18em] text-(--text-muted)">Type</div>
                 <div className="mt-2 text-sm text-(--text)">{status?.type ?? 'unknown'}</div>
               </div>
-              <div className="rounded-xl border border-(--border) bg-(--surface-2) p-4">
+              <div className="p-4">
                 <div className="text-xs uppercase tracking-[0.18em] text-(--text-muted)">Running</div>
                 <div className="mt-2 text-sm text-(--text)">{status?.running ? 'Yes' : 'No'}</div>
               </div>
-              <div className="rounded-xl border border-(--border) bg-(--surface-2) p-4 md:col-span-2">
+              <div className="p-4">
                 <div className="text-xs uppercase tracking-[0.18em] text-(--text-muted)">Version</div>
                 <div className="mt-2 text-sm text-(--text)">{status?.version || 'n/a'}</div>
               </div>
@@ -253,7 +253,7 @@ export default function ServerProxyPage() {
           </section>
 
           {suggestedPaths.length > 0 ? (
-            <section className="rounded-2xl border border-(--border) bg-(--surface) p-6">
+            <section className="border border-(--border) bg-(--surface) p-6">
               <h2 className="text-lg font-semibold text-(--text)">Suggested proxy files</h2>
               <p className="mt-2 text-sm text-(--text-muted)">
                 Optizen found imported proxy-like projects on this server. Pick a likely config file to load without
@@ -285,7 +285,7 @@ export default function ServerProxyPage() {
           />
 
           {config?.path ? (
-            <section className="rounded-2xl border border-(--border) bg-(--surface) p-6">
+            <section className="border border-(--border) bg-(--surface) p-6">
               <h2 className="mb-3 text-lg font-semibold text-(--text)">Config history</h2>
               <FileRevisionList revisions={revisions} restoring={restoringId} onRestore={(revisionId) => void handleRestore(revisionId)} />
             </section>

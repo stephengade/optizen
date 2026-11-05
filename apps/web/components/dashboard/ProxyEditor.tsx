@@ -44,7 +44,7 @@ export function ProxyEditor({
   }, [configValue])
 
   return (
-    <section className="rounded-2xl border border-(--border) bg-(--surface) p-6">
+    <section className="border border-(--border) bg-(--surface) p-6">
       <div className="flex flex-wrap items-start justify-between gap-4">
         <div>
                     <h2 className="mt-2 text-lg font-semibold text-(--text)">Proxy editor</h2>

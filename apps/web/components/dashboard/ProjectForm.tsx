@@ -240,7 +240,7 @@ export function ProjectForm({
             <select
               value={values.source}
               onChange={(event) => setValues((current) => ({ ...current, source: event.target.value as ProjectSource }))}
-              className="h-10 rounded border border-(--border) bg-(--surface-2) px-3 text-sm text-(--text) outline-none focus:border-(--border-strong)"
+              className="h-10 border border-(--border) bg-(--surface-2) px-3 text-sm text-(--text) outline-none focus:border-(--border-strong)"
             >
               <option value="manual">Manual</option>
               <option value="imported">Imported</option>
@@ -251,7 +251,7 @@ export function ProjectForm({
             <select
               value={values.runtime}
               onChange={(event) => setValues((current) => ({ ...current, runtime: event.target.value as ProjectRuntime }))}
-              className="h-10 rounded border border-(--border) bg-(--surface-2) px-3 text-sm text-(--text) outline-none focus:border-(--border-strong)"
+              className="h-10 border border-(--border) bg-(--surface-2) px-3 text-sm text-(--text) outline-none focus:border-(--border-strong)"
             >
               <option value="compose">Compose app</option>
               <option value="image">Image app</option>
@@ -328,14 +328,14 @@ export function ProjectForm({
               onChange={(event) =>
                 setValues((current) => ({ ...current, proxyType: event.target.value as ProxyType }))
               }
-              className="h-10 rounded border border-(--border) bg-(--surface-2) px-3 text-sm text-(--text) outline-none focus:border-(--border-strong)"
+              className="h-10 border border-(--border) bg-(--surface-2) px-3 text-sm text-(--text) outline-none focus:border-(--border-strong)"
             >
               <option value="none">None</option>
               <option value="caddy">Caddy</option>
               <option value="nginx">Nginx</option>
             </select>
           </label>
-          <label className="flex items-center gap-3 rounded border border-(--border) bg-(--surface-2) px-3 py-2 text-sm text-(--text)">
+          <label className="flex items-center gap-3 border border-(--border) bg-(--surface-2) px-3 py-2 text-sm text-(--text)">
             <input
               type="checkbox"
               checked={values.webhookEnabled}
@@ -353,7 +353,7 @@ export function ProjectForm({
           <textarea
             value={values.deployCommands}
             onChange={(event) => setValues((current) => ({ ...current, deployCommands: event.target.value }))}
-            className="min-h-36 rounded border border-(--border) bg-(--surface-2) px-3 py-2 font-mono text-sm text-(--text) outline-none focus:border-(--border-strong)"
+            className="min-h-36 border border-(--border) bg-(--surface-2) px-3 py-2 font-mono text-sm text-(--text) outline-none focus:border-(--border-strong)"
             placeholder={'docker pull ghcr.io/acme/app:latest\ndocker compose up -d'}
             required
           />
@@ -363,7 +363,7 @@ export function ProjectForm({
         </label>
 
         <div className="grid gap-3 md:grid-cols-2">
-          <label className="flex items-center gap-3 rounded border border-(--border) bg-(--surface-2) px-3 py-2 text-sm text-(--text)">
+          <label className="flex items-center gap-3 border border-(--border) bg-(--surface-2) px-3 py-2 text-sm text-(--text)">
             <input
               type="checkbox"
               checked={values.onSuccess}
@@ -372,7 +372,7 @@ export function ProjectForm({
             />
             Notify on success
           </label>
-          <label className="flex items-center gap-3 rounded border border-(--border) bg-(--surface-2) px-3 py-2 text-sm text-(--text)">
+          <label className="flex items-center gap-3 border border-(--border) bg-(--surface-2) px-3 py-2 text-sm text-(--text)">
             <input
               type="checkbox"
               checked={values.onFailure}

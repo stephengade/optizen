@@ -443,7 +443,7 @@ export default function StoragePage() {
           <p className="mt-1 text-sm text-(--text-muted)">Load a fast storage overview first, then run a deeper directory scan only when you need it.</p>
         </div>
         {selectedId && audit && (
-          <div className="flex items-center gap-2 pt-1">
+          <div className="flex flex-wrap items-center gap-2 pt-1">
             <Button variant="ghost" size="sm" onClick={() => void loadOverview(true)} loading={auditing && !deepAuditRan}>
               Refresh overview
             </Button>

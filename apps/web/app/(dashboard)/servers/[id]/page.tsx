@@ -269,11 +269,11 @@ export default function ServerDetailPage() {
       </div>
 
       {/* Metrics */}
-      <div className="grid grid-cols-2 md:grid-cols-4 border border-(--border) divide-x divide-(--border)">
+      <div className="cell-grid grid-cols-2 md:grid-cols-4">
         <Metric
           label="CPU"
           value={hasCpuUsage ? formatPercent(resources!.cpuUsagePercent!, 1) : '—'}
-          sub={loadAverage ? loadAverage.map((v) => v.toFixed(2)).join(' / ') : hasCpuCapacity ? `${resources!.cpuCoreCount}c` : 'no data'}
+          sub={loadAverage ? `load ${loadAverage.map((v) => v.toFixed(2)).join(' / ')}` : hasCpuCapacity ? `${resources!.cpuCoreCount}c` : 'no data'}
         />
         <Metric
           label="Memory"
@@ -288,7 +288,7 @@ export default function ServerDetailPage() {
         <Metric
           label="Uptime"
           value={hasUptime ? formatUptime(resources!.uptimeSeconds!) : '—'}
-          sub={containersAvailable && hasContainerStats ? `${resources!.runningContainers} running / ${resources!.exitedContainers} exited` : 'no data'}
+          sub={containersAvailable && hasContainerStats ? `${resources!.runningContainers} running / ${resources!.exitedContainers} exited` : hasUptime ? 'no container data' : 'no data'}
         />
       </div>
 

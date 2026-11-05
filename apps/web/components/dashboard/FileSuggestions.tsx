@@ -12,7 +12,7 @@ export function FileSuggestions({ suggestions }: FileSuggestionsProps) {
   }
 
   return (
-    <section className="rounded-2xl border border-(--border) bg-(--surface) p-6">
+    <section className="border border-(--border) bg-(--surface) p-6">
       <h2 className="text-lg font-semibold text-(--text)">Related files</h2>
       <p className="mt-1 text-sm text-(--text-muted)">
         Suggested files around this project that are often useful during imports, config edits, and troubleshooting.

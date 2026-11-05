@@ -4,6 +4,7 @@ import { useEffect } from 'react'
 import { useRouter, usePathname } from 'next/navigation'
 import { useAuth } from '@/lib/auth-context'
 import { Loader2 } from 'lucide-react'
+import { rememberReturnTo, takeReturnTo } from '@/lib/return-to'
 
 export function AuthGate({ children }: { children: React.ReactNode }) {
   const { isSetup, authenticated, loading } = useAuth()
@@ -22,13 +23,16 @@ export function AuthGate({ children }: { children: React.ReactNode }) {
     }
 
     if (!authenticated) {
-      if (!isAuthRoute && !isPublicRoute) router.replace('/login')
+      if (!isAuthRoute && !isPublicRoute) {
+        rememberReturnTo(`${pathname}${window.location.search}`)
+        router.replace('/login')
+      }
       return
     }
 
     // Already authenticated — redirect away from auth pages
     if (isAuthRoute) {
-      router.replace('/servers')
+      router.replace(takeReturnTo())
     }
   }, [isSetup, authenticated, loading, pathname, router])
 

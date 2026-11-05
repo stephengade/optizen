@@ -47,7 +47,7 @@ function EventDetail({ detail }: { detail: string }) {
   }
 
   return (
-    <div className="mt-3 overflow-hidden rounded-lg border border-(--border) bg-[#0b0b0d] font-mono text-xs">
+    <div className="mt-3 overflow-hidden border border-(--border) bg-[#0b0b0d] font-mono text-xs">
       {/* Terminal header */}
       <div className="flex items-center justify-between border-b border-(--border) bg-[#121215] px-3 py-1.5 select-none">
         <div className="flex items-center gap-2 text-(--text-muted)">
@@ -56,7 +56,7 @@ function EventDetail({ detail }: { detail: string }) {
         </div>
         <button
           onClick={() => void handleCopy()}
-          className="inline-flex items-center gap-1.5 rounded px-2 py-0.5 text-[10px] font-medium text-(--text-muted) hover:bg-(--surface-2) hover:text-(--text) transition-colors cursor-pointer"
+          className="inline-flex items-center gap-1.5 px-2 py-0.5 text-[10px] font-medium text-(--text-muted) hover:bg-(--surface-2) hover:text-(--text) transition-colors cursor-pointer"
         >
           {copied ? (
             <>
@@ -108,14 +108,14 @@ function EventDetail({ detail }: { detail: string }) {
 export function ActivityTimeline({ events, emptyLabel }: ActivityTimelineProps) {
   if (events.length === 0) {
     return (
-      <div className="rounded-2xl border border-dashed border-(--border) bg-(--surface) p-5 text-sm text-(--text-muted)">
+      <div className="border border-dashed border-(--border) bg-(--surface) p-5 text-sm text-(--text-muted)">
         {emptyLabel}
       </div>
     )
   }
 
   return (
-    <div className="rounded-2xl border border-(--border) bg-(--surface) divide-y divide-(--border)">
+    <div className="border border-(--border) bg-(--surface) divide-y divide-(--border)">
       {events.map((event) => (
         <div key={event.id} className="p-5 transition-colors duration-200 hover:bg-(--bg-subtle)/40">
           <div className="flex items-start gap-3">

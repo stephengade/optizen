@@ -38,6 +38,7 @@ interface ServerFormProps {
     diskAlertThresholdPercent?: number
   }) => Promise<void>
   onDelete?: () => Promise<void>
+  onCancel?: () => void
 }
 
 function getInitialValue(initialValue?: Partial<Server>): ServerFormValues {
@@ -61,6 +62,7 @@ export function ServerForm({
   inModal = false,
   onSubmit,
   onDelete,
+  onCancel,
 }: ServerFormProps) {
   const [values, setValues] = useState<ServerFormValues>(getInitialValue(initialValue))
   const [loading, setLoading] = useState(false)
@@ -150,10 +152,12 @@ export function ServerForm({
 
   return (
     <section className={inModal ? '' : 'border border-(--border) bg-(--surface) p-6'}>
-      <div className="mb-6">
-        <h2 className="text-lg font-semibold text-(--text)">{title}</h2>
-        <p className="mt-1 text-sm text-(--text-muted)">{description}</p>
-      </div>
+      {title || description ? (
+        <div className="mb-6">
+          {title ? <h2 className="text-lg font-semibold text-(--text)">{title}</h2> : null}
+          {description ? <p className="mt-1 text-sm text-(--text-muted)">{description}</p> : null}
+        </div>
+      ) : null}
 
       <form className="space-y-4" onSubmit={handleSubmit}>
         <Input
@@ -195,13 +199,14 @@ export function ServerForm({
             sensitive
             value={values.sshKeyPath}
             onChange={(event) => setValues((current) => ({ ...current, sshKeyPath: event.target.value }))}
-            placeholder="C:\\Users\\you\\.ssh\\id_ed25519"
+            placeholder="/app/ssh/id_ed25519"
+            hint="Path on the machine running Optizen (Docker: /app/ssh/<file>)."
             required
           />
         </div>
         <div className="flex flex-col gap-1.5">
           <div className="flex items-end gap-2">
-            <div className="flex-1">
+            <div className="min-w-0 flex-1">
               <Input
                 label="Key passphrase"
                 sensitive
@@ -213,7 +218,7 @@ export function ServerForm({
                 disabled={values.clearSshPassphrase}
               />
             </div>
-            <Button type="button" variant="ghost" size="sm" className="mb-0.5" onClick={() => setShowPassphrase((v) => !v)}>
+            <Button type="button" variant="ghost" className="w-16" onClick={() => setShowPassphrase((v) => !v)}>
               {showPassphrase ? 'Hide' : 'Show'}
             </Button>
           </div>
@@ -264,6 +269,11 @@ export function ServerForm({
           <Button type="button" variant="ghost" loading={testing} disabled={!canTest} onClick={() => void handleTestConnection()}>
             Test connection
           </Button>
+          {onCancel ? (
+            <Button type="button" variant="ghost" onClick={onCancel}>
+              Cancel
+            </Button>
+          ) : null}
           {onDelete ? (
             <Button type="button" variant="danger" loading={deleting} onClick={handleDelete}>
               Delete server
