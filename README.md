@@ -79,11 +79,18 @@ Deployment artifacts: [apps/server/Dockerfile](apps/server/Dockerfile), [apps/we
    docker compose up -d --build
    ```
 
+5. Create the master password. A fresh install prints a one-time setup code to the API log; the setup page asks for it, so nobody else can claim the instance before you do. The code changes on every restart.
+
+   ```bash
+   docker compose logs server | grep "Setup code"
+   ```
+
 Notes:
 
 - Caddy terminates HTTPS and proxies to the Next.js app; Next rewrites `/api/*` to the internal Elysia service. The API address is baked in at build time (`NEXT_PUBLIC_API_URL` build arg).
 - Data persists in `./data/launchpad.db.json`. Back it up; without your master password it cannot be decrypted.
 - The encryption key lives only in memory. After the API container restarts, sign in once before webhook-triggered deploys can run (they return 503 until then).
+- Security: the API refuses to start in production without a strong `SESSION_SECRET` (32+ characters) and an `https://` `WEB_URL`. The master password is hashed with scrypt (older SHA-256 hashes upgrade on the next sign-in). Failed sign-ins lock out the offending IP for 15 minutes after 5 tries, not the whole instance. Caddy adds HSTS, nosniff, no-framing and referrer headers. Only Caddy publishes ports; the web and API containers are reachable only on the internal Docker network.
 - Deploy webhooks are public at `https://<DOMAIN>/api/webhooks/deploy/<projectId>/<secret>`.
 
 ### Public landing site on its own domain

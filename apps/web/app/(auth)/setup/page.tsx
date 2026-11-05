@@ -25,6 +25,7 @@ export default function SetupPage() {
   const { setup } = useAuth()
   const router = useRouter()
 
+  const [setupCode, setSetupCode] = useState('')
   const [password, setPassword] = useState('')
   const [confirm, setConfirm] = useState('')
   const [showPassword, setShowPassword] = useState(false)
@@ -36,13 +37,14 @@ export default function SetupPage() {
 
   async function handleSubmit(e: FormEvent) {
     e.preventDefault()
+    if (!setupCode.trim()) { setError('Enter the setup code from the server log'); return }
     if (password !== confirm) { setError('Passwords do not match'); return }
     if (password.length < 12) { setError('Password must be at least 12 characters'); return }
 
     setError('')
     setLoading(true)
 
-    const result = await setup(password)
+    const result = await setup(password, setupCode)
 
     if (result.success) {
       router.push('/servers')
@@ -61,6 +63,18 @@ export default function SetupPage() {
       </p>
 
       <form onSubmit={handleSubmit} className="mt-8 flex flex-col gap-5">
+        <Input
+          label="Setup code"
+          value={setupCode}
+          onChange={e => setSetupCode(e.target.value)}
+          placeholder="XXXX-XXXX-XXXX"
+          autoFocus
+          autoComplete="off"
+          spellCheck={false}
+          className="font-mono uppercase"
+          hint="Printed in the server log when Optizen starts. Docker: docker compose logs server"
+        />
+
         {/* Password field */}
         <div className="relative">
           <Input
@@ -69,7 +83,6 @@ export default function SetupPage() {
             value={password}
             onChange={e => setPassword(e.target.value)}
             placeholder="At least 12 characters"
-            autoFocus
             autoComplete="new-password"
           />
           <button
@@ -133,7 +146,7 @@ export default function SetupPage() {
         <Button
           type="submit"
           loading={loading}
-          disabled={password.length < 12 || mismatch || password !== confirm}
+          disabled={!setupCode.trim() || password.length < 12 || mismatch || password !== confirm}
           className="w-full mt-1"
         >
           Set up Optizen

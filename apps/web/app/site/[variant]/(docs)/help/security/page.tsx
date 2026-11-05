@@ -4,7 +4,7 @@ import { ArrowLeft } from 'lucide-react'
 const topics = [
   {
     title: 'Master password',
-    body: 'Your master password encrypts all credentials stored on disk. Optizen never stores it in plaintext. Sessions expire based on the duration you set in Settings.',
+    body: 'Your master password encrypts all credentials stored on disk. Optizen never stores it in plaintext: it keeps only a slow scrypt hash, and five wrong attempts lock out that IP address for 15 minutes. Sessions expire based on the duration you set in Settings.',
   },
   {
     title: 'Re-authentication',

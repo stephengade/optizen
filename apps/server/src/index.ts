@@ -3,6 +3,9 @@ import { cors } from '@elysiajs/cors'
 import { authRoutes } from './routes/auth'
 import { authMiddleware } from './lib/authMiddleware'
 import { purgeExpired } from './lib/session'
+import { getDb } from './lib/db'
+import { printSetupCode } from './lib/setupCode'
+import { assertSecureConfig } from './lib/startupChecks'
 import { serverRoutes } from './routes/servers'
 import { projectRoutes } from './routes/projects'
 import { deployRoutes } from './routes/deploy'
@@ -14,6 +17,8 @@ import { notificationRoutes } from './routes/notifications'
 import { fileRoutes } from './routes/files'
 import { logRoutes } from './routes/logs'
 import { memoryRoutes } from './routes/memory'
+
+assertSecureConfig()
 
 const PORT = process.env.PORT ? parseInt(process.env.PORT) : 3001
 const WEB_URL = process.env.WEB_URL ?? 'http://localhost:3000'
@@ -63,5 +68,7 @@ const app = new Elysia()
   })
 
 console.log(`🚀 Launchpad server running at http://localhost:${PORT}`)
+
+if (!(await getDb()).data.auth?.isSetup) printSetupCode()
 
 export type App = typeof app

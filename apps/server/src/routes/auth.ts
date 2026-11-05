@@ -7,16 +7,26 @@
  * GET  /auth/status  — check if setup complete + session valid
  */
 import { Elysia, t } from 'elysia'
-import { randomBytes, createHash, timingSafeEqual } from 'crypto'
 import { recordActivity } from '../lib/activity'
 import { getDb, saveDb } from '../lib/db'
 import { clearKey, deriveKey, hasKey, setKey, generateSalt } from '../lib/crypto'
 import { createSession, destroySession, elevateSession, SESSION_COOKIE, validateSession } from '../lib/session'
-import { checkRateLimit, recordFailedAttempt, resetRateLimit } from '../lib/rateLimit'
+import { checkRateLimit, clientKey, recordFailedAttempt, resetRateLimit, type RateLimitResult } from '../lib/rateLimit'
 import { clampSecuritySettings, getSecuritySettings } from '../lib/securitySettings'
+import { hashPassword, isLegacyHash, verifyPassword } from '../lib/password'
+import { clearSetupCode, verifySetupCode } from '../lib/setupCode'
 
-function hashPassword(password: string, salt: string): string {
-  return createHash('sha256').update(password + salt).digest('hex')
+type RequestIp = { requestIP(request: Request): { address: string } | null } | null
+
+function lockedMessage(limit: RateLimitResult) {
+  // Minutes, not a clock time: the server's timezone is usually not the visitor's.
+  const minutes = limit.lockedUntil ? Math.max(1, Math.ceil((limit.lockedUntil.getTime() - Date.now()) / 60_000)) : 0
+  const until = minutes ? `Try again in ${minutes} minute${minutes === 1 ? '' : 's'}.` : 'Try again later.'
+  return `Too many failed attempts from your network. ${until}`
+}
+
+function readSalts(salt: string): { crypto: string; hash?: string } {
+  return JSON.parse(salt)
 }
 
 const isProduction = process.env.NODE_ENV === 'production'
@@ -37,12 +47,30 @@ export const authRoutes = new Elysia({ prefix: '/auth' })
   // ── POST /auth/setup ──────────────────────────────────────────────────────
   .post(
     '/setup',
-    async ({ body, cookie, set }) => {
+    async ({ body, cookie, set, request, server }) => {
       const db = await getDb()
 
       if (db.data.auth?.isSetup) {
         set.status = 409
         return { success: false, error: 'Launchpad is already set up' }
+      }
+
+      const ip = `setup:${clientKey(request, (server as RequestIp)?.requestIP(request)?.address)}`
+      const limit = checkRateLimit(ip)
+      if (!limit.allowed) {
+        set.status = 429
+        return { success: false, error: lockedMessage(limit) }
+      }
+
+      if (!verifySetupCode(body.setupCode ?? '')) {
+        const result = recordFailedAttempt(ip)
+        set.status = 403
+        return {
+          success: false,
+          error: result.allowed
+            ? 'Setup code is wrong. Find it in the server log (docker compose logs server).'
+            : lockedMessage(result),
+        }
       }
 
       const { password } = body
@@ -52,13 +80,19 @@ export const authRoutes = new Elysia({ prefix: '/auth' })
       }
 
       const cryptoSalt = generateSalt()
-      const hashSalt = randomBytes(16).toString('hex')
-      const key = deriveKey(password, cryptoSalt)
-      setKey(key)
+      const passwordHash = await hashPassword(password)
+      // Another request may have finished setup while this one was hashing.
+      if (db.data.auth?.isSetup) {
+        set.status = 409
+        return { success: false, error: 'Launchpad is already set up' }
+      }
+      setKey(deriveKey(password, cryptoSalt))
+      clearSetupCode()
+      resetRateLimit(ip)
 
       db.data.auth = {
-        passwordHash: hashPassword(password, hashSalt),
-        salt: JSON.stringify({ crypto: cryptoSalt.toString('hex'), hash: hashSalt }),
+        passwordHash,
+        salt: JSON.stringify({ crypto: cryptoSalt.toString('hex') }),
         isSetup: true,
         totpEnabled: false,
         ...getSecuritySettings(null),
@@ -78,13 +112,13 @@ export const authRoutes = new Elysia({ prefix: '/auth' })
 
       return { success: true }
     },
-    { body: t.Object({ password: t.String() }) }
+    { body: t.Object({ password: t.String(), setupCode: t.Optional(t.String()) }) }
   )
 
   // ── POST /auth/login ──────────────────────────────────────────────────────
   .post(
     '/login',
-    async ({ body, cookie, set }) => {
+    async ({ body, cookie, set, request, server }) => {
       const db = await getDb()
 
       if (!db.data.auth?.isSetup) {
@@ -92,34 +126,40 @@ export const authRoutes = new Elysia({ prefix: '/auth' })
         return { success: false, error: 'Launchpad is not set up yet' }
       }
 
-      const limit = await checkRateLimit()
+      const ip = clientKey(request, (server as RequestIp)?.requestIP(request)?.address)
+      const limit = checkRateLimit(ip)
       if (!limit.allowed) {
         set.status = 429
-        const until = limit.lockedUntil
-          ? `Try again after ${limit.lockedUntil.toLocaleTimeString()}`
-          : 'Try again later'
-        return { success: false, error: `Too many failed attempts. ${until}` }
+        return { success: false, error: lockedMessage(limit) }
       }
 
       const { password } = body
       const auth = db.data.auth
-      const salts = JSON.parse(auth.salt)
+      const salts = readSalts(auth.salt)
 
-      const expected = Buffer.from(auth.passwordHash, 'hex')
-      const actual = Buffer.from(hashPassword(password, salts.hash), 'hex')
-
-      if (expected.length !== actual.length || !timingSafeEqual(expected, actual)) {
-        const result = await recordFailedAttempt()
+      if (!(await verifyPassword(password, auth.passwordHash, salts.hash))) {
+        const result = recordFailedAttempt(ip)
         set.status = 401
-        const msg = result.attemptsRemaining > 0
+        const msg = result.allowed
           ? `Incorrect password. ${result.attemptsRemaining} attempt${result.attemptsRemaining === 1 ? '' : 's'} remaining`
-          : `Too many failed attempts. Account locked for 15 minutes`
+          : lockedMessage(result)
         return { success: false, error: msg }
       }
 
       const cryptoSalt = Buffer.from(salts.crypto, 'hex')
       setKey(deriveKey(password, cryptoSalt))
-      await resetRateLimit()
+      resetRateLimit(ip)
+
+      // Upgrade hashes from older versions (single SHA-256) to scrypt. The encryption key is
+      // derived separately from salts.crypto, so stored secrets are unaffected.
+      if (isLegacyHash(auth.passwordHash)) {
+        db.data.auth = {
+          ...auth,
+          passwordHash: await hashPassword(password),
+          salt: JSON.stringify({ crypto: salts.crypto }),
+        }
+        await saveDb()
+      }
 
       const security = getSecuritySettings(db.data.auth)
       const sessionTtlMs = security.sessionDurationHours * 60 * 60 * 1000
@@ -186,7 +226,7 @@ export const authRoutes = new Elysia({ prefix: '/auth' })
   )
   .post(
     '/reauth',
-    async ({ body, cookie, set }) => {
+    async ({ body, cookie, set, request, server }) => {
       const token = cookie[SESSION_COOKIE]?.value
       if (typeof token !== 'string' || !(await validateSession(token))) {
         set.status = 401
@@ -199,13 +239,20 @@ export const authRoutes = new Elysia({ prefix: '/auth' })
         return { success: false, error: 'Launchpad is not set up yet' }
       }
 
-      const salts = JSON.parse(db.data.auth.salt)
-      const expected = Buffer.from(db.data.auth.passwordHash, 'hex')
-      const actual = Buffer.from(hashPassword(body.password, salts.hash), 'hex')
-      if (expected.length !== actual.length || !timingSafeEqual(expected, actual)) {
+      const ip = `reauth:${clientKey(request, (server as RequestIp)?.requestIP(request)?.address)}`
+      const limit = checkRateLimit(ip)
+      if (!limit.allowed) {
+        set.status = 429
+        return { success: false, error: lockedMessage(limit) }
+      }
+
+      const salts = readSalts(db.data.auth.salt)
+      if (!(await verifyPassword(body.password, db.data.auth.passwordHash, salts.hash))) {
+        recordFailedAttempt(ip)
         set.status = 401
         return { success: false, error: 'Re-authentication failed. Password did not match.' }
       }
+      resetRateLimit(ip)
 
       const settings = getSecuritySettings(db.data.auth)
       const elevatedUntil = await elevateSession(token, settings.reauthWindowMinutes * 60 * 1000)

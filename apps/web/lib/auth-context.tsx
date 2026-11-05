@@ -13,7 +13,7 @@ interface AuthState {
 
 interface AuthContextValue extends AuthState {
   login: (password: string) => Promise<{ success: boolean; error?: string }>
-  setup: (password: string) => Promise<{ success: boolean; error?: string }>
+  setup: (password: string, setupCode: string) => Promise<{ success: boolean; error?: string }>
   logout: () => Promise<void>
   refresh: () => Promise<void>
 }
@@ -70,9 +70,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
   }
 
-  const setup = async (password: string) => {
+  const setup = async (password: string, setupCode: string) => {
     try {
-      await api.post('/auth/setup', { password })
+      await api.post('/auth/setup', { password, setupCode })
       await refresh()
       return { success: true }
     } catch (err) {

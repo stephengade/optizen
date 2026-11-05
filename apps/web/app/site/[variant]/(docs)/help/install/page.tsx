@@ -17,7 +17,7 @@ const steps = [
   {
     n: '03',
     title: 'Create the .env file',
-    body: 'Docker Compose reads these values from a .env file in the repository root. Pick a dashboard hostname that is hard to guess. The session secret must be random and kept private.',
+    body: 'Docker Compose reads these values from a .env file in the repository root. Pick a dashboard hostname that is hard to guess. The session secret must be random and kept private: the API refuses to start with a missing or short one.',
     code: `DOMAIN=ops.example.com\nACME_EMAIL=you@example.com\nSESSION_SECRET=<output of: openssl rand -hex 32>`,
   },
   {
@@ -34,9 +34,10 @@ const steps = [
   },
   {
     n: '06',
-    title: 'Create your master password straight away',
-    body: 'Open https://<DOMAIN> and set the master password. Do this right after starting: until it is set, the first person to open the page can claim the instance. There is no recovery if you lose it.',
-    code: `https://ops.example.com`,
+    title: 'Create your master password',
+    body: 'A fresh install prints a one-time setup code to the API log. Open https://<DOMAIN>, enter that code and choose your master password. Without the code nobody else can claim the instance, even if they find the page first. The code changes on every restart. There is no recovery if you lose the password.',
+    code: `docker compose logs server | grep "Setup code"
+# then open https://ops.example.com`,
   },
 ]
 

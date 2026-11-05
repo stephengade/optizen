@@ -5,7 +5,7 @@ const steps = [
   {
     n: '01',
     title: 'Create a master password',
-    body: 'On first run, Optizen prompts you to set a master password. This encrypts all credentials stored on disk. Keep it somewhere safe — there is no recovery path.',
+    body: 'On first run, Optizen prints a one-time setup code to the API log and asks for it along with a new master password, so only someone with access to the machine can claim the instance. The password encrypts all credentials stored on disk. Keep it somewhere safe — there is no recovery path.',
   },
   {
     n: '02',

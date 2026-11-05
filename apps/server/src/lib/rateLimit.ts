@@ -1,12 +1,16 @@
 /**
  * Launchpad Rate Limiter
- * Tracks failed auth attempts and enforces lockout periods.
- * State persisted in DB so lockout survives server restarts.
+ *
+ * Failed password attempts are counted per client IP, so a stranger guessing passwords locks out
+ * only themselves, never the owner signing in from elsewhere. Kept in memory: an attacker cannot
+ * restart the server, and the slow password hash already caps how fast anyone can guess.
  */
-import { getDb, saveDb } from './db'
 
 const MAX_ATTEMPTS = 5
 const LOCKOUT_MS = 15 * 60 * 1000 // 15 minutes
+// Forget an IP's failures after this long without new ones.
+const WINDOW_MS = 15 * 60 * 1000
+const MAX_TRACKED = 10_000
 
 export interface RateLimitResult {
   allowed: boolean
@@ -14,48 +18,69 @@ export interface RateLimitResult {
   lockedUntil?: Date
 }
 
-export async function checkRateLimit(): Promise<RateLimitResult> {
-  const db = await getDb()
-  const state = db.data.rateLimit
+interface Entry {
+  attempts: number
+  lastFailureAt: number
+  lockedUntil?: number
+}
 
-  if (state.lockedUntil) {
-    const lockedUntil = new Date(state.lockedUntil)
-    if (new Date() < lockedUntil) {
-      return {
-        allowed: false,
-        attemptsRemaining: 0,
-        lockedUntil,
-      }
-    }
-    // Lockout expired — reset
-    db.data.rateLimit = { attempts: 0 }
-    await saveDb()
+const entries = new Map<string, Entry>()
+
+function current(key: string, now = Date.now()): Entry | undefined {
+  const entry = entries.get(key)
+  if (!entry) return undefined
+  const lockExpired = entry.lockedUntil !== undefined && now >= entry.lockedUntil
+  const stale = entry.lockedUntil === undefined && now - entry.lastFailureAt > WINDOW_MS
+  if (lockExpired || stale) {
+    entries.delete(key)
+    return undefined
   }
+  return entry
+}
 
-  return {
-    allowed: true,
-    attemptsRemaining: MAX_ATTEMPTS - state.attempts,
+function prune(now: number) {
+  if (entries.size < MAX_TRACKED) return
+  for (const key of entries.keys()) current(key, now)
+  // Still full (a flood of distinct addresses): drop the oldest entries.
+  for (const key of entries.keys()) {
+    if (entries.size < MAX_TRACKED) break
+    entries.delete(key)
   }
 }
 
-export async function recordFailedAttempt(): Promise<RateLimitResult> {
-  const db = await getDb()
-  const attempts = (db.data.rateLimit.attempts ?? 0) + 1
+export function checkRateLimit(key: string): RateLimitResult {
+  const entry = current(key)
+  if (entry?.lockedUntil !== undefined) {
+    return { allowed: false, attemptsRemaining: 0, lockedUntil: new Date(entry.lockedUntil) }
+  }
+  return { allowed: true, attemptsRemaining: MAX_ATTEMPTS - (entry?.attempts ?? 0) }
+}
+
+export function recordFailedAttempt(key: string): RateLimitResult {
+  const now = Date.now()
+  prune(now)
+  const attempts = (current(key, now)?.attempts ?? 0) + 1
 
   if (attempts >= MAX_ATTEMPTS) {
-    const lockedUntil = new Date(Date.now() + LOCKOUT_MS)
-    db.data.rateLimit = { attempts, lockedUntil: lockedUntil.toISOString() }
-    await saveDb()
-    return { allowed: false, attemptsRemaining: 0, lockedUntil }
+    const lockedUntil = now + LOCKOUT_MS
+    entries.set(key, { attempts, lastFailureAt: now, lockedUntil })
+    return { allowed: false, attemptsRemaining: 0, lockedUntil: new Date(lockedUntil) }
   }
 
-  db.data.rateLimit = { attempts }
-  await saveDb()
+  entries.set(key, { attempts, lastFailureAt: now })
   return { allowed: true, attemptsRemaining: MAX_ATTEMPTS - attempts }
 }
 
-export async function resetRateLimit(): Promise<void> {
-  const db = await getDb()
-  db.data.rateLimit = { attempts: 0 }
-  await saveDb()
+export function resetRateLimit(key: string): void {
+  entries.delete(key)
+}
+
+/**
+ * The visitor's IP. In the Docker deploy, Caddy replaces any client-sent X-Forwarded-For with the
+ * real address and Next.js appends its own hop, so the first entry is the visitor. Without a proxy
+ * in front, fall back to the socket address.
+ */
+export function clientKey(request: Request, socketIp?: string): string {
+  const forwarded = request.headers.get('x-forwarded-for')?.split(',')[0]?.trim()
+  return forwarded || request.headers.get('x-real-ip')?.trim() || socketIp || 'unknown'
 }

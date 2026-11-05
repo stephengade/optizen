@@ -2,7 +2,22 @@
   email {$ACME_EMAIL}
 }
 
+# Security headers for every site below.
+(security_headers) {
+  header {
+    Strict-Transport-Security "max-age=31536000"
+    X-Content-Type-Options "nosniff"
+    X-Frame-Options "DENY"
+    Referrer-Policy "strict-origin-when-cross-origin"
+    Permissions-Policy "camera=(), microphone=(), geolocation=(), payment=()"
+    Content-Security-Policy "frame-ancestors 'none'; base-uri 'self'; form-action 'self'; object-src 'none'"
+    -Server
+    -X-Powered-By
+  }
+}
+
 {$DOMAIN} {
+  import security_headers
   encode gzip zstd
   reverse_proxy web:3000
 }

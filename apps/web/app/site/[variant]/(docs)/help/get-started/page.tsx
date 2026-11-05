@@ -35,7 +35,7 @@ const steps = [
   {
     n: '06',
     title: 'Open the app and complete first-run setup',
-    body: 'Visit the local web app, create the master password, then add a server record and test SSH. Optizen stores encrypted config locally, so your first run sets up that trust boundary.',
+    body: 'Visit the local web app, enter the setup code printed in the API terminal, create the master password, then add a server record and test SSH. Optizen stores encrypted config locally, so your first run sets up that trust boundary.',
     code: `# typical local web URL\nhttp://localhost:3000`,
   },
 ]

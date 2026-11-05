@@ -32,17 +32,18 @@ async function request<T>(
 
   if (!res.ok) {
     const rawBody = await res.text().catch(() => '')
-    let err: { code?: string; message?: string } = { message: res.statusText }
+    // Most routes reply { message }, the auth routes { success: false, error }.
+    let err: { code?: string; message?: string; error?: string } = { message: res.statusText }
 
     if (rawBody) {
       try {
-        err = JSON.parse(rawBody) as { code?: string; message?: string }
+        err = JSON.parse(rawBody) as { code?: string; message?: string; error?: string }
       } catch {
         err = { message: rawBody }
       }
     }
 
-    throw new ApiError(res.status, err.code, err.message ?? 'Request failed', rawBody || undefined)
+    throw new ApiError(res.status, err.code, err.message ?? err.error ?? 'Request failed', rawBody || undefined)
   }
 
   if (res.status === 204) {

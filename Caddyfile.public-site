@@ -3,8 +3,23 @@
   email {$ACME_EMAIL}
 }
 
+# Security headers for every site below.
+(security_headers) {
+  header {
+    Strict-Transport-Security "max-age=31536000"
+    X-Content-Type-Options "nosniff"
+    X-Frame-Options "DENY"
+    Referrer-Policy "strict-origin-when-cross-origin"
+    Permissions-Policy "camera=(), microphone=(), geolocation=(), payment=()"
+    Content-Security-Policy "frame-ancestors 'none'; base-uri 'self'; form-action 'self'; object-src 'none'"
+    -Server
+    -X-Powered-By
+  }
+}
+
 # Dashboard (keep this hostname to yourself).
 {$DOMAIN} {
+  import security_headers
   encode gzip zstd
   reverse_proxy web:3000
 }
@@ -12,6 +27,7 @@
 # Public landing page and docs. The web app already refuses dashboard routes on this host
 # (PUBLIC_SITE_HOST); blocking the API here as well means it never reaches the app at all.
 {$PUBLIC_DOMAIN} {
+  import security_headers
   encode gzip zstd
   respond /api/* 404
   respond /internal/* 404
