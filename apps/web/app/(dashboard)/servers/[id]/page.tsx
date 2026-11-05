@@ -4,7 +4,7 @@ import { useEffect, useState } from 'react'
 import Link from 'next/link'
 import { useParams, useRouter } from 'next/navigation'
 import type { ActivityEvent, DeployRecord, Project, Server, ServerConnectionStatus, ServerResourceStatus } from '@launchpad/shared'
-import { HardDrive, MemoryStick, Plus } from 'lucide-react'
+import { Database, HardDrive, MemoryStick, Plus } from 'lucide-react'
 import { toast } from 'sonner'
 import { ActivityTimeline } from '@/components/dashboard/ActivityTimeline'
 import { ConnectionBadge } from '@/components/dashboard/ConnectionBadge'
@@ -264,6 +264,13 @@ export default function ServerDetailPage() {
           >
             <HardDrive size={12} />
             Storage
+          </Link>
+          <Link
+            href={`/databases?server=${params.id}`}
+            className="inline-flex h-8 items-center gap-1.5 border rounded-(--radius) border-(--border) px-3 text-xs text-(--text-muted) hover:text-(--text) hover:border-(--border-strong) transition-colors"
+          >
+            <Database size={12} />
+            Databases
           </Link>
         </div>
       </div>

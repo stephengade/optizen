@@ -934,6 +934,7 @@ export const serverRoutes = new Elysia({ prefix: '/servers' })
 
     db.data.servers.splice(serverIndex, 1)
     db.data.projects = db.data.projects.filter((project) => project.serverId !== params.id)
+    db.data.databases = db.data.databases.filter((database) => database.serverId !== params.id)
     await saveDb()
     await recordActivity({
       serverId: server.id,

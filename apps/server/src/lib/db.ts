@@ -17,6 +17,7 @@ import type {
   NotificationSettings,
   RateLimitState,
   BackupSettings,
+  DatabaseConnection,
 } from '@launchpad/shared'
 
 export interface DbSchema {
@@ -30,6 +31,7 @@ export interface DbSchema {
   activity: ActivityEvent[]
   fileHistory: FileRevision[]
   backupSettings: BackupSettings
+  databases: DatabaseConnection[]
 }
 
 export const DB_PATH = process.env.DB_PATH ?? join(process.cwd(), 'launchpad.db.json')
@@ -48,6 +50,7 @@ const defaultData: DbSchema = {
   activity: [],
   fileHistory: [],
   backupSettings: { autoEnabled: true, retainDaily: 14 },
+  databases: [],
 }
 
 let _db: Low<DbSchema> | null = null

@@ -18,6 +18,7 @@ import { fileRoutes } from './routes/files'
 import { logRoutes } from './routes/logs'
 import { memoryRoutes } from './routes/memory'
 import { backupRoutes } from './routes/backups'
+import { databaseRoutes } from './routes/databases'
 import { startBackupScheduler } from './lib/backups'
 
 assertSecureConfig()
@@ -60,6 +61,7 @@ const app = new Elysia()
   .use(logRoutes)
   .use(memoryRoutes)
   .use(backupRoutes)
+  .use(databaseRoutes)
 
   // Future routes — each will use requireAuth() at the top of their handlers:
 

@@ -3,7 +3,7 @@
 import { useEffect, useState } from 'react'
 import Link from 'next/link'
 import { usePathname, useRouter } from 'next/navigation'
-import { BookOpen, HardDrive, Info, LogOut, ScanSearch, Search, Server, Settings } from 'lucide-react'
+import { BookOpen, Database, HardDrive, Info, LogOut, ScanSearch, Search, Server, Settings } from 'lucide-react'
 import { useAuth } from '@/lib/auth-context'
 import { CommandPalette } from '@/components/dashboard/CommandPalette'
 import { OptizenLogo } from '@/components/ui/OptizenMark'
@@ -12,6 +12,7 @@ import { cn } from '@/lib/utils'
 
 const NAV = [
   { href: '/servers', icon: Server, label: 'Servers' },
+  { href: '/databases', icon: Database, label: 'Databases' },
   { href: '/scan', icon: ScanSearch, label: 'Scan' },
   { href: '/storage', icon: HardDrive, label: 'Storage' },
   { href: '/settings', icon: Settings, label: 'Settings' },
@@ -19,6 +20,7 @@ const NAV = [
 
 const SECTION_LABELS: Record<string, string> = {
   servers: 'Servers',
+  databases: 'Databases',
   scan: 'Scan',
   storage: 'Storage',
   settings: 'Settings',
@@ -29,7 +31,7 @@ const SECTION_LABELS: Record<string, string> = {
   env: 'Environment',
 }
 
-const RECORD_LABELS: Record<string, string> = { servers: 'Server', projects: 'Project' }
+const RECORD_LABELS: Record<string, string> = { servers: 'Server', projects: 'Project', databases: 'Database' }
 
 /** Breadcrumb from the URL. A record id is named after its parent section, not shown raw. */
 function crumbs(pathname: string): string[] {

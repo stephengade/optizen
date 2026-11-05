@@ -24,6 +24,7 @@ interface PaletteItem {
 
 const staticItems: PaletteItem[] = [
   { id: 'servers', label: 'Open servers', detail: 'Fleet overview and server cards', href: '/servers', keywords: 'servers fleet hosts overview' },
+  { id: 'databases', label: 'Open databases', detail: 'Browse tables and run SQL', href: '/databases', keywords: 'database sql query tables postgres mysql sqlite' },
   { id: 'scan', label: 'Open scan workspace', detail: 'Discover and import apps', href: '/scan', keywords: 'scan import discovery docker' },
   { id: 'help', label: 'Open help', detail: 'Operator guide and product model', href: '/help', keywords: 'help docs guide onboarding' },
   { id: 'settings', label: 'Open settings', detail: 'Notifications, demo privacy, configuration', href: '/settings', keywords: 'settings smtp webhooks privacy' },
