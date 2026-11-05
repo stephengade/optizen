@@ -49,7 +49,7 @@ export function SensitivePanel({
     : 'text-sm break-all'
 
   return (
-    <div className=" border border-(--border) bg-(--surface-2) p-4">
+    <div className=" border rounded-(--radius) border-(--border) bg-(--surface-2) p-4">
       <div className="mb-3 flex flex-wrap items-center justify-between gap-3">
         <div className="text-sm font-medium text-(--text)">{label}</div>
         <div className="flex gap-2">
@@ -67,7 +67,7 @@ export function SensitivePanel({
                 }).catch(() => undefined)
               }
             }}
-            className="inline-flex items-center gap-1  border border-(--border) px-2 py-1 text-xs text-(--text-muted) transition-colors hover:bg-(--surface-2) hover:text-(--text)"
+            className="inline-flex items-center gap-1 border rounded-(--radius) border-(--border) px-2 py-1 text-xs text-(--text-muted) transition-colors hover:bg-(--surface-2) hover:text-(--text)"
           >
             {revealed ? <EyeOff size={12} /> : <Eye size={12} />}
             {revealed ? 'Hide' : 'Reveal'}
@@ -76,7 +76,7 @@ export function SensitivePanel({
             type="button"
             onClick={() => void handleCopy()}
             disabled={!hasValue}
-            className="inline-flex items-center gap-1  border border-(--border) px-2 py-1 text-xs text-(--text-muted) transition-colors hover:bg-(--surface-2) hover:text-(--text) disabled:opacity-50"
+            className="inline-flex items-center gap-1 border rounded-(--radius) border-(--border) px-2 py-1 text-xs text-(--text-muted) transition-colors hover:bg-(--surface-2) hover:text-(--text) disabled:opacity-50"
           >
             <Copy size={12} />
             Copy

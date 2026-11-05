@@ -42,17 +42,17 @@ export default function ProjectTypesPage() {
         Docs
       </Link>
 
-      <h1 className="text-xl font-semibold text-(--text)">Project types</h1>
+      <h1 className="text-gradient text-[32px] leading-tight font-semibold tracking-[-0.03em]">Project types</h1>
       <p className="mt-1 text-sm text-(--text-muted)">
         Choosing the right type keeps deploy intent clear for everyone on the team.
       </p>
 
-      <div className="mt-8 border border-(--border) divide-y divide-(--border)">
+      <div className="mt-8 border rounded-(--radius) border-(--border) divide-y divide-(--border)">
         {types.map((t) => (
           <div key={t.label} className="px-5 py-5">
             <div className="flex items-start gap-4">
               <div className="w-20 shrink-0">
-                <span className="text-xs font-medium text-(--text) uppercase tracking-[0.14em]">{t.label}</span>
+                <span className="text-xs font-medium text-(--text) font-medium">{t.label}</span>
               </div>
               <div>
                 <p className="text-sm text-(--text-muted)"><span className="text-(--text)">Use when:</span> {t.when}</p>
@@ -64,11 +64,11 @@ export default function ProjectTypesPage() {
       </div>
 
       <div className="mt-8 border-t border-(--border) pt-6 flex items-center justify-between">
-        <Link href="/help/setup" className="inline-flex items-center gap-1.5 text-xs text-(--text-muted) hover:text-(--text) border border-(--border) px-3 py-1.5 transition-colors">
+        <Link href="/help/setup" className="inline-flex items-center gap-1.5 text-xs text-(--text-muted) hover:text-(--text) border rounded-(--radius) border-(--border) px-3 py-1.5 transition-colors">
           <ArrowLeft size={11} />
           Quick start
         </Link>
-        <Link href="/help/workflows" className="inline-flex items-center gap-1.5 text-xs text-(--text-muted) hover:text-(--text) border border-(--border) px-3 py-1.5 transition-colors">
+        <Link href="/help/workflows" className="inline-flex items-center gap-1.5 text-xs text-(--text-muted) hover:text-(--text) border rounded-(--radius) border-(--border) px-3 py-1.5 transition-colors">
           Workflows
           <ArrowLeft size={11} className="rotate-180" />
         </Link>

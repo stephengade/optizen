@@ -1,28 +1,26 @@
 'use client'
 
 import type { DeployStatus } from '@launchpad/shared'
-import { cn } from '@/lib/utils'
+import { StatusPill, type StatusTone } from '@/components/ui/StatusPill'
 
-interface DeployStatusBadgeProps {
-  status: DeployStatus
+const tones: Record<DeployStatus, StatusTone> = {
+  idle: 'neutral',
+  deploying: 'info',
+  success: 'ok',
+  failed: 'bad',
 }
 
-const STATUS_STYLES: Record<DeployStatus, string> = {
-  idle: 'border-(--border) text-(--text-muted)',
-  deploying: 'border-(--blue) text-(--blue)',
-  success: 'border-(--accent) text-(--accent)',
-  failed: 'border-(--red) bg-(--red-dim) text-(--red)',
+const labels: Record<DeployStatus, string> = {
+  idle: 'Idle',
+  deploying: 'Deploying',
+  success: 'Success',
+  failed: 'Failed',
 }
 
-export function DeployStatusBadge({ status }: DeployStatusBadgeProps) {
+export function DeployStatusBadge({ status }: { status: DeployStatus }) {
   return (
-    <span
-      className={cn(
-        'inline-flex border px-2 py-0.5 text-[10px] uppercase tracking-[0.14em]',
-        STATUS_STYLES[status]
-      )}
-    >
-      {status}
-    </span>
+    <StatusPill tone={tones[status]} pulse={status === 'deploying'}>
+      {labels[status]}
+    </StatusPill>
   )
 }

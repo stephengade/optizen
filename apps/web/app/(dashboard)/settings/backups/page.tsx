@@ -24,7 +24,7 @@ const KIND_LABEL: Record<BackupKind, string> = {
 
 function Section({ title, description, children }: { title: string; description?: string; children: React.ReactNode }) {
   return (
-    <section className="border border-(--border) bg-(--surface)">
+    <section className="border rounded-(--radius) border-(--border) bg-(--surface)">
       <div className="px-5 py-4 border-b border-(--border)">
         <h2 className="text-sm font-semibold text-(--text)">{title}</h2>
         {description && <p className="mt-0.5 text-xs text-(--text-muted)">{description}</p>}
@@ -182,7 +182,7 @@ export default function BackupsPage() {
 
       <div className="mb-8 flex flex-wrap items-start justify-between gap-4">
         <div>
-          <h1 className="text-xl font-semibold text-(--text)">Backups</h1>
+          <h1 className="text-[26px] leading-tight font-semibold tracking-[-0.03em] text-(--text)">Backups</h1>
           <p className="mt-1 text-sm text-(--text-muted)">
             Copies of all Optizen data: servers, projects, settings and history. Secrets stay encrypted with your master password.
           </p>
@@ -190,7 +190,7 @@ export default function BackupsPage() {
         <Button onClick={() => void handleCreate()} loading={creating}>Back up now</Button>
       </div>
 
-      <div className="space-y-px">
+      <div className="space-y-4">
         <Section title="Daily backups" description="Optizen takes one backup a day while it is running and deletes the oldest beyond the limit.">
           <div className="space-y-5">
             <label className="flex items-center justify-between gap-4 cursor-pointer">
@@ -216,8 +216,8 @@ export default function BackupsPage() {
                 onChange={(e) => setSettings((c) => ({ ...c, retainDaily: Number(e.target.value || 0) }))}
               />
               <div className="flex flex-col gap-1.5">
-                <span className="text-xs text-(--text-muted) uppercase tracking-wider">Folder on the server</span>
-                <code className="border border-(--border) bg-(--surface-2) px-3 py-2 font-mono text-xs text-(--text-muted) break-all" data-sensitive="true">
+                <span className="text-xs text-(--text-muted) tracking-wider">Folder on the server</span>
+                <code className="border rounded-(--radius) border-(--border) bg-(--surface-2) px-3 py-2 font-mono text-xs text-(--text-muted) break-all" data-sensitive="true">
                   {overview.directory}
                 </code>
               </div>
@@ -234,7 +234,7 @@ export default function BackupsPage() {
             {overview.backups.length === 0 ? (
               <p className="text-sm text-(--text-muted)">No backups yet. Click &ldquo;Back up now&rdquo; to make the first one.</p>
             ) : (
-              <div className="border border-(--border) divide-y divide-(--border)">
+              <div className="border rounded-(--radius) border-(--border) divide-y divide-(--border)">
                 {overview.backups.map((backup) => (
                   <div key={backup.name} className="flex flex-wrap items-center gap-3 px-4 py-3">
                     <div className="min-w-0 flex-1">
@@ -242,7 +242,7 @@ export default function BackupsPage() {
                         <span className="text-sm text-(--text)" title={formatDateTime(backup.createdAt)}>
                           {formatDateTime(backup.createdAt)}
                         </span>
-                        <span className="border border-(--border) px-1.5 py-0.5 text-[10px] uppercase tracking-wider text-(--text-muted)">
+                        <span className="border rounded-(--radius) border-(--border) px-1.5 py-0.5 text-[10px] tracking-wider text-(--text-muted)">
                           {KIND_LABEL[backup.kind]}
                         </span>
                       </div>

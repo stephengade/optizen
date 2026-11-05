@@ -101,7 +101,7 @@ export function CommandPalette({ open, onClose }: CommandPaletteProps) {
       onClose={onClose}
     >
       <div className="space-y-4">
-        <label className="flex items-center gap-3 border border-(--border) bg-(--surface-2) px-4 py-2.5">
+        <label className="flex items-center gap-3 border rounded-(--radius) border-(--border) bg-(--surface-2) px-4 py-2.5">
           <Search size={14} className="text-(--text-muted) shrink-0" />
           <input
             ref={inputRef}
@@ -118,14 +118,14 @@ export function CommandPalette({ open, onClose }: CommandPaletteProps) {
               key={item.id}
               href={item.href}
               onClick={onClose}
-              className="flex flex-col border border-(--border) bg-(--surface-2) px-4 py-3 transition-colors hover:bg-(--surface-2)"
+              className="flex flex-col border rounded-(--radius) border-(--border) bg-(--surface-2) px-4 py-3 transition-colors hover:bg-(--surface-2)"
             >
               <div className="text-sm font-medium text-(--text)">{item.label}</div>
               <div className="mt-0.5 text-xs text-(--text-muted)">{item.detail}</div>
             </Link>
           ))}
           {filtered.length === 0 && (
-            <div className="border border-dashed border-(--border) px-4 py-6 text-sm text-(--text-muted)">
+            <div className="border rounded-(--radius) border-dashed border-(--border) px-4 py-6 text-sm text-(--text-muted)">
               {loading ? (
                 <div className="flex items-center gap-2">
                   <Loader2 size={14} className="animate-spin" />

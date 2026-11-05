@@ -9,11 +9,11 @@ export default function AboutPage() {
     <main className="max-w-3xl mx-auto px-6 py-12">
       {/* Intro Header */}
       <div className="mb-12 border-b border-(--border) pb-8">
-        <div className="flex items-center gap-3 text-xs text-(--accent) uppercase tracking-[0.2em] mb-2 font-mono">
+        <div className="flex items-center gap-3 text-xs text-(--accent) font-medium mb-2 font-mono">
           <Info size={14} />
           About Optizen
         </div>
-        <h1 className="text-3xl font-semibold text-(--text) tracking-tight">
+        <h1 className="text-gradient text-[32px] leading-tight font-semibold tracking-[-0.03em]">
           A modern, open-source VPS control plane.
         </h1>
         <p className="mt-4 text-base leading-7 text-(--text-muted)">
@@ -26,7 +26,7 @@ export default function AboutPage() {
 
       {/* Core Principles */}
       <div className="grid gap-6 md:grid-cols-2 mb-16">
-        <div className="border border-(--border) bg-(--surface) p-6">
+        <div className="border rounded-(--radius) border-(--border) bg-(--surface) p-6">
           <div className="flex items-center gap-2.5 mb-3 text-(--accent)">
             <Heart size={16} />
             <h2 className="text-sm font-semibold text-(--text)">Privacy First</h2>
@@ -36,7 +36,7 @@ export default function AboutPage() {
             Passwords and passphrases are encrypted at rest with AES-256-GCM. There is no cloud telemetry or phone-home reporting.
           </p>
         </div>
-        <div className="border border-(--border) bg-(--surface) p-6">
+        <div className="border rounded-(--radius) border-(--border) bg-(--surface) p-6">
           <div className="flex items-center gap-2.5 mb-3 text-(--accent)">
             <Shield size={16} />
             <h2 className="text-sm font-semibold text-(--text)">Operation Guardrails</h2>
@@ -49,10 +49,10 @@ export default function AboutPage() {
       </div>
 
       {/* Dedicated License Explanation Section */}
-      <section className="border border-(--border) bg-(--bg-subtle) p-6 md:p-8 mb-12 relative overflow-hidden">
+      <section className="border rounded-(--radius) border-(--border) bg-(--bg-subtle) p-6 md:p-8 mb-12 relative overflow-hidden">
         <div className="absolute top-0 right-0 h-32 w-32 bg-(--accent-dim) rounded-full blur-3xl opacity-30 -mr-16 -mt-16 pointer-events-none" />
         
-        <div className="flex items-center gap-3 text-xs text-(--accent) uppercase tracking-[0.2em] mb-3 font-mono">
+        <div className="flex items-center gap-3 text-xs text-(--accent) font-medium mb-3 font-mono">
           <Shield size={14} />
           License Terms
         </div>
@@ -68,7 +68,7 @@ export default function AboutPage() {
 
           <div className="border-l-2 border-(--accent) pl-4 my-6 py-1 space-y-3 bg-(--surface) pr-4">
             <div>
-              <h3 className="text-xs font-semibold uppercase tracking-wider text-(--text) font-mono mb-1">
+              <h3 className="text-xs font-semibold tracking-wider text-(--text) font-mono mb-1">
                 ✓ Free for Personal & Internal Use
               </h3>
               <p className="text-xs text-(--text-muted)">
@@ -77,7 +77,7 @@ export default function AboutPage() {
               </p>
             </div>
             <div className="pt-2 border-t border-(--border)">
-              <h3 className="text-xs font-semibold uppercase tracking-wider text-(--text) font-mono mb-1">
+              <h3 className="text-xs font-semibold tracking-wider text-(--text) font-mono mb-1">
                 ✗ Restricted Commercial Closed-Source Repackaging
               </h3>
               <p className="text-xs text-(--text-muted)">
@@ -98,7 +98,7 @@ export default function AboutPage() {
               href="https://www.gnu.org/licenses/agpl-3.0.html" 
               target="_blank" 
               rel="noopener noreferrer"
-              className="inline-flex items-center gap-2 text-xs font-semibold text-(--text) hover:text-(--accent) transition-colors border border-(--border) px-3 py-1.5 bg-(--surface) hover:border-(--border-strong)"
+              className="inline-flex items-center gap-2 text-xs font-semibold text-(--text) hover:text-(--accent) transition-colors border rounded-(--radius) border-(--border) px-3 py-1.5 bg-(--surface) hover:border-(--border-strong)"
             >
               <FileText size={13} />
               Read Full License Text

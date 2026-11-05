@@ -71,7 +71,7 @@ export default function ContributePage() {
 
       {/* Header */}
       <div className="mb-10">
-        <h1 className="text-3xl font-semibold text-(--text) tracking-tight">Contributing Guidelines</h1>
+        <h1 className="text-gradient text-[32px] leading-tight font-semibold tracking-[-0.03em]">Contributing Guidelines</h1>
         <p className="mt-2 text-sm text-(--text-muted) max-w-xl">
           Optizen is built by and for the self-hosted community. Learn how to run the codebase locally, test changes, and submit pull requests safely.
         </p>
@@ -79,13 +79,13 @@ export default function ContributePage() {
 
       {/* Principles */}
       <section className="mb-12">
-        <h2 className="text-sm font-semibold text-(--text) uppercase tracking-wider mb-4 font-mono flex items-center gap-2">
+        <h2 className="text-sm font-semibold text-(--text) tracking-wider mb-4 font-mono flex items-center gap-2">
           <Heart size={14} className="text-(--accent)" />
           Contribution Principles
         </h2>
         <div className="grid gap-4 md:grid-cols-3">
           {principles.map((p) => (
-            <div key={p.title} className="border border-(--border) bg-(--surface) p-5">
+            <div key={p.title} className="border rounded-(--radius) border-(--border) bg-(--surface) p-5">
               <h3 className="text-xs font-semibold text-(--text) mb-1.5">{p.title}</h3>
               <p className="text-xs leading-5 text-(--text-muted)">{p.copy}</p>
             </div>
@@ -95,11 +95,11 @@ export default function ContributePage() {
 
       {/* Development Steps */}
       <section className="mb-12">
-        <h2 className="text-sm font-semibold text-(--text) uppercase tracking-wider mb-4 font-mono flex items-center gap-2">
+        <h2 className="text-sm font-semibold text-(--text) tracking-wider mb-4 font-mono flex items-center gap-2">
           <Terminal size={14} className="text-(--accent)" />
           Setup & Workflow
         </h2>
-        <div className="border border-(--border) divide-y divide-(--border)">
+        <div className="border rounded-(--radius) border-(--border) divide-y divide-(--border)">
           {workflow.map((step) => (
             <div key={step.n} className="p-6">
               <div className="flex gap-5">
@@ -107,7 +107,7 @@ export default function ContributePage() {
                 <div className="min-w-0 flex-1">
                   <div className="text-sm font-semibold text-(--text)">{step.title}</div>
                   <p className="mt-1.5 text-xs leading-5 text-(--text-muted)">{step.body}</p>
-                  <pre className="mt-3 overflow-x-auto border border-(--border) bg-(--bg) px-4 py-3 font-mono text-xs leading-6 text-(--text-muted)">
+                  <pre className="mt-3 overflow-x-auto border rounded-(--radius) border-(--border) bg-(--bg) px-4 py-3 font-mono text-xs leading-6 text-(--text-muted)">
 {step.code}
                   </pre>
                 </div>
@@ -118,8 +118,8 @@ export default function ContributePage() {
       </section>
 
       {/* Pull Request Guide */}
-      <section className="border border-(--border) bg-(--bg-subtle) p-6 md:p-8 mb-12">
-        <h2 className="text-sm font-semibold text-(--text) uppercase tracking-wider mb-3 font-mono flex items-center gap-2">
+      <section className="border rounded-(--radius) border-(--border) bg-(--bg-subtle) p-6 md:p-8 mb-12">
+        <h2 className="text-sm font-semibold text-(--text) tracking-wider mb-3 font-mono flex items-center gap-2">
           <GitPullRequest size={14} className="text-(--accent)" />
           Pull Request Checklist
         </h2>

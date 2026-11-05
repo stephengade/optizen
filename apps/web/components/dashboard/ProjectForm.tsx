@@ -198,7 +198,7 @@ export function ProjectForm({
   }
 
   return (
-    <section className={inModal ? '' : 'border border-(--border) bg-(--surface) p-6'}>
+    <section className={inModal ? '' : 'border rounded-(--radius) border-(--border) bg-(--surface) p-6'}>
       <div className="mb-6">
         <h2 className="text-lg font-semibold text-(--text)">{title}</h2>
         <p className="mt-1 text-sm text-(--text-muted)">{description}</p>
@@ -207,7 +207,7 @@ export function ProjectForm({
       <form className="space-y-4" onSubmit={handleSubmit}>
         <div className="space-y-3">
           <div>
-            <h3 className="text-xs font-medium uppercase tracking-wider text-(--text-muted)">Project preset</h3>
+            <h3 className="text-xs font-medium tracking-wider text-(--text-muted)">Project preset</h3>
             <p className="mt-1 text-sm text-(--text-muted)">
               Pick the closest setup type and Optizen will prefill the project with sensible defaults.
             </p>
@@ -229,29 +229,29 @@ export function ProjectForm({
               </button>
             ))}
           </div>
-          <div className="border border-(--border) bg-(--surface-2) px-4 py-3 text-sm text-(--text-muted)">
+          <div className="border rounded-(--radius) border-(--border) bg-(--surface-2) px-4 py-3 text-sm text-(--text-muted)">
             {getPresetHint(preset)}
           </div>
         </div>
 
         <div className="grid gap-4 md:grid-cols-2">
           <label className="flex flex-col gap-1.5">
-            <span className="text-xs font-medium uppercase tracking-wider text-(--text-muted)">Source</span>
+            <span className="text-xs font-medium tracking-wider text-(--text-muted)">Source</span>
             <select
               value={values.source}
               onChange={(event) => setValues((current) => ({ ...current, source: event.target.value as ProjectSource }))}
-              className="h-10 border border-(--border) bg-(--surface-2) px-3 text-sm text-(--text) outline-none focus:border-(--border-strong)"
+              className="h-10 border rounded-(--radius) border-(--border) bg-(--surface-2) px-3 text-sm text-(--text) outline-none focus:border-(--border-strong)"
             >
               <option value="manual">Manual</option>
               <option value="imported">Imported</option>
             </select>
           </label>
           <label className="flex flex-col gap-1.5">
-            <span className="text-xs font-medium uppercase tracking-wider text-(--text-muted)">Runtime</span>
+            <span className="text-xs font-medium tracking-wider text-(--text-muted)">Runtime</span>
             <select
               value={values.runtime}
               onChange={(event) => setValues((current) => ({ ...current, runtime: event.target.value as ProjectRuntime }))}
-              className="h-10 border border-(--border) bg-(--surface-2) px-3 text-sm text-(--text) outline-none focus:border-(--border-strong)"
+              className="h-10 border rounded-(--radius) border-(--border) bg-(--surface-2) px-3 text-sm text-(--text) outline-none focus:border-(--border-strong)"
             >
               <option value="compose">Compose app</option>
               <option value="image">Image app</option>
@@ -322,20 +322,20 @@ export function ProjectForm({
 
         <div className="grid gap-4 md:grid-cols-2">
           <label className="flex flex-col gap-1.5">
-            <span className="text-xs font-medium uppercase tracking-wider text-(--text-muted)">Proxy</span>
+            <span className="text-xs font-medium tracking-wider text-(--text-muted)">Proxy</span>
             <select
               value={values.proxyType}
               onChange={(event) =>
                 setValues((current) => ({ ...current, proxyType: event.target.value as ProxyType }))
               }
-              className="h-10 border border-(--border) bg-(--surface-2) px-3 text-sm text-(--text) outline-none focus:border-(--border-strong)"
+              className="h-10 border rounded-(--radius) border-(--border) bg-(--surface-2) px-3 text-sm text-(--text) outline-none focus:border-(--border-strong)"
             >
               <option value="none">None</option>
               <option value="caddy">Caddy</option>
               <option value="nginx">Nginx</option>
             </select>
           </label>
-          <label className="flex items-center gap-3 border border-(--border) bg-(--surface-2) px-3 py-2 text-sm text-(--text)">
+          <label className="flex items-center gap-3 border rounded-(--radius) border-(--border) bg-(--surface-2) px-3 py-2 text-sm text-(--text)">
             <input
               type="checkbox"
               checked={values.webhookEnabled}
@@ -347,13 +347,13 @@ export function ProjectForm({
         </div>
 
         <label className="flex flex-col gap-1.5">
-          <span className="text-xs font-medium uppercase tracking-wider text-(--text-muted)">
+          <span className="text-xs font-medium tracking-wider text-(--text-muted)">
             Deploy commands
           </span>
           <textarea
             value={values.deployCommands}
             onChange={(event) => setValues((current) => ({ ...current, deployCommands: event.target.value }))}
-            className="min-h-36 border border-(--border) bg-(--surface-2) px-3 py-2 font-mono text-sm text-(--text) outline-none focus:border-(--border-strong)"
+            className="min-h-36 border rounded-(--radius) border-(--border) bg-(--surface-2) px-3 py-2 font-mono text-sm text-(--text) outline-none focus:border-(--border-strong)"
             placeholder={'docker pull ghcr.io/acme/app:latest\ndocker compose up -d'}
             required
           />
@@ -363,7 +363,7 @@ export function ProjectForm({
         </label>
 
         <div className="grid gap-3 md:grid-cols-2">
-          <label className="flex items-center gap-3 border border-(--border) bg-(--surface-2) px-3 py-2 text-sm text-(--text)">
+          <label className="flex items-center gap-3 border rounded-(--radius) border-(--border) bg-(--surface-2) px-3 py-2 text-sm text-(--text)">
             <input
               type="checkbox"
               checked={values.onSuccess}
@@ -372,7 +372,7 @@ export function ProjectForm({
             />
             Notify on success
           </label>
-          <label className="flex items-center gap-3 border border-(--border) bg-(--surface-2) px-3 py-2 text-sm text-(--text)">
+          <label className="flex items-center gap-3 border rounded-(--radius) border-(--border) bg-(--surface-2) px-3 py-2 text-sm text-(--text)">
             <input
               type="checkbox"
               checked={values.onFailure}

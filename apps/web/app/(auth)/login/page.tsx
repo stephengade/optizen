@@ -34,12 +34,12 @@ export default function LoginPage() {
 
   return (
     <div>
-      <h1 className="text-xl font-semibold text-(--text)">Sign in</h1>
+      <h1 className="text-[22px] font-semibold tracking-[-0.02em] text-(--text)">Sign in</h1>
       <p className="mt-2 text-sm text-(--text-muted)">
         Enter your master password to unlock Optizen.
       </p>
 
-      <form onSubmit={handleSubmit} className="mt-8 flex flex-col gap-5">
+      <form onSubmit={handleSubmit} className="mt-7 flex flex-col gap-5">
         <div className="relative">
           <Input
             label="Master password"
@@ -54,7 +54,7 @@ export default function LoginPage() {
           <button
             type="button"
             onClick={() => setShowPassword(v => !v)}
-            className="absolute right-3 top-[2rem] p-1 text-(--text-muted) transition-colors hover:text-(--text)"
+            className="absolute right-2.5 top-[2.15rem] rounded p-1 text-(--text-muted) transition-colors hover:text-(--text)"
             aria-label={showPassword ? 'Hide password' : 'Show password'}
           >
             {showPassword ? <EyeOff size={13} /> : <Eye size={13} />}

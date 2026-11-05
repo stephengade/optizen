@@ -153,11 +153,11 @@ export default function ServerMemoryPage() {
         <div>
           <Link
             href={`/servers/${params.id}`}
-            className="text-xs uppercase tracking-[0.24em] text-(--text-muted) transition-colors hover:text-(--text)"
+            className="text-[12.5px] font-medium text-(--text-muted) transition-colors hover:text-(--text)"
           >
             ← {server?.name ?? 'Server'}
           </Link>
-          <h1 className="mt-2 text-2xl font-semibold text-(--text)">Memory</h1>
+          <h1 className="mt-2 text-[26px] leading-tight font-semibold tracking-[-0.03em] text-(--text)">Memory</h1>
           <p className="mt-1 text-sm text-(--text-muted)">
             What is using RAM on this server, and safe ways to free it.
             {report ? ` Checked ${formatRelative(report.checkedAt)}.` : ''}
@@ -181,17 +181,17 @@ export default function ServerMemoryPage() {
       </div>
 
       {isDemo ? (
-        <div className="border border-dashed border-(--border) px-5 py-8 text-center text-sm text-(--text-muted)">
+        <div className="border rounded-(--radius) border-dashed border-(--border) px-5 py-8 text-center text-sm text-(--text-muted)">
           The memory view reads live data from a real server and is not available in demo mode.
         </div>
       ) : null}
 
       {error ? (
-        <div className="border border-(--red) bg-(--red-dim) px-4 py-3 text-sm text-(--red)">{error}</div>
+        <div className="border rounded-(--radius) border-(--red) bg-(--red-dim) px-4 py-3 text-sm text-(--red)">{error}</div>
       ) : null}
 
       {lastResult?.availableBeforeBytes !== undefined && lastResult.availableAfterBytes !== undefined ? (
-        <div className="border border-(--border) bg-(--surface) px-4 py-3 text-sm text-(--text-muted)">
+        <div className="border rounded-(--radius) border-(--border) bg-(--surface) px-4 py-3 text-sm text-(--text-muted)">
           Last action: available memory went from{' '}
           <span className="text-(--text)">{formatBytes(lastResult.availableBeforeBytes)}</span> to{' '}
           <span className="text-(--text)">{formatBytes(lastResult.availableAfterBytes)}</span>.
@@ -223,9 +223,9 @@ export default function ServerMemoryPage() {
             Containers <span className="ml-2 font-normal text-(--text-muted)">{report.containers.length}</span>
           </h2>
           {report.containers.length ? (
-            <div className="overflow-x-auto border border-(--border)">
+            <div className="overflow-x-auto border rounded-(--radius) border-(--border)">
               <table className="w-full text-sm">
-                <thead className="text-left text-[10px] uppercase tracking-[0.16em] text-(--text-muted)">
+                <thead className="text-left text-[11.5px] font-medium text-(--text-muted)">
                   <tr className="border-b border-(--border)">
                     <th className="px-4 py-2 font-normal">Container</th>
                     <th className="px-4 py-2 font-normal">Memory</th>
@@ -269,7 +269,7 @@ export default function ServerMemoryPage() {
         <section>
           <h2 className="mb-1 text-sm font-semibold text-(--text)">By program</h2>
           <p className="mb-3 text-xs text-(--text-muted)">All processes with the same name added together (e.g. many php-fpm or node workers).</p>
-          <div className="divide-y divide-(--border) border border-(--border)">
+          <div className="divide-y divide-(--border) border rounded-(--radius) border-(--border)">
             {report.groups.slice(0, 10).map((group) => (
               <div key={group.command} className="flex items-center gap-4 px-4 py-2 text-sm">
                 <div className="w-32 truncate text-(--text) sm:w-48">{group.command}</div>
@@ -298,7 +298,7 @@ export default function ServerMemoryPage() {
           <p className="mb-3 text-xs text-(--text-muted)">
             Sorted by resident memory. System processes (sshd, systemd, dockerd…) are protected and cannot be stopped from here.
           </p>
-          <ul className="divide-y divide-(--border) border border-(--border)">
+          <ul className="divide-y divide-(--border) border rounded-(--radius) border-(--border)">
             {(showAllProcesses ? report.topProcesses : report.topProcesses.slice(0, 15)).map((process) => (
               <li key={process.pid} className="flex flex-wrap items-center gap-x-4 gap-y-2 px-4 py-3 text-sm">
                 <div className="min-w-0 flex-1 basis-56">
@@ -370,7 +370,7 @@ export default function ServerMemoryPage() {
 function Stat({ label, value, sub }: { label: string; value: string; sub: string }) {
   return (
     <div className="px-4 py-3">
-      <div className="text-[10px] uppercase tracking-[0.16em] text-(--text-muted)">{label}</div>
+      <div className="text-[11.5px] font-medium text-(--text-muted)">{label}</div>
       <div className="mt-1 text-base font-semibold text-(--text)">{value}</div>
       <div className="mt-0.5 truncate text-xs text-(--text-muted)">{sub}</div>
     </div>
@@ -388,7 +388,7 @@ function MemoryBar({ breakdown }: { breakdown: MemoryReport['breakdown'] }) {
   const usedColor = availablePercent < 10 ? 'bg-(--red)' : availablePercent < 25 ? 'bg-(--yellow)' : 'bg-(--accent)'
   return (
     <div>
-      <div className="flex h-3 w-full overflow-hidden border border-(--border)">
+      <div className="flex h-3 w-full overflow-hidden border rounded-(--radius) border-(--border)">
         <div className={usedColor} style={{ width: `${used}%` }} title="Used by programs" />
         <div className="bg-(--blue)" style={{ width: `${cache}%` }} title="Reclaimable cache" />
         <div className="bg-(--surface-2)" style={{ width: `${free}%` }} title="Free" />

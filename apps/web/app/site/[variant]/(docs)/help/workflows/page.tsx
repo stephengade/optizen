@@ -59,7 +59,7 @@ export default function WorkflowsPage() {
         Docs
       </Link>
 
-      <h1 className="text-xl font-semibold text-(--text)">Workflows</h1>
+      <h1 className="text-gradient text-[32px] leading-tight font-semibold tracking-[-0.03em]">Workflows</h1>
       <p className="mt-1 text-sm text-(--text-muted)">
         Common day-to-day operations and how to do them safely.
       </p>
@@ -68,7 +68,7 @@ export default function WorkflowsPage() {
         {workflows.map((w) => (
           <div key={w.title}>
             <h2 className="text-sm font-semibold text-(--text) mb-3">{w.title}</h2>
-            <div className="border border-(--border) divide-y divide-(--border)">
+            <div className="border rounded-(--radius) border-(--border) divide-y divide-(--border)">
               {w.steps.map((step, i) => (
                 <div key={i} className="flex gap-4 px-4 py-3">
                   <span className="text-[10px] font-mono text-(--text-muted) w-5 shrink-0 pt-0.5">{i + 1}</span>
@@ -81,11 +81,11 @@ export default function WorkflowsPage() {
       </div>
 
       <div className="mt-8 border-t border-(--border) pt-6 flex items-center justify-between">
-        <Link href="/help/projects" className="inline-flex items-center gap-1.5 text-xs text-(--text-muted) hover:text-(--text) border border-(--border) px-3 py-1.5 transition-colors">
+        <Link href="/help/projects" className="inline-flex items-center gap-1.5 text-xs text-(--text-muted) hover:text-(--text) border rounded-(--radius) border-(--border) px-3 py-1.5 transition-colors">
           <ArrowLeft size={11} />
           Project types
         </Link>
-        <Link href="/help/security" className="inline-flex items-center gap-1.5 text-xs text-(--text-muted) hover:text-(--text) border border-(--border) px-3 py-1.5 transition-colors">
+        <Link href="/help/security" className="inline-flex items-center gap-1.5 text-xs text-(--text-muted) hover:text-(--text) border rounded-(--radius) border-(--border) px-3 py-1.5 transition-colors">
           Trust & security
           <ArrowLeft size={11} className="rotate-180" />
         </Link>

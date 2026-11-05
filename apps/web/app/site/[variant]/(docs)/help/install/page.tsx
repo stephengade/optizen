@@ -50,12 +50,12 @@ export default function InstallPage() {
         Docs
       </Link>
 
-      <h1 className="text-xl font-semibold text-(--text)">Install on your server</h1>
+      <h1 className="text-gradient text-[32px] leading-tight font-semibold tracking-[-0.03em]">Install on your server</h1>
       <p className="mt-1 text-sm text-(--text-muted)">
         Run your own Optizen with Docker. Each install is private: its own data, password, and SSH keys.
       </p>
 
-      <div className="mt-6 flex flex-col gap-4 border border-(--accent) bg-(--accent-dim) p-5 sm:flex-row sm:items-center sm:justify-between">
+      <div className="mt-6 flex flex-col gap-4 border rounded-(--radius) border-(--accent) bg-(--accent-dim) p-5 sm:flex-row sm:items-center sm:justify-between">
         <div>
           <div className="text-sm font-semibold text-(--text)">Free and open source. No sign-up, no sign-in.</div>
           <p className="mt-1 text-sm text-(--text-muted)">
@@ -66,14 +66,14 @@ export default function InstallPage() {
           href={GITHUB_REPO_URL}
           target="_blank"
           rel="noopener noreferrer"
-          className="inline-flex h-9 shrink-0 items-center gap-2 bg-(--accent) px-5 text-sm font-semibold text-(--bg) transition-opacity hover:opacity-90"
+          className="inline-flex h-9 shrink-0 items-center gap-2 btn-primary px-5 text-sm font-semibold"
         >
           Get it on GitHub
           <ArrowUpRight size={14} />
         </a>
       </div>
 
-      <div className="mt-8 border border-(--border) divide-y divide-(--border)">
+      <div className="mt-8 border rounded-(--radius) border-(--border) divide-y divide-(--border)">
         {steps.map((step) => (
           <div key={step.n} className="px-5 py-5">
             <div className="flex gap-6">
@@ -81,7 +81,7 @@ export default function InstallPage() {
               <div className="min-w-0 flex-1">
                 <div className="text-sm font-semibold text-(--text)">{step.title}</div>
                 <p className="mt-1.5 text-sm leading-6 text-(--text-muted)">{step.body}</p>
-                <pre className="mt-3 overflow-x-auto border border-(--border) bg-(--surface) px-4 py-4 font-mono text-xs leading-6 text-(--text-muted)">
+                <pre className="mt-3 overflow-x-auto border rounded-(--radius) border-(--border) bg-(--surface) px-4 py-4 font-mono text-xs leading-6 text-(--text-muted)">
 {step.code}
                 </pre>
               </div>
@@ -90,7 +90,7 @@ export default function InstallPage() {
         ))}
       </div>
 
-      <div className="mt-8 border border-(--border) bg-(--surface) p-5">
+      <div className="mt-8 border rounded-(--radius) border-(--border) bg-(--surface) p-5">
         <h2 className="text-sm font-semibold text-(--text)">Good to know</h2>
         <div className="mt-3 space-y-2 text-sm leading-6 text-(--text-muted)">
           <p>Optizen backs up its data once a day to ./data/backups (Settings → Backups, where you can also download and restore). Those copies live on the same server, so download one now and then or sync the folder elsewhere. Secrets in a backup stay encrypted: keep the master password safe too.</p>
@@ -102,7 +102,7 @@ export default function InstallPage() {
 
       <div className="mt-8 border-t border-(--border) pt-6 flex items-center justify-between">
         <p className="text-xs text-(--text-muted)">Next: add your first server and project</p>
-        <Link href="/help/setup" className="inline-flex items-center gap-1.5 text-xs text-(--text-muted) hover:text-(--text) border border-(--border) px-3 py-1.5 transition-colors">
+        <Link href="/help/setup" className="inline-flex items-center gap-1.5 text-xs text-(--text-muted) hover:text-(--text) border rounded-(--radius) border-(--border) px-3 py-1.5 transition-colors">
           Quick start
           <ArrowLeft size={11} className="rotate-180" />
         </Link>

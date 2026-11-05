@@ -109,11 +109,11 @@ export default function ProjectEnvPage() {
       <section>
         <Link
           href={`/servers/${params.id}/projects/${params.pid}`}
-          className="text-xs uppercase tracking-[0.24em] text-(--text-muted)"
+          className="text-[12.5px] font-medium text-(--text-muted)"
         >
           Back to project
         </Link>
-        <h1 className="mt-2 text-3xl font-semibold text-(--text)">Environment file</h1>
+        <h1 className="mt-2 text-[26px] leading-tight font-semibold tracking-[-0.03em] text-(--text)">Environment file</h1>
         <p className="mt-2 text-sm text-(--text-muted)">
           Fetch, review, and update the project&apos;s remote `.env` file without storing its contents in Optizen&apos;s database.
         </p>
@@ -143,7 +143,7 @@ export default function ProjectEnvPage() {
           </section>
         </>
       ) : (
-        <div className="border border-(--border) bg-(--surface) p-6 text-sm text-(--text-muted)">
+        <div className="border rounded-(--radius) border-(--border) bg-(--surface) p-6 text-sm text-(--text-muted)">
           No env path configured for this project yet.
         </div>
       )}

@@ -51,7 +51,7 @@ export function ImagePanel({
   onRollback,
 }: ImagePanelProps) {
   return (
-    <section className="border border-(--border) bg-(--surface) p-6">
+    <section className="border rounded-(--radius) border-(--border) bg-(--surface) p-6">
       <div className="flex flex-wrap items-start justify-between gap-4">
         <div>
                     <h2 className="mt-2 text-lg font-semibold text-(--text)">Docker image manager</h2>
@@ -65,7 +65,7 @@ export function ImagePanel({
       </div>
 
       <div className="mt-5 grid gap-4 lg:grid-cols-[1fr_320px]">
-        <div className=" border border-(--border) bg-(--surface-2) p-4">
+        <div className=" border rounded-(--radius) border-(--border) bg-(--surface-2) p-4">
           <h3 className="text-sm font-medium text-(--text)">Container status</h3>
           {status ? (
             <div className="mt-3 grid gap-2 text-sm text-(--text-muted)">
@@ -82,13 +82,13 @@ export function ImagePanel({
         </div>
 
         <div className="space-y-4">
-          <div className=" border border-(--border) bg-(--surface-2) p-4">
+          <div className=" border rounded-(--radius) border-(--border) bg-(--surface-2) p-4">
             <h3 className="text-sm font-medium text-(--text)">Pull tag</h3>
             <div className="mt-3 space-y-3">
               <select
                 value={selectedTag}
                 onChange={(event) => onTagChange(event.target.value)}
-                className="h-10 w-full border border-(--border) bg-(--surface) px-3 text-sm text-(--text) outline-none focus:border-(--border-strong)"
+                className="h-10 w-full border rounded-(--radius) border-(--border) bg-(--surface) px-3 text-sm text-(--text) outline-none focus:border-(--border-strong)"
               >
                 <option value="">latest</option>
                 {tags.map((tag) => (
@@ -103,13 +103,13 @@ export function ImagePanel({
             </div>
           </div>
 
-          <div className=" border border-(--border) bg-(--surface-2) p-4">
+          <div className=" border rounded-(--radius) border-(--border) bg-(--surface-2) p-4">
             <h3 className="text-sm font-medium text-(--text)">Rollback</h3>
             <div className="mt-3 space-y-3">
               <select
                 value={selectedRollbackId}
                 onChange={(event) => onRollbackChange(event.target.value)}
-                className="h-10 w-full border border-(--border) bg-(--surface) px-3 text-sm text-(--text) outline-none focus:border-(--border-strong)"
+                className="h-10 w-full border rounded-(--radius) border-(--border) bg-(--surface) px-3 text-sm text-(--text) outline-none focus:border-(--border-strong)"
               >
                 <option value="">Select successful deploy</option>
                 {rollbackCandidates.map((record) => (
@@ -130,7 +130,7 @@ export function ImagePanel({
             </div>
           </div>
 
-          <div className=" border border-(--border) bg-(--surface-2) p-4">
+          <div className=" border rounded-(--radius) border-(--border) bg-(--surface-2) p-4">
             <h3 className="text-sm font-medium text-(--text)">Cleanup</h3>
             <p className="mt-2 text-sm text-(--text-muted)">Prune dangling images on the remote host.</p>
             <div className="mt-3">

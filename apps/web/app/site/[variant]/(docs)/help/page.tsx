@@ -72,13 +72,13 @@ export default function HelpPage() {
   return (
     <div className="max-w-4xl mx-auto px-6 py-8">
       <div className="mb-8">
-        <h1 className="text-xl font-semibold text-(--text)">Docs</h1>
+        <h1 className="text-gradient text-[32px] leading-tight font-semibold tracking-[-0.03em]">Docs</h1>
         <p className="mt-1 text-sm text-(--text-muted)">
           Understand how Optizen works before you rely on it in production.
         </p>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 border border-(--border) divide-y md:divide-y-0 md:divide-x divide-(--border) mb-8">
+      <div className="grid grid-cols-1 md:grid-cols-2 border rounded-(--radius) border-(--border) divide-y md:divide-y-0 md:divide-x divide-(--border) mb-8">
         {sections.map((s) => (
           <Link
             key={s.href}
@@ -101,7 +101,7 @@ export default function HelpPage() {
         <h2 className="text-sm font-semibold text-(--text)">The four-layer model</h2>
         <p className="mt-1 text-xs text-(--text-muted)">Optizen organises everything into four distinct layers.</p>
       </div>
-      <div className="border border-(--border) divide-y divide-(--border)">
+      <div className="border rounded-(--radius) border-(--border) divide-y divide-(--border)">
         {model.map((item) => (
           <div key={item.term} className="px-5 py-4 flex gap-6">
             <div className="w-24 shrink-0 text-sm font-medium text-(--text)">{item.term}</div>

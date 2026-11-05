@@ -1,6 +1,5 @@
-import Link from 'next/link'
-import { ArrowLeft, ArrowUpRight } from 'lucide-react'
-import { GITHUB_REPO_URL } from '@/lib/links'
+import { SiteFooter, SiteHeader } from '@/components/site/SiteChrome'
+import { PageTransition } from '@/components/ui/PageTransition'
 
 export default async function DocsLayout({
   children,
@@ -12,56 +11,11 @@ export default async function DocsLayout({
   const publicSite = (await params).variant === 'public'
 
   return (
-    <div className="min-h-screen bg-(--bg)">
-      {/* Minimal nav */}
-      <header className="sticky top-0 z-30 border-b border-(--border) bg-(--bg) px-6 py-3">
-        <div className="mx-auto flex max-w-4xl items-center justify-between">
-          <Link href="/" className="flex items-center gap-2 text-xs text-(--text-muted) hover:text-(--text) transition-colors">
-            <ArrowLeft size={12} />
-            Optizen
-          </Link>
-          <div className="flex items-center gap-4">
-            <Link href="/contribute" className="text-xs text-(--text-muted) hover:text-(--text) transition-colors">Contribute</Link>
-            <Link href="/help" className="text-xs text-(--text-muted) hover:text-(--text) transition-colors">Docs</Link>
-            {publicSite ? (
-              <a
-                href={GITHUB_REPO_URL}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="inline-flex h-7 items-center gap-1.5 border border-(--accent) px-3 text-xs font-medium text-(--accent) hover:bg-(--accent-dim) transition-colors"
-              >
-                Get it on GitHub
-                <ArrowUpRight size={12} />
-              </a>
-            ) : (
-              <Link
-                href="/login"
-                className="inline-flex h-7 items-center gap-1.5 border border-(--border) px-3 text-xs text-(--text-muted) hover:text-(--text) hover:border-(--border-strong) transition-colors"
-              >
-                Sign in
-              </Link>
-            )}
-          </div>
-        </div>
-      </header>
-
-      {children}
-
-      {/* Footer */}
-      <footer className="border-t border-(--border) px-6 py-6 mt-16">
-        <div className="mx-auto max-w-4xl flex flex-col sm:flex-row items-start sm:items-center justify-between gap-6">
-          <p className="text-xs text-(--text-subtle) whitespace-nowrap">Optizen · AGPL-3.0 License · Self-hosted</p>
-          <div className="flex flex-wrap items-center gap-x-4 gap-y-2 text-xs text-(--text-muted)">
-            <Link href="/about" className="hover:text-(--text) transition-colors whitespace-nowrap">About</Link>
-            <Link href="/contribute" className="hover:text-(--text) transition-colors whitespace-nowrap">Contribute</Link>
-            <Link href="/help/install" className="hover:text-(--text) transition-colors whitespace-nowrap">Install</Link>
-            <Link href="/help/setup" className="hover:text-(--text) transition-colors whitespace-nowrap">Quick start</Link>
-            <Link href="/help/projects" className="hover:text-(--text) transition-colors whitespace-nowrap">Projects</Link>
-            <Link href="/help/workflows" className="hover:text-(--text) transition-colors whitespace-nowrap">Workflows</Link>
-            <Link href="/help/security" className="hover:text-(--text) transition-colors whitespace-nowrap">Security</Link>
-          </div>
-        </div>
-      </footer>
+    <div className="relative min-h-screen overflow-x-clip bg-(--bg)">
+      <div className="pointer-events-none absolute inset-x-0 top-0 h-[420px] bg-[radial-gradient(600px_260px_at_50%_0%,rgba(124,131,255,0.12),transparent_70%)]" />
+      <SiteHeader publicSite={publicSite} />
+      <div className="relative pt-6 pb-20"><PageTransition>{children}</PageTransition></div>
+      <SiteFooter />
     </div>
   )
 }

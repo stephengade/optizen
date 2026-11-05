@@ -31,7 +31,7 @@ function createWebhook(): GlobalWebhook {
 
 function Section({ title, description, children }: { title: string; description?: string; children: React.ReactNode }) {
   return (
-    <section className="border border-(--border) bg-(--surface)">
+    <section className="border rounded-(--radius) border-(--border) bg-(--surface)">
       <div className="px-5 py-4 border-b border-(--border)">
         <h2 className="text-sm font-semibold text-(--text)">{title}</h2>
         {description && <p className="mt-0.5 text-xs text-(--text-muted)">{description}</p>}
@@ -147,11 +147,11 @@ export default function SettingsPage() {
   return (
     <div className="max-w-3xl mx-auto px-6 py-8">
       <div className="mb-8">
-        <h1 className="text-xl font-semibold text-(--text)">Settings</h1>
+        <h1 className="text-[26px] leading-tight font-semibold tracking-[-0.03em] text-(--text)">Settings</h1>
         <p className="mt-1 text-sm text-(--text-muted)">Session security, backups, notifications, and display preferences.</p>
       </div>
 
-      <div className="space-y-px">
+      <div className="space-y-4">
         {/* Display */}
         <Section title="Display" description="Control what is visible in the UI.">
           <div className="space-y-4">
@@ -188,7 +188,7 @@ export default function SettingsPage() {
         <Section title="Backups" description="Daily copies of all Optizen data, plus download and restore.">
           <Link
             href="/settings/backups"
-            className="inline-flex items-center gap-2 border border-(--border) px-3 py-1.5 text-xs font-medium text-(--text) transition-colors hover:border-(--border-strong)"
+            className="inline-flex items-center gap-2 border rounded-(--radius) border-(--border) px-3 py-1.5 text-xs font-medium text-(--text) transition-colors hover:border-(--border-strong)"
           >
             Manage backups
           </Link>
@@ -280,7 +280,7 @@ export default function SettingsPage() {
           <div className="space-y-4">
             {webhooks.length > 0 ? (
               webhooks.map((webhook, index) => (
-                <div key={webhook.id} className="border border-(--border) bg-(--surface-2) p-4 space-y-4">
+                <div key={webhook.id} className="border rounded-(--radius) border-(--border) bg-(--surface-2) p-4 space-y-4">
                   <div className="grid grid-cols-2 gap-4">
                     <Input
                       label="Name"
@@ -300,7 +300,7 @@ export default function SettingsPage() {
                       value={webhook.secret ?? ''}
                       onChange={(e) => setWebhooks((cur) => cur.map((w, i) => i === index ? { ...w, secret: e.target.value } : w))}
                     />
-                    <label className="flex items-center gap-3 cursor-pointer border border-(--border) bg-(--surface) px-3 py-2 text-sm text-(--text)">
+                    <label className="flex items-center gap-3 cursor-pointer border rounded-(--radius) border-(--border) bg-(--surface) px-3 py-2 text-sm text-(--text)">
                       <input
                         type="checkbox"
                         checked={webhook.enabled}

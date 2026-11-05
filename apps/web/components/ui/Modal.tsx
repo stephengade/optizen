@@ -42,7 +42,7 @@ export function Modal({ open, title, description, onClose, children }: ModalProp
 
   return (
     <div
-      className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 px-6 py-8"
+      className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 px-6 py-8 backdrop-blur-sm"
       role="presentation"
       onMouseDown={(event) => {
         if (event.target === event.currentTarget) {
@@ -55,11 +55,11 @@ export function Modal({ open, title, description, onClose, children }: ModalProp
         role="dialog"
         aria-modal="true"
         aria-label={title}
-        className="max-h-full w-full max-w-3xl overflow-auto border border-(--border) bg-(--surface) shadow-(--shadow)"
+        className="max-h-full w-full max-w-3xl overflow-auto rounded-(--radius-lg) border border-(--border-strong) bg-(--surface) shadow-(--shadow)"
       >
         <div className="flex items-start justify-between gap-4 border-b border-(--border) px-6 py-4">
           <div>
-            <h2 className="text-sm font-semibold text-(--text)">{title}</h2>
+            <h2 className="text-[15px] font-semibold tracking-tight text-(--text)">{title}</h2>
             {description ? (
               <p className="mt-1 max-w-2xl text-xs text-(--text-muted)">{description}</p>
             ) : null}
@@ -68,7 +68,7 @@ export function Modal({ open, title, description, onClose, children }: ModalProp
             ref={closeButtonRef}
             type="button"
             onClick={onClose}
-            className="border border-(--border) px-3 py-1.5 text-xs text-(--text-muted) transition-colors hover:bg-(--surface-2) hover:text-(--text)"
+            className="rounded-(--radius-sm) border border-(--border-strong) px-3 py-1.5 text-xs text-(--text-muted) transition-colors hover:bg-white/[0.05] hover:text-(--text)"
           >
             Close
           </button>

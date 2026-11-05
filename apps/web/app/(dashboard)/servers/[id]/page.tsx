@@ -229,10 +229,10 @@ export default function ServerDetailPage() {
       {/* Header */}
       <div className="flex flex-wrap items-start justify-between gap-4">
         <div>
-          <Link href="/servers" className="text-xs uppercase tracking-[0.24em] text-(--text-muted) hover:text-(--text) transition-colors">
+          <Link href="/servers" className="text-[12.5px] font-medium text-(--text-muted) hover:text-(--text) transition-colors">
             ← Servers
           </Link>
-          <h1 className="mt-2 text-2xl font-semibold text-(--text)">{server.name}</h1>
+          <h1 className="mt-2 text-[26px] leading-tight font-semibold tracking-[-0.03em] text-(--text)">{server.name}</h1>
           <p className="mt-1 text-sm text-(--text-muted) font-mono">
             <SensitiveText value={`${server.user}@${server.host}:${server.port}`} />
           </p>
@@ -247,20 +247,20 @@ export default function ServerDetailPage() {
           </Button>
           <Link
             href={`/servers/${params.id}/proxy`}
-            className="inline-flex h-8 items-center border border-(--border) px-3 text-xs text-(--text-muted) hover:text-(--text) hover:border-(--border-strong) transition-colors"
+            className="inline-flex h-8 items-center border rounded-(--radius) border-(--border) px-3 text-xs text-(--text-muted) hover:text-(--text) hover:border-(--border-strong) transition-colors"
           >
             Proxy
           </Link>
           <Link
             href={`/servers/${params.id}/memory`}
-            className="inline-flex h-8 items-center gap-1.5 border border-(--border) px-3 text-xs text-(--text-muted) hover:text-(--text) hover:border-(--border-strong) transition-colors"
+            className="inline-flex h-8 items-center gap-1.5 border rounded-(--radius) border-(--border) px-3 text-xs text-(--text-muted) hover:text-(--text) hover:border-(--border-strong) transition-colors"
           >
             <MemoryStick size={12} />
             Memory
           </Link>
           <Link
             href={`/storage?server=${params.id}`}
-            className="inline-flex h-8 items-center gap-1.5 border border-(--border) px-3 text-xs text-(--text-muted) hover:text-(--text) hover:border-(--border-strong) transition-colors"
+            className="inline-flex h-8 items-center gap-1.5 border rounded-(--radius) border-(--border) px-3 text-xs text-(--text-muted) hover:text-(--text) hover:border-(--border-strong) transition-colors"
           >
             <HardDrive size={12} />
             Storage
@@ -308,7 +308,7 @@ export default function ServerDetailPage() {
             <button
               type="button"
               onClick={() => setAddProjectOpen(true)}
-              className="inline-flex items-center gap-1.5 h-8 px-3 border border-(--border) text-xs text-(--text-muted) hover:text-(--text) hover:border-(--border-strong) transition-colors"
+              className="inline-flex items-center gap-1.5 h-8 px-3 border rounded-(--radius) border-(--border) text-xs text-(--text-muted) hover:text-(--text) hover:border-(--border-strong) transition-colors"
             >
               <Plus size={13} />
               Add project
@@ -317,13 +317,13 @@ export default function ServerDetailPage() {
         </div>
 
         {projects.length > 0 ? (
-          <div className="grid gap-px md:grid-cols-2">
+          <div className="grid gap-3.5 md:grid-cols-2">
             {projects.map((project) => (
               <ProjectCard key={project.id} project={project} />
             ))}
           </div>
         ) : (
-          <div className="border border-dashed border-(--border) px-5 py-8 text-center">
+          <div className="border rounded-(--radius) border-dashed border-(--border) px-5 py-8 text-center">
             <p className="text-sm text-(--text-muted)">No projects yet.</p>
             <p className="mt-1 text-xs text-(--text-subtle)">Add one manually or import from the scan workspace.</p>
           </div>
@@ -335,7 +335,7 @@ export default function ServerDetailPage() {
         <section>
           <h2 className="text-sm font-semibold text-(--text) mb-3">Recent deploys</h2>
           {server.recentDeployOutcomes?.length ? (
-            <div className="border border-(--border) divide-y divide-(--border)">
+            <div className="border rounded-(--radius) border-(--border) divide-y divide-(--border)">
               {server.recentDeployOutcomes.map((record) => (
                 <div key={record.id} className="flex items-center justify-between gap-4 px-4 py-3">
                   <div className="flex items-center gap-3">
@@ -347,7 +347,7 @@ export default function ServerDetailPage() {
               ))}
             </div>
           ) : (
-            <div className="border border-dashed border-(--border) px-4 py-6 text-sm text-(--text-muted)">
+            <div className="border rounded-(--radius) border-dashed border-(--border) px-4 py-6 text-sm text-(--text-muted)">
               No deploys yet.
             </div>
           )}
@@ -427,7 +427,7 @@ export default function ServerDetailPage() {
 function Metric({ label, value, sub }: { label: string; value: string; sub: string }) {
   return (
     <div className="px-4 py-3">
-      <div className="text-[10px] uppercase tracking-[0.16em] text-(--text-muted)">{label}</div>
+      <div className="text-[11.5px] font-medium text-(--text-muted)">{label}</div>
       <div className="mt-1 text-base font-semibold text-(--text)">{value}</div>
       <div className="mt-0.5 text-xs text-(--text-muted) truncate">{sub}</div>
     </div>

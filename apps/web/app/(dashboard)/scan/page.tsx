@@ -202,7 +202,7 @@ export default function ScanPage() {
       {/* Header */}
       <div className="flex items-center justify-between gap-4 mb-8">
         <div>
-          <h1 className="text-xl font-semibold text-(--text)">Scan</h1>
+          <h1 className="text-[26px] leading-tight font-semibold tracking-[-0.03em] text-(--text)">Scan</h1>
           <p className="mt-1 text-sm text-(--text-muted)">
             Discover running Docker workloads and import them as projects.
           </p>
@@ -213,19 +213,19 @@ export default function ScanPage() {
       </div>
 
       {/* Stats */}
-      <div className="grid grid-cols-2 border border-(--border) divide-x divide-(--border) mb-8">
+      <div className="grid grid-cols-2 border rounded-(--radius) border-(--border) divide-x divide-(--border) mb-8">
         <div className="px-5 py-4">
-          <div className="text-xs uppercase tracking-[0.16em] text-(--text-muted)">Servers</div>
+          <div className="text-[12.5px] font-medium text-(--text-muted)">Servers</div>
           <div className="mt-1.5 text-2xl font-semibold text-(--text)">{servers.length}</div>
         </div>
         <div className="px-5 py-4">
-          <div className="text-xs uppercase tracking-[0.16em] text-(--text-muted)">Results</div>
+          <div className="text-[12.5px] font-medium text-(--text-muted)">Results</div>
           <div className="mt-1.5 text-2xl font-semibold text-(--text)">{results.length}</div>
         </div>
       </div>
 
       {servers.length === 0 && (
-        <div className="border border-dashed border-(--border) px-5 py-10 text-center">
+        <div className="border rounded-(--radius) border-dashed border-(--border) px-5 py-10 text-center">
           <p className="text-sm text-(--text-muted)">No servers configured yet.</p>
         </div>
       )}
@@ -235,7 +235,7 @@ export default function ScanPage() {
           const items = grouped.get(server.id) ?? []
           return (
             <section key={server.id}>
-              <div className="flex items-center justify-between gap-4 border border-(--border) bg-(--surface) px-5 py-4">
+              <div className="flex items-center justify-between gap-4 border rounded-(--radius) border-(--border) bg-(--surface) px-5 py-4">
                 <div>
                   <h2 className="text-sm font-semibold text-(--text)">{server.name}</h2>
                   <p className="mt-0.5 text-xs text-(--text-muted)">
@@ -257,22 +257,22 @@ export default function ScanPage() {
                             <ProjectClassificationBadge source={app.suggestedProject.source} runtime={app.suggestedProject.runtime} />
                           </div>
                         </div>
-                        <div className="flex flex-wrap gap-1.5 text-[10px] uppercase tracking-[0.14em] text-(--text-muted)">
-                          <span className="border border-(--border) px-2 py-0.5">{app.status}</span>
-                          {app.composeService && <span className="border border-(--border) px-2 py-0.5">compose</span>}
-                          {app.alreadyImported && <span className="border border-(--accent) px-2 py-0.5 text-(--accent)">imported</span>}
+                        <div className="flex flex-wrap gap-1.5 text-[11.5px] font-medium text-(--text-muted)">
+                          <span className="border rounded-(--radius) border-(--border) px-2 py-0.5">{app.status}</span>
+                          {app.composeService && <span className="border rounded-(--radius) border-(--border) px-2 py-0.5">compose</span>}
+                          {app.alreadyImported && <span className="rounded-full border border-(--green-border) bg-(--green-dim) px-2 py-0.5 text-(--green)">Imported</span>}
                         </div>
                       </div>
 
-                      <div className="mt-4 grid grid-cols-2 border border-(--border) divide-x divide-(--border) text-xs">
+                      <div className="mt-4 grid grid-cols-2 border rounded-(--radius) border-(--border) divide-x divide-(--border) text-xs">
                         <div className="px-3 py-2 text-(--text-muted)">Container: <SensitiveText value={app.containerName} className="font-mono text-(--text)" /></div>
                         <div className="px-3 py-2 text-(--text-muted)">Tag: <span className="text-(--text)">{app.imageTag}</span></div>
                         <div className="px-3 py-2 text-(--text-muted) border-t border-(--border)">Dir: <SensitiveText value={app.workingDir || '—'} className="font-mono text-(--text)" /></div>
                         <div className="px-3 py-2 text-(--text-muted) border-t border-(--border)">Env: <SensitiveText value={app.envPath || '—'} className="font-mono text-(--text)" /></div>
                       </div>
 
-                      <div className="mt-3 border border-(--border) bg-(--bg) px-4 py-3">
-                        <div className="text-[10px] uppercase tracking-[0.14em] text-(--text-muted) mb-1.5">Deploy commands</div>
+                      <div className="mt-3 border rounded-(--radius) border-(--border) bg-(--bg) px-4 py-3">
+                        <div className="text-[11.5px] font-medium text-(--text-muted) mb-1.5">Deploy commands</div>
                         <pre data-sensitive="true" className="whitespace-pre-wrap font-mono text-xs text-(--text)">
                           {app.suggestedProject.deployCommands.join('\n')}
                         </pre>
@@ -309,11 +309,11 @@ export default function ScanPage() {
         {selected && (
           <div className="space-y-4">
             <label className="flex flex-col gap-1.5">
-              <span className="text-xs uppercase tracking-wider text-(--text-muted)">Import to server</span>
+              <span className="text-[12.5px] font-medium text-(--text-muted)">Import to server</span>
               <select
                 value={targetServerId}
                 onChange={(e) => setTargetServerId(e.target.value)}
-                className="h-9 border border-(--border) bg-(--surface-2) px-3 text-sm text-(--text) outline-none focus:border-(--border-strong)"
+                className="h-9 border rounded-(--radius) border-(--border) bg-(--surface-2) px-3 text-sm text-(--text) outline-none focus:border-(--border-strong)"
               >
                 <option value="">Select a server</option>
                 {servers.map((s) => (
@@ -322,7 +322,7 @@ export default function ScanPage() {
               </select>
             </label>
 
-            <div className="border border-(--border) bg-(--surface-2) p-4 text-xs space-y-2 text-(--text-muted)">
+            <div className="border rounded-(--radius) border-(--border) bg-(--surface-2) p-4 text-xs space-y-2 text-(--text-muted)">
               <div>Image: <SensitiveText value={selected.suggestedProject.repoImage} className="text-(--text)" /></div>
               <div className="pt-1"><ProjectClassificationBadge source={selected.suggestedProject.source} runtime={selected.suggestedProject.runtime} /></div>
               <div>Dir: <SensitiveText value={selected.suggestedProject.workingDir || '—'} className="font-mono text-(--text)" /></div>

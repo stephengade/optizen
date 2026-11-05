@@ -511,10 +511,10 @@ export default function ProjectDetailPage() {
   return (
     <div className="mx-auto flex w-full max-w-5xl flex-col gap-8 px-6 py-8 lg:px-8">
       <section>
-        <Link href={`/servers/${params.id}`} className="text-xs uppercase tracking-[0.24em] text-(--text-muted)">
+        <Link href={`/servers/${params.id}`} className="text-[12.5px] font-medium text-(--text-muted)">
           Back to server
         </Link>
-        <h1 className="mt-2 text-3xl font-semibold text-(--text)">{project.name}</h1>
+        <h1 className="mt-2 text-[26px] leading-tight font-semibold tracking-[-0.03em] text-(--text)">{project.name}</h1>
         <p className="mt-2 text-sm text-(--text-muted)">
           <SensitiveText value={project.repoImage} />
         </p>
@@ -525,14 +525,14 @@ export default function ProjectDetailPage() {
         <div className="mt-4 flex flex-wrap gap-3">
           <Link
             href={`/servers/${params.id}/projects/${params.pid}/env`}
-            className="inline-flex h-9 items-center border border-(--border) px-3 text-sm text-(--text) transition-colors hover:bg-(--surface-2)"
+            className="inline-flex h-9 items-center border rounded-(--radius) border-(--border) px-3 text-sm text-(--text) transition-colors hover:bg-(--surface-2)"
           >
             Open env editor
           </Link>
           {project.proxyType && project.proxyType !== 'none' && (
             <Link
               href={`/servers/${params.id}/proxy${likelyProxyPath ? `?path=${encodeURIComponent(likelyProxyPath)}` : ''}`}
-              className="inline-flex h-9 items-center border border-(--border) px-3 text-sm text-(--text) transition-colors hover:bg-(--surface-2)"
+              className="inline-flex h-9 items-center border rounded-(--radius) border-(--border) px-3 text-sm text-(--text) transition-colors hover:bg-(--surface-2)"
             >
               Open proxy editor
             </Link>
@@ -544,15 +544,15 @@ export default function ProjectDetailPage() {
       </section>
 
       <section className="grid gap-4 md:grid-cols-3">
-        <div className="border border-(--border) bg-(--surface) p-5">
-          <div className="text-xs uppercase tracking-[0.18em] text-(--text-muted)">Health</div>
+        <div className="border rounded-(--radius) border-(--border) bg-(--surface) p-5">
+          <div className="text-[12.5px] font-medium text-(--text-muted)">Health</div>
           <div className="mt-2 text-lg font-semibold text-(--text)">{project.healthStatus?.status ?? 'unknown'}</div>
           <div className="mt-1 text-sm text-(--text-muted)">
             {project.healthStatus?.message ?? 'Configure a path or port to start heartbeat tracking.'}
           </div>
         </div>
-        <div className="border border-(--border) bg-(--surface) p-5">
-          <div className="text-xs uppercase tracking-[0.18em] text-(--text-muted)">Last successful heartbeat</div>
+        <div className="border rounded-(--radius) border-(--border) bg-(--surface) p-5">
+          <div className="text-[12.5px] font-medium text-(--text-muted)">Last successful heartbeat</div>
           <div className="mt-2 text-lg font-semibold text-(--text)">
             {project.healthStatus?.lastSuccessfulAt ? formatRelative(project.healthStatus.lastSuccessfulAt) : 'Never'}
           </div>
@@ -560,8 +560,8 @@ export default function ProjectDetailPage() {
             {project.healthStatus?.lastSuccessfulAt ? formatDateTime(project.healthStatus.lastSuccessfulAt) : 'Run a health check after configuring it.'}
           </div>
         </div>
-        <div className="border border-(--border) bg-(--surface) p-5">
-          <div className="text-xs uppercase tracking-[0.18em] text-(--text-muted)">Health target</div>
+        <div className="border rounded-(--radius) border-(--border) bg-(--surface) p-5">
+          <div className="text-[12.5px] font-medium text-(--text-muted)">Health target</div>
           <div className="mt-2 text-lg font-semibold text-(--text)">
             {project.healthCheck?.path || (project.healthCheck?.port ? `:${project.healthCheck.port}` : 'Not set')}
           </div>
@@ -573,7 +573,7 @@ export default function ProjectDetailPage() {
 
       <FileSuggestions suggestions={fileSuggestions} />
 
-      <section className="border border-(--border) bg-(--surface) p-6">
+      <section className="border rounded-(--radius) border-(--border) bg-(--surface) p-6">
         <div className="flex flex-wrap items-start justify-between gap-4">
           <div>
                         <h2 className="mt-2 text-lg font-semibold text-(--text)">Deploy engine</h2>
@@ -586,20 +586,20 @@ export default function ProjectDetailPage() {
 
         <div className="mt-5 flex flex-wrap items-end gap-3">
           <label className="flex min-w-64 flex-col gap-1.5">
-            <span className="text-xs font-medium uppercase tracking-wider text-(--text-muted)">
+            <span className="text-xs font-medium tracking-wider text-(--text-muted)">
               Image tag
             </span>
             <input
               value={imageTag}
               onChange={(event) => setImageTag(event.target.value)}
               placeholder="latest or git sha"
-              className="h-10 border border-(--border) bg-(--surface-2) px-3 text-sm text-(--text) outline-none focus:border-(--border-strong)"
+              className="h-10 border rounded-(--radius) border-(--border) bg-(--surface-2) px-3 text-sm text-(--text) outline-none focus:border-(--border-strong)"
             />
           </label>
           <DeployButton status={deploying ? 'deploying' : status} onDeploy={() => setDeployConfirmOpen(true)} />
         </div>
 
-        <div className="mt-4 border border-(--border) bg-(--surface-2) px-4 py-3 text-sm text-(--text-muted)">
+        <div className="mt-4 border rounded-(--radius) border-(--border) bg-(--surface-2) px-4 py-3 text-sm text-(--text-muted)">
           Optizen will run these commands in {project.workingDir || 'the remote default directory'}:
           <pre data-sensitive="true" className="mt-2 whitespace-pre-wrap font-mono text-xs text-(--text)">
             {project.deployCommands.join('\n')}
@@ -651,7 +651,7 @@ export default function ProjectDetailPage() {
           />
         </div>
 
-        <div className="border border-(--border) bg-(--surface) p-6">
+        <div className="border rounded-(--radius) border-(--border) bg-(--surface) p-6">
           <h2 className="text-lg font-semibold text-(--text)">Selected deploy</h2>
           {selectedDeploy ? (
             <div className="mt-4 space-y-4">
@@ -666,11 +666,11 @@ export default function ProjectDetailPage() {
                 <div className="text-sm text-(--text-muted)">Image tag: {selectedDeploy.imageTag}</div>
               ) : null}
               {selectedDeploy.error ? (
-                <div className="border border-(--red) bg-(--red-dim) px-3 py-2 text-sm text-(--red)">
+                <div className="border rounded-(--radius) border-(--red) bg-(--red-dim) px-3 py-2 text-sm text-(--red)">
                   {selectedDeploy.error}
                 </div>
               ) : null}
-              <div className="border border-(--border) bg-[#0b0b0d] px-4 py-3 font-mono text-xs text-(--text)">
+              <div className="border rounded-(--radius) border-(--border) bg-[#0b0b0d] px-4 py-3 font-mono text-xs text-(--text)">
                 <div className="space-y-2">
                   {selectedDeploy.logSnapshot.length > 0 ? (
                     selectedDeploy.logSnapshot.map((line, index) => <div key={`${selectedDeploy.id}-${index}`}>{line}</div>)
@@ -691,7 +691,7 @@ export default function ProjectDetailPage() {
         <ActivityTimeline events={activity} emptyLabel="No project activity yet. Deploys, imports, env edits, proxy edits, and health checks will appear here." />
       </section>
 
-      <div className="border border-(--border) bg-(--surface) p-6">
+      <div className="border rounded-(--radius) border-(--border) bg-(--surface) p-6">
         <div className="flex flex-wrap items-center justify-between gap-4">
           <div>
                         <h2 className="mt-2 text-lg font-semibold text-(--text)">Inbound webhook</h2>
@@ -708,7 +708,7 @@ export default function ProjectDetailPage() {
         </div>
 
         <div className="mt-5 grid gap-4">
-          <div className="border border-(--border) bg-(--surface-2) px-4 py-3">
+          <div className="border rounded-(--radius) border-(--border) bg-(--surface-2) px-4 py-3">
             <div className="flex flex-wrap items-center justify-between gap-3">
               <div>
                 <h3 className="text-sm font-medium text-(--text)">Webhook status</h3>
@@ -718,7 +718,7 @@ export default function ProjectDetailPage() {
                     : 'Webhook is disabled. Requests will return 404 until you enable it in project settings.'}
                 </p>
               </div>
-              <span className="text-xs uppercase tracking-[0.18em] text-(--text-muted)">
+              <span className="text-[12.5px] font-medium text-(--text-muted)">
                 {project.webhookEnabled ? 'Enabled' : 'Disabled'}
               </span>
             </div>

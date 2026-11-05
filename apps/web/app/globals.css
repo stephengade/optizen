@@ -1,35 +1,47 @@
 @import "tailwindcss";
 
 :root {
-  /* Surfaces */
-  --bg: #0d0d0d;
-  --bg-subtle: #111111;
-  --surface: #161616;
-  --surface-2: #1c1c1c;
-  --surface-3: #222222;
+  /* Surfaces: layered near-black, each step a touch lighter */
+  --bg: #08090b;
+  --bg-subtle: #0b0c0f;
+  --surface: #0f1014;
+  --surface-2: #15161b;
+  --surface-3: #1c1d24;
+  --code-bg: #060709;
 
   /* Borders */
-  --border: rgba(255, 255, 255, 0.08);
-  --border-strong: rgba(255, 255, 255, 0.14);
+  --border: rgba(255, 255, 255, 0.07);
+  --border-strong: rgba(255, 255, 255, 0.12);
 
   /* Text */
-  --text: #f0f0f0;
-  --text-muted: #8a8a8a;
-  --text-subtle: #5c5c5c;
+  --text: #ededf0;
+  --text-muted: #9a9ba6;
+  --text-subtle: #62636d;
 
-  /* Accent — single sharp lime */
-  --accent: #c8ff57;
-  --accent-dim: rgba(200, 255, 87, 0.1);
+  /* Brand: indigo to violet */
+  --accent: #7c83ff;
+  --accent-2: #a78bfa;
+  --accent-strong: #6d73f5;
+  --accent-dim: rgba(124, 131, 255, 0.12);
+  --accent-border: rgba(124, 131, 255, 0.28);
+  --accent-fg: #ffffff;
 
-  /* States */
-  --red: #ff5252;
-  --red-dim: rgba(255, 82, 82, 0.1);
-  --yellow: #f5a623;
-  --blue: #5b9cf6;
+  /* Status */
+  --green: #4ade80;
+  --green-dim: rgba(74, 222, 128, 0.1);
+  --green-border: rgba(74, 222, 128, 0.24);
+  --yellow: #f5b74f;
+  --yellow-dim: rgba(245, 183, 79, 0.1);
+  --red: #f26d6d;
+  --red-dim: rgba(242, 109, 109, 0.1);
+  --blue: #60a5fa;
 
-  /* Misc */
-  --shadow: 0 1px 3px rgba(0, 0, 0, 0.5), 0 8px 24px rgba(0, 0, 0, 0.3);
-  --radius: 0px;
+  /* Shape and depth */
+  --radius-sm: 7px;
+  --radius: 10px;
+  --radius-lg: 14px;
+  --shadow: 0 1px 0 rgba(255, 255, 255, 0.04) inset, 0 24px 60px -24px rgba(0, 0, 0, 0.8);
+  --glow: 0 0 0 1px rgba(124, 131, 255, 0.5), 0 8px 24px -8px rgba(124, 131, 255, 0.6), inset 0 1px 0 rgba(255, 255, 255, 0.2);
 }
 
 @layer base {
@@ -46,25 +58,25 @@
     font-family: var(--font-sans), system-ui, sans-serif;
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
+    overflow-x: clip;
   }
 
   body {
     min-height: 100vh;
   }
 
-  /* Scrollbar */
-  ::-webkit-scrollbar { width: 4px; height: 4px; }
+  ::-webkit-scrollbar { width: 8px; height: 8px; }
   ::-webkit-scrollbar-track { background: transparent; }
-  ::-webkit-scrollbar-thumb { background: var(--surface-3); }
+  ::-webkit-scrollbar-thumb { background: var(--surface-3); border-radius: 999px; border: 2px solid var(--bg); }
   ::-webkit-scrollbar-thumb:hover { background: var(--text-subtle); }
 
-  .font-mono {
+  .font-mono, code, pre, kbd {
     font-family: var(--font-mono), ui-monospace, monospace;
     font-feature-settings: "liga" 1, "calt" 1;
   }
 
   ::selection {
-    background: var(--accent-dim);
+    background: rgba(124, 131, 255, 0.3);
     color: var(--text);
   }
 
@@ -74,6 +86,11 @@
 
   a {
     text-decoration: none;
+  }
+
+  :focus-visible {
+    outline: 2px solid var(--accent);
+    outline-offset: 2px;
   }
 
   input[type="checkbox"],
@@ -91,11 +108,13 @@
   .panel {
     background: var(--surface);
     border: 1px solid var(--border);
+    border-radius: var(--radius-lg);
   }
 
   .panel-2 {
     background: var(--surface-2);
     border: 1px solid var(--border);
+    border-radius: var(--radius);
   }
 
   .dashboard-shell {
@@ -110,6 +129,8 @@
     gap: 1px;
     background: var(--border);
     border: 1px solid var(--border);
+    border-radius: var(--radius);
+    overflow: hidden;
   }
 
   .cell-grid > * {
@@ -120,4 +141,97 @@
     border: none;
     border-top: 1px solid var(--border);
   }
+
+  /* Primary call to action: gradient fill with a soft brand glow. */
+  .btn-primary {
+    color: var(--accent-fg);
+    background: linear-gradient(180deg, #8b91ff, var(--accent-strong));
+    box-shadow: var(--glow);
+    transition: filter 0.15s;
+  }
+  .btn-primary:hover { filter: brightness(1.08); }
+
+  /* Raised card with a faint highlight along the top edge. */
+  .card {
+    position: relative;
+    border: 1px solid var(--border);
+    border-radius: var(--radius-lg);
+    background: linear-gradient(180deg, var(--surface), var(--bg-subtle));
+    overflow: hidden;
+  }
+  .card::before {
+    content: '';
+    position: absolute;
+    inset: 0 0 auto;
+    height: 1px;
+    background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.12), transparent);
+    pointer-events: none;
+  }
+
+  .text-gradient {
+    background: linear-gradient(180deg, #fff 30%, #a3a4b3);
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
+  }
+
+  .glass {
+    background: rgba(8, 9, 11, 0.72);
+    backdrop-filter: blur(14px) saturate(140%);
+    -webkit-backdrop-filter: blur(14px) saturate(140%);
+  }
+
+  .hero-glow {
+    position: absolute;
+    inset: -200px 0 auto;
+    height: 760px;
+    background:
+      radial-gradient(600px 340px at 50% 30%, rgba(124, 131, 255, 0.22), transparent 70%),
+      radial-gradient(400px 260px at 70% 10%, rgba(167, 139, 250, 0.14), transparent 70%);
+    pointer-events: none;
+  }
+
+  .hero-grid {
+    position: absolute;
+    inset: 0;
+    background-image:
+      linear-gradient(var(--border) 1px, transparent 1px),
+      linear-gradient(90deg, var(--border) 1px, transparent 1px);
+    background-size: 64px 64px;
+    mask-image: radial-gradient(ellipse 60% 50% at 50% 20%, #000 20%, transparent 75%);
+    opacity: 0.5;
+    pointer-events: none;
+  }
+
+  .blink {
+    animation: blink 1s steps(1) infinite;
+  }
+}
+
+@keyframes blink {
+  50% { opacity: 0; }
+}
+
+/* Page transitions: a short fade and rise when a page mounts (see components/ui/PageTransition.tsx). */
+@keyframes page-enter {
+  from { opacity: 0; transform: translateY(6px); }
+  to { opacity: 1; transform: none; }
+}
+
+@keyframes fade-in {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+.page-enter {
+  animation: page-enter 0.28s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+/* Content that arrives after a fetch fades in rather than popping. */
+.fade-in {
+  animation: fade-in 0.25s ease-out both;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .page-enter, .fade-in { animation: none; }
 }

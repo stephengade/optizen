@@ -12,7 +12,7 @@ interface ActivityTimelineProps {
 
 function StatusDot({ status }: { status: ActivityEvent['status'] }) {
   const colorMap = {
-    success: 'bg-(--accent) shadow-[0_0_8px_rgba(200,255,87,0.4)]',
+    success: 'bg-(--green) shadow-[0_0_8px_rgba(74,222,128,0.5)]',
     error: 'bg-(--red) shadow-[0_0_8px_rgba(255,82,82,0.4)]',
     warning: 'bg-(--yellow) shadow-[0_0_8px_rgba(245,166,35,0.4)]',
     info: 'bg-(--blue) shadow-[0_0_8px_rgba(91,156,246,0.4)]',
@@ -47,12 +47,12 @@ function EventDetail({ detail }: { detail: string }) {
   }
 
   return (
-    <div className="mt-3 overflow-hidden border border-(--border) bg-[#0b0b0d] font-mono text-xs">
+    <div className="mt-3 overflow-hidden border rounded-(--radius) border-(--border) bg-[#0b0b0d] font-mono text-xs">
       {/* Terminal header */}
       <div className="flex items-center justify-between border-b border-(--border) bg-[#121215] px-3 py-1.5 select-none">
         <div className="flex items-center gap-2 text-(--text-muted)">
           <Terminal className="h-3.5 w-3.5" />
-          <span className="text-[10px] uppercase tracking-wider font-semibold">Console Output</span>
+          <span className="text-[10px] tracking-wider font-semibold">Console Output</span>
         </div>
         <button
           onClick={() => void handleCopy()}
@@ -60,7 +60,7 @@ function EventDetail({ detail }: { detail: string }) {
         >
           {copied ? (
             <>
-              <Check className="h-3 w-3 text-(--accent)" />
+              <Check className="h-3 w-3 text-(--green)" />
               <span>Copied</span>
             </>
           ) : (
@@ -108,14 +108,14 @@ function EventDetail({ detail }: { detail: string }) {
 export function ActivityTimeline({ events, emptyLabel }: ActivityTimelineProps) {
   if (events.length === 0) {
     return (
-      <div className="border border-dashed border-(--border) bg-(--surface) p-5 text-sm text-(--text-muted)">
+      <div className="border rounded-(--radius) border-dashed border-(--border) bg-(--surface) p-5 text-sm text-(--text-muted)">
         {emptyLabel}
       </div>
     )
   }
 
   return (
-    <div className="border border-(--border) bg-(--surface) divide-y divide-(--border)">
+    <div className="border rounded-(--radius) border-(--border) bg-(--surface) divide-y divide-(--border)">
       {events.map((event) => (
         <div key={event.id} className="p-5 transition-colors duration-200 hover:bg-(--bg-subtle)/40">
           <div className="flex items-start gap-3">
@@ -129,7 +129,7 @@ export function ActivityTimeline({ events, emptyLabel }: ActivityTimelineProps) 
               <div className="flex flex-wrap items-center justify-between gap-3">
                 <div className="text-sm font-semibold text-(--text)">{event.title}</div>
                 <div 
-                  className="text-xs uppercase tracking-[0.18em] text-(--text-muted) select-none" 
+                  className="text-[12.5px] font-medium text-(--text-muted) select-none" 
                   title={formatDateTime(event.createdAt)}
                 >
                   {formatRelative(event.createdAt)}

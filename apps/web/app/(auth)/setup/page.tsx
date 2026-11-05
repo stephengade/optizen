@@ -18,7 +18,7 @@ function getStrength(password: string): { score: number; label: string; color: s
 
   if (score <= 1) return { score, label: 'Weak', color: 'var(--red)' }
   if (score <= 3) return { score, label: 'Fair', color: 'var(--yellow)' }
-  return { score, label: 'Strong', color: 'var(--accent)' }
+  return { score, label: 'Strong', color: 'var(--green)' }
 }
 
 export default function SetupPage() {
@@ -57,12 +57,12 @@ export default function SetupPage() {
 
   return (
     <div>
-      <h1 className="text-xl font-semibold text-(--text)">Create master password</h1>
+      <h1 className="text-[22px] font-semibold tracking-[-0.02em] text-(--text)">Create master password</h1>
       <p className="mt-2 text-sm text-(--text-muted)">
         This encrypts all your server credentials. It cannot be recovered if lost.
       </p>
 
-      <form onSubmit={handleSubmit} className="mt-8 flex flex-col gap-5">
+      <form onSubmit={handleSubmit} className="mt-7 flex flex-col gap-5">
         <Input
           label="Setup code"
           value={setupCode}
@@ -71,7 +71,7 @@ export default function SetupPage() {
           autoFocus
           autoComplete="off"
           spellCheck={false}
-          className="font-mono uppercase"
+          className="font-mono "
           hint="Printed in the server log when Optizen starts. Docker: docker compose logs server"
         />
 
@@ -88,7 +88,7 @@ export default function SetupPage() {
           <button
             type="button"
             onClick={() => setShowPassword(v => !v)}
-            className="absolute right-3 top-[2rem] p-1 text-(--text-muted) transition-colors hover:text-(--text)"
+            className="absolute right-2.5 top-[2.15rem] rounded p-1 text-(--text-muted) transition-colors hover:text-(--text)"
             aria-label={showPassword ? 'Hide password' : 'Show password'}
           >
             {showPassword ? <EyeOff size={14} /> : <Eye size={14} />}
@@ -102,7 +102,7 @@ export default function SetupPage() {
               {[1, 2, 3, 4, 5].map(i => (
                 <div
                   key={i}
-                  className="h-1 flex-1 transition-all"
+                  className="h-1 flex-1 rounded-full transition-all"
                   style={{
                     background: i <= strength.score ? strength.color : 'var(--border)',
                   }}
@@ -135,7 +135,7 @@ export default function SetupPage() {
           ].map(req => (
             <li key={req.label} className={cn(
               'flex items-center gap-2 text-xs transition-colors',
-              req.met ? 'text-(--accent)' : 'text-(--text-muted)'
+              req.met ? 'text-(--green)' : 'text-(--text-muted)'
             )}>
               <span>{req.met ? '✓' : '○'}</span>
               {req.label}

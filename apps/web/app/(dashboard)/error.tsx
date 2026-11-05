@@ -17,9 +17,9 @@ export default function DashboardError({
 
   return (
     <div className="mx-auto flex min-h-[60vh] w-full max-w-3xl flex-col items-start justify-center gap-6 px-6 py-12 lg:px-8">
-      <div className="border border-(--border) bg-(--surface) p-8">
-        <p className="text-xs uppercase tracking-[0.24em] text-(--yellow)">Recovery</p>
-        <h1 className="mt-2 text-3xl font-semibold text-(--text)">This workspace hit an unexpected state</h1>
+      <div className="border rounded-(--radius) border-(--border) bg-(--surface) p-8">
+        <p className="text-[12.5px] font-medium text-(--yellow)">Recovery</p>
+        <h1 className="mt-2 text-[26px] leading-tight font-semibold tracking-[-0.03em] text-(--text)">This workspace hit an unexpected state</h1>
         <p className="mt-3 max-w-2xl text-sm text-(--text-muted)">
           Optizen keeps your server and project records intact. Try the action again, or step back to a stable view and continue from there.
         </p>
@@ -27,13 +27,13 @@ export default function DashboardError({
           <Button onClick={reset}>Retry this view</Button>
           <Link
             href="/servers"
-            className="inline-flex h-10 items-center border border-(--border) px-4 text-sm text-(--text) transition-colors hover:bg-(--surface-2)"
+            className="inline-flex h-10 items-center border rounded-(--radius) border-(--border) px-4 text-sm text-(--text) transition-colors hover:bg-(--surface-2)"
           >
             Back to servers
           </Link>
           <Link
             href="/help"
-            className="inline-flex h-10 items-center border border-(--border) px-4 text-sm text-(--text) transition-colors hover:bg-(--surface-2)"
+            className="inline-flex h-10 items-center border rounded-(--radius) border-(--border) px-4 text-sm text-(--text) transition-colors hover:bg-(--surface-2)"
           >
             Open help
           </Link>

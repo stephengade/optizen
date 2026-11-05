@@ -13,15 +13,15 @@ interface DeployHistoryProps {
 export function DeployHistory({ records, selectedId, onSelect }: DeployHistoryProps) {
   if (records.length === 0) {
     return (
-      <div className=" border border-dashed border-(--border) bg-(--surface) p-5 text-sm text-(--text-muted)">
+      <div className=" border rounded-(--radius) border-dashed border-(--border) bg-(--surface) p-5 text-sm text-(--text-muted)">
         No deploy history yet.
       </div>
     )
   }
 
   return (
-    <div className="overflow-hidden  border border-(--border) bg-(--surface)">
-      <div className="grid grid-cols-[1.1fr_0.9fr_0.8fr_0.8fr] gap-4 border-b border-(--border) px-4 py-3 text-[10px] uppercase tracking-[0.18em] text-(--text-muted)">
+    <div className="overflow-hidden border rounded-(--radius) border-(--border) bg-(--surface)">
+      <div className="grid grid-cols-[1.1fr_0.9fr_0.8fr_0.8fr] gap-4 border-b border-(--border) px-4 py-3 text-[11.5px] font-medium text-(--text-muted)">
         <span>When</span>
         <span>Status</span>
         <span>Trigger</span>

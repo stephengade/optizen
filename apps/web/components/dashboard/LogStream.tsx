@@ -24,7 +24,7 @@ export function LogStream({ lines }: LogStreamProps) {
   return (
     <div
       ref={containerRef}
-      className="h-96 overflow-auto  border border-(--border) bg-[#0b0b0d] px-4 py-3 font-mono text-xs"
+      className="h-96 overflow-auto border rounded-(--radius) border-(--border) bg-[#0b0b0d] px-4 py-3 font-mono text-xs"
     >
       {lines.length > 0 ? (
         <div className="space-y-2">

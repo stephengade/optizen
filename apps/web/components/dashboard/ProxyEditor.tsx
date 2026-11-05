@@ -44,7 +44,7 @@ export function ProxyEditor({
   }, [configValue])
 
   return (
-    <section className="border border-(--border) bg-(--surface) p-6">
+    <section className="border rounded-(--radius) border-(--border) bg-(--surface) p-6">
       <div className="flex flex-wrap items-start justify-between gap-4">
         <div>
                     <h2 className="mt-2 text-lg font-semibold text-(--text)">Proxy editor</h2>
@@ -75,18 +75,18 @@ export function ProxyEditor({
 
       <div className="mt-5">
         <label className="flex flex-col gap-1.5">
-          <span className="text-xs font-medium uppercase tracking-wider text-(--text-muted)">Config path</span>
+          <span className="text-xs font-medium tracking-wider text-(--text-muted)">Config path</span>
           <input
             value={configPath}
             onChange={(event) => onPathChange(event.target.value)}
-            className="h-10 border border-(--border) bg-(--surface-2) px-3 text-sm text-(--text) outline-none focus:border-(--border-strong)"
+            className="h-10 border rounded-(--radius) border-(--border) bg-(--surface-2) px-3 text-sm text-(--text) outline-none focus:border-(--border-strong)"
             placeholder={proxyType === 'caddy' ? '/etc/caddy/Caddyfile' : '/etc/nginx/nginx.conf'}
           />
         </label>
       </div>
 
       {error ? (
-        <div className="mt-5 border border-(--yellow) bg-[rgba(255,184,63,0.08)] px-4 py-3 text-sm text-(--yellow)">
+        <div className="mt-5 border rounded-(--radius) border-(--yellow) bg-[rgba(255,184,63,0.08)] px-4 py-3 text-sm text-(--yellow)">
           {error}
         </div>
       ) : null}
@@ -95,13 +95,13 @@ export function ProxyEditor({
         <textarea
           value={configValue}
           onChange={(event) => onChange(event.target.value)}
-          className="min-h-128 w-full  border border-(--border) bg-[#0b0b0d] px-4 py-3 font-mono text-sm text-(--text) outline-none focus:border-(--border-strong)"
+          className="min-h-128 w-full border rounded-(--radius) border-(--border) bg-[#0b0b0d] px-4 py-3 font-mono text-sm text-(--text) outline-none focus:border-(--border-strong)"
           spellCheck={false}
           disabled={!editable}
         />
 
         <div className="space-y-4">
-          <div className=" border border-(--border) bg-(--surface-2) p-4">
+          <div className=" border rounded-(--radius) border-(--border) bg-(--surface-2) p-4">
             <h3 className="text-sm font-medium text-(--text)">Write safety</h3>
             <div className="mt-3 space-y-2 text-sm text-(--text-muted)">
               <div>Temp validation: {proxyType === 'none' ? 'Skipped' : 'Before overwrite'}</div>
@@ -110,7 +110,7 @@ export function ProxyEditor({
             </div>
           </div>
 
-          <div className=" border border-(--border) bg-(--surface-2) p-4">
+          <div className=" border rounded-(--radius) border-(--border) bg-(--surface-2) p-4">
             <h3 className="text-sm font-medium text-(--text)">File stats</h3>
             <div className="mt-3 space-y-2 text-sm text-(--text-muted)">
               <div>Lines: {stats.lineCount}</div>

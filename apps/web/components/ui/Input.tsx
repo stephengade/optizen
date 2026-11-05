@@ -15,7 +15,7 @@ export function Input({ label, error, hint, className, id, sensitive = false, ..
   return (
     <div className="flex flex-col gap-1.5">
       {label && (
-        <label htmlFor={inputId} className="text-xs text-(--text-muted) uppercase tracking-wider">
+        <label htmlFor={inputId} className="text-[13px] font-medium text-(--text-muted)">
           {label}
         </label>
       )}
@@ -23,11 +23,11 @@ export function Input({ label, error, hint, className, id, sensitive = false, ..
         id={inputId}
         data-sensitive={sensitive ? 'true' : undefined}
         className={cn(
-          'h-9 w-full border bg-(--surface-2) px-3 text-sm text-(--text) placeholder:text-(--text-subtle) transition-colors',
-          'focus:outline-none focus:ring-1 focus:ring-(--accent)',
+          'h-10 w-full rounded-(--radius-sm) border bg-(--bg-subtle) px-3 text-sm text-(--text) placeholder:text-(--text-subtle) transition-colors',
+          'focus:outline-none focus:border-(--accent) focus:ring-3 focus:ring-(--accent-dim)',
           error
             ? 'border-(--red) focus:ring-(--red)'
-            : 'border-(--border) focus:border-(--border-strong)',
+            : 'border-(--border-strong) hover:border-white/20',
           className
         )}
         {...props}

@@ -49,12 +49,12 @@ export default function ServerHealthPage() {
         Docs
       </Link>
 
-      <h1 className="text-xl font-semibold text-(--text)">Server health</h1>
+      <h1 className="text-gradient text-[32px] leading-tight font-semibold tracking-[-0.03em]">Server health</h1>
       <p className="mt-1 text-sm text-(--text-muted)">
         Healthy servers are boring in the best way: clear deploy paths, enough headroom, easy recovery, and no hidden surprises.
       </p>
 
-      <div className="mt-8 border border-(--border) divide-y divide-(--border)">
+      <div className="mt-8 border rounded-(--radius) border-(--border) divide-y divide-(--border)">
         {practices.map((practice, index) => (
           <div key={practice.title} className="flex gap-6 px-5 py-5">
             <div className="text-xs font-mono text-(--text-muted) w-6 shrink-0 pt-0.5">
@@ -70,7 +70,7 @@ export default function ServerHealthPage() {
 
       <div className="mt-8">
         <h2 className="text-sm font-semibold text-(--text)">Quick maintenance checklist</h2>
-        <div className="mt-3 border border-(--border) divide-y divide-(--border)">
+        <div className="mt-3 border rounded-(--radius) border-(--border) divide-y divide-(--border)">
           {checklist.map((item) => (
             <div key={item} className="px-5 py-4 text-sm text-(--text-muted)">
               {item}
@@ -79,7 +79,7 @@ export default function ServerHealthPage() {
         </div>
       </div>
 
-      <div className="mt-8 border border-(--border) bg-(--surface) p-5">
+      <div className="mt-8 border rounded-(--radius) border-(--border) bg-(--surface) p-5">
         <h2 className="text-sm font-semibold text-(--text)">A practical mindset</h2>
         <p className="mt-2 text-sm leading-6 text-(--text-muted)">
           The goal is not a perfect graph. The goal is a system where deploys are understandable, failures are visible, and recovery does not depend on memory or guesswork.
@@ -87,11 +87,11 @@ export default function ServerHealthPage() {
       </div>
 
       <div className="mt-8 border-t border-(--border) pt-6 flex items-center justify-between">
-        <Link href="/help/server-metrics" className="inline-flex items-center gap-1.5 text-xs text-(--text-muted) hover:text-(--text) border border-(--border) px-3 py-1.5 transition-colors">
+        <Link href="/help/server-metrics" className="inline-flex items-center gap-1.5 text-xs text-(--text-muted) hover:text-(--text) border rounded-(--radius) border-(--border) px-3 py-1.5 transition-colors">
           <ArrowLeft size={11} />
           Server metrics
         </Link>
-        <Link href="/help/workflows" className="inline-flex items-center gap-1.5 text-xs text-(--text-muted) hover:text-(--text) border border-(--border) px-3 py-1.5 transition-colors">
+        <Link href="/help/workflows" className="inline-flex items-center gap-1.5 text-xs text-(--text-muted) hover:text-(--text) border rounded-(--radius) border-(--border) px-3 py-1.5 transition-colors">
           Workflows
           <ArrowLeft size={11} className="rotate-180" />
         </Link>

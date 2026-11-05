@@ -151,7 +151,7 @@ export function ServerForm({
   }
 
   return (
-    <section className={inModal ? '' : 'border border-(--border) bg-(--surface) p-6'}>
+    <section className={inModal ? '' : 'border rounded-(--radius) border-(--border) bg-(--surface) p-6'}>
       {title || description ? (
         <div className="mb-6">
           {title ? <h2 className="text-lg font-semibold text-(--text)">{title}</h2> : null}
@@ -253,7 +253,7 @@ export function ServerForm({
 
         {testResult ? (
           <div
-            className={`border px-3 py-2 text-xs ${testResult.connected ? 'border-(--accent) text-(--accent)' : 'border-(--red) text-(--red)'}`}
+            className={`rounded-(--radius) border px-3 py-2 text-xs ${testResult.connected ? 'border-(--green-border) bg-(--green-dim) text-(--green)' : 'border-(--red) text-(--red)'}`}
             role="status"
           >
             {testResult.connected

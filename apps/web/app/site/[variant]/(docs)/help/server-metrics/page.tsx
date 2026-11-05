@@ -68,12 +68,12 @@ export default function ServerMetricsPage() {
         Docs
       </Link>
 
-      <h1 className="text-xl font-semibold text-(--text)">Server metrics</h1>
+      <h1 className="text-gradient text-[32px] leading-tight font-semibold tracking-[-0.03em]">Server metrics</h1>
       <p className="mt-1 text-sm text-(--text-muted)">
         A quick guide to what Optizen shows on server cards and detail pages, and how to interpret those numbers without overreacting.
       </p>
 
-      <div className="mt-8 border border-(--border) divide-y divide-(--border)">
+      <div className="mt-8 border rounded-(--radius) border-(--border) divide-y divide-(--border)">
         {metrics.map((metric) => (
           <div key={metric.name} className="px-5 py-5">
             <div className="flex flex-wrap items-start justify-between gap-3">
@@ -91,7 +91,7 @@ export default function ServerMetricsPage() {
         ))}
       </div>
 
-      <div className="mt-8 border border-(--border) bg-(--surface) p-5">
+      <div className="mt-8 border rounded-(--radius) border-(--border) bg-(--surface) p-5">
         <h2 className="text-sm font-semibold text-(--text)">Rule of thumb</h2>
         <p className="mt-2 text-sm leading-6 text-(--text-muted)">
           No single metric proves a server is healthy or unhealthy. The strongest signal comes from combining machine metrics with app-level health checks and recent deploy outcomes.
@@ -100,7 +100,7 @@ export default function ServerMetricsPage() {
 
       <div className="mt-8 border-t border-(--border) pt-6 flex items-center justify-between">
         <p className="text-xs text-(--text-muted)">Next: how to keep a server healthy over time</p>
-        <Link href="/help/server-health" className="inline-flex items-center gap-1.5 text-xs text-(--text-muted) hover:text-(--text) border border-(--border) px-3 py-1.5 transition-colors">
+        <Link href="/help/server-health" className="inline-flex items-center gap-1.5 text-xs text-(--text-muted) hover:text-(--text) border rounded-(--radius) border-(--border) px-3 py-1.5 transition-colors">
           Server health
           <ArrowLeft size={11} className="rotate-180" />
         </Link>

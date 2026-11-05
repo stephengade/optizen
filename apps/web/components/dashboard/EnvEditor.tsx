@@ -77,7 +77,7 @@ export function EnvEditor({
   }, [original, value])
 
   return (
-    <section className="border border-(--border) bg-(--surface) p-6">
+    <section className="border rounded-(--radius) border-(--border) bg-(--surface) p-6">
       <div className="flex flex-wrap items-start justify-between gap-4">
         <div>
                     <h2 className="mt-2 text-lg font-semibold text-(--text)">Env editor</h2>
@@ -100,13 +100,13 @@ export function EnvEditor({
           <textarea
             value={value}
             onChange={(event) => onChange(event.target.value)}
-            className="min-h-112 w-full  border border-(--border) bg-[#0b0b0d] px-4 py-3 font-mono text-sm text-(--text) outline-none focus:border-(--border-strong)"
+            className="min-h-112 w-full border rounded-(--radius) border-(--border) bg-[#0b0b0d] px-4 py-3 font-mono text-sm text-(--text) outline-none focus:border-(--border-strong)"
             spellCheck={false}
           />
         </div>
 
         <div className="space-y-4">
-          <div className=" border border-(--border) bg-(--surface-2) p-4">
+          <div className=" border rounded-(--radius) border-(--border) bg-(--surface-2) p-4">
             <h3 className="text-sm font-medium text-(--text)">Change summary</h3>
             <div className="mt-3 space-y-2 text-sm text-(--text-muted)">
               <div>Added lines: {diff.added}</div>
@@ -116,12 +116,12 @@ export function EnvEditor({
             </div>
           </div>
 
-          <div className=" border border-(--border) bg-(--surface-2) p-4 text-sm text-(--text-muted)">
+          <div className=" border rounded-(--radius) border-(--border) bg-(--surface-2) p-4 text-sm text-(--text-muted)">
             Saving validates the env format, creates a remote backup, stores a local revision, and then overwrites
             <span className="font-mono text-(--text)"> {path}</span>.
           </div>
 
-          <div className=" border border-(--border) bg-(--surface-2) p-4">
+          <div className=" border rounded-(--radius) border-(--border) bg-(--surface-2) p-4">
             <h3 className="text-sm font-medium text-(--text)">Diff preview</h3>
             <div className="mt-3 space-y-2 font-mono text-xs">
               {preview.length > 0 ? (
@@ -130,7 +130,7 @@ export function EnvEditor({
                     key={`${row.type}-${index}`}
                     className={
                       row.type === 'added'
-                        ? 'text-(--accent)'
+                        ? 'text-(--green)'
                         : row.type === 'removed'
                           ? 'text-(--red)'
                           : 'text-(--yellow)'

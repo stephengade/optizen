@@ -14,7 +14,7 @@ interface ProjectCardProps {
 
 export function ProjectCard({ project }: ProjectCardProps) {
   return (
-    <article className="border border-(--border) bg-(--surface) p-4">
+    <article className="border rounded-(--radius) border-(--border) bg-(--surface) p-4">
       {/* Header */}
       <div className="flex items-start justify-between gap-4">
         <div>
@@ -29,7 +29,7 @@ export function ProjectCard({ project }: ProjectCardProps) {
       {/* Badges */}
       <div className="mt-3 flex flex-wrap gap-1.5">
         <ProjectClassificationBadge source={project.source} runtime={project.runtime} />
-        <span className="border border-(--border) px-2 py-0.5 text-[10px] uppercase tracking-[0.14em] text-(--text-muted)">
+        <span className="border rounded-(--radius) border-(--border) px-2 py-0.5 text-[11.5px] font-medium text-(--text-muted)">
           {project.proxyType === 'none' ? 'no proxy' : project.proxyType}
         </span>
       </div>

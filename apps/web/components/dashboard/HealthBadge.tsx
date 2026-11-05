@@ -1,22 +1,22 @@
 'use client'
 
 import type { ProjectHealthStatus } from '@launchpad/shared'
+import { StatusPill, type StatusTone } from '@/components/ui/StatusPill'
 
-interface HealthBadgeProps {
-  status?: ProjectHealthStatus
+const tones: Record<ProjectHealthStatus, StatusTone> = {
+  unknown: 'neutral',
+  healthy: 'ok',
+  degraded: 'warn',
+  down: 'bad',
 }
 
-const styles: Record<ProjectHealthStatus, string> = {
-  unknown: 'border-(--border) text-(--text-muted)',
-  healthy: 'border-(--accent) text-(--accent)',
-  degraded: 'border-(--yellow) text-(--yellow)',
-  down: 'border-(--red) text-(--red)',
+const labels: Record<ProjectHealthStatus, string> = {
+  unknown: 'Unknown',
+  healthy: 'Healthy',
+  degraded: 'Degraded',
+  down: 'Down',
 }
 
-export function HealthBadge({ status = 'unknown' }: HealthBadgeProps) {
-  return (
-    <span className={`inline-flex border px-2 py-0.5 text-[10px] uppercase tracking-[0.14em] ${styles[status]}`}>
-      {status}
-    </span>
-  )
+export function HealthBadge({ status = 'unknown' }: { status?: ProjectHealthStatus }) {
+  return <StatusPill tone={tones[status]}>{labels[status]}</StatusPill>
 }

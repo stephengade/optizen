@@ -44,12 +44,12 @@ export default function SecurityPage() {
         Docs
       </Link>
 
-      <h1 className="text-xl font-semibold text-(--text)">Trust & security</h1>
+      <h1 className="text-gradient text-[32px] leading-tight font-semibold tracking-[-0.03em]">Trust & security</h1>
       <p className="mt-1 text-sm text-(--text-muted)">
         How Optizen protects your credentials and keeps dangerous actions explicit.
       </p>
 
-      <div className="mt-8 border border-(--border) divide-y divide-(--border)">
+      <div className="mt-8 border rounded-(--radius) border-(--border) divide-y divide-(--border)">
         {topics.map((t) => (
           <div key={t.title} className="px-5 py-5">
             <div className="text-sm font-semibold text-(--text)">{t.title}</div>
@@ -58,8 +58,8 @@ export default function SecurityPage() {
         ))}
       </div>
 
-      <div className="mt-8 border border-(--border) bg-(--surface) px-5 py-5">
-        <div className="text-xs uppercase tracking-[0.16em] text-(--text-muted) mb-2">Where to configure this</div>
+      <div className="mt-8 border rounded-(--radius) border-(--border) bg-(--surface) px-5 py-5">
+        <div className="text-[12.5px] font-medium text-(--text-muted) mb-2">Where to configure this</div>
         <p className="text-sm text-(--text-muted)">
           Session duration, re-auth requirements, demo privacy, and demo mode are all in{' '}
           <Link href="/settings" className="text-(--text) underline underline-offset-2">Settings</Link>.
@@ -68,7 +68,7 @@ export default function SecurityPage() {
       </div>
 
       <div className="mt-8 border-t border-(--border) pt-6">
-        <Link href="/help/workflows" className="inline-flex items-center gap-1.5 text-xs text-(--text-muted) hover:text-(--text) border border-(--border) px-3 py-1.5 transition-colors">
+        <Link href="/help/workflows" className="inline-flex items-center gap-1.5 text-xs text-(--text-muted) hover:text-(--text) border rounded-(--radius) border-(--border) px-3 py-1.5 transition-colors">
           <ArrowLeft size={11} />
           Workflows
         </Link>

@@ -42,10 +42,10 @@ export default function SetupPage() {
         Docs
       </Link>
 
-      <h1 className="text-xl font-semibold text-(--text)">Quick start</h1>
+      <h1 className="text-gradient text-[32px] leading-tight font-semibold tracking-[-0.03em]">Quick start</h1>
       <p className="mt-1 text-sm text-(--text-muted)">Six steps from zero to a working deploy.</p>
 
-      <div className="mt-8 border border-(--border) divide-y divide-(--border)">
+      <div className="mt-8 border rounded-(--radius) border-(--border) divide-y divide-(--border)">
         {steps.map((step) => (
           <div key={step.n} className="flex gap-6 px-5 py-5">
             <div className="text-xs font-mono text-(--text-muted) w-6 shrink-0 pt-0.5">{step.n}</div>
@@ -59,7 +59,7 @@ export default function SetupPage() {
 
       <div className="mt-8">
         <h2 className="text-sm font-semibold text-(--text) mb-3">Example project config</h2>
-        <pre className="border border-(--border) bg-(--surface) px-5 py-5 font-mono text-xs text-(--text-muted) overflow-x-auto leading-6">
+        <pre className="border rounded-(--radius) border-(--border) bg-(--surface) px-5 py-5 font-mono text-xs text-(--text-muted) overflow-x-auto leading-6">
 {`name:         marketing-site
 type:         compose
 working_dir:  /var/www/marketing-site
@@ -72,11 +72,11 @@ deploy:
       </div>
 
       <div className="mt-8 border-t border-(--border) pt-6 flex items-center justify-between">
-        <Link href="/help/server-metrics" className="inline-flex items-center gap-1.5 text-xs text-(--text-muted) hover:text-(--text) border border-(--border) px-3 py-1.5 transition-colors">
+        <Link href="/help/server-metrics" className="inline-flex items-center gap-1.5 text-xs text-(--text-muted) hover:text-(--text) border rounded-(--radius) border-(--border) px-3 py-1.5 transition-colors">
           Server metrics
           <ArrowLeft size={11} className="rotate-180" />
         </Link>
-        <Link href="/help/projects" className="inline-flex items-center gap-1.5 text-xs text-(--text-muted) hover:text-(--text) border border-(--border) px-3 py-1.5 transition-colors">
+        <Link href="/help/projects" className="inline-flex items-center gap-1.5 text-xs text-(--text-muted) hover:text-(--text) border rounded-(--radius) border-(--border) px-3 py-1.5 transition-colors">
           Project types
           <ArrowLeft size={11} className="rotate-180" />
         </Link>

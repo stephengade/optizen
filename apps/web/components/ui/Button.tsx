@@ -22,12 +22,12 @@ export function Button({
     <button
       disabled={disabled || loading}
       className={cn(
-        'inline-flex shrink-0 items-center justify-center gap-2 whitespace-nowrap font-medium transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-(--accent) disabled:opacity-40 disabled:cursor-not-allowed',
-        size === 'md' && 'h-9 px-4 text-sm',
-        size === 'sm' && 'h-7 px-3 text-xs',
-        variant === 'primary' && 'bg-(--accent) text-(--bg) hover:opacity-90',
-        variant === 'ghost' && 'border border-(--border) text-(--text-muted) hover:text-(--text) hover:border-(--border-strong) hover:bg-(--surface-2)',
-        variant === 'danger' && 'border border-(--red) bg-(--red-dim) text-(--red) hover:bg-(--red) hover:text-white',
+        'inline-flex shrink-0 items-center justify-center gap-2 whitespace-nowrap rounded-(--radius-sm) border border-transparent font-medium transition-colors disabled:opacity-40 disabled:cursor-not-allowed',
+        size === 'md' && 'h-9 px-4 text-[13.5px]',
+        size === 'sm' && 'h-[30px] px-3 text-[12.5px] gap-1.5',
+        variant === 'primary' && 'btn-primary',
+        variant === 'ghost' && 'border-(--border-strong) bg-white/[0.03] text-(--text) hover:bg-white/[0.06]',
+        variant === 'danger' && 'border-[rgba(242,109,109,0.3)] bg-(--red-dim) text-(--red) hover:bg-(--red) hover:text-white',
         className
       )}
       {...props}

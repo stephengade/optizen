@@ -439,7 +439,7 @@ export default function StoragePage() {
       {/* Header */}
       <div className="flex flex-wrap items-start justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-semibold text-(--text)">Storage</h1>
+          <h1 className="text-[26px] leading-tight font-semibold tracking-[-0.03em] text-(--text)">Storage</h1>
           <p className="mt-1 text-sm text-(--text-muted)">Load a fast storage overview first, then run a deeper directory scan only when you need it.</p>
         </div>
         {selectedId && audit && (
@@ -467,11 +467,11 @@ export default function StoragePage() {
       {serversLoading ? (
         <LoadingState label="Loading servers" compact />
       ) : servers.length === 0 ? (
-        <div className="border border-dashed border-(--border) px-5 py-8 text-center text-sm text-(--text-muted)">
+        <div className="border rounded-(--radius) border-dashed border-(--border) px-5 py-8 text-center text-sm text-(--text-muted)">
           No servers found. Add a server first.
         </div>
       ) : (
-        <div className="border border-(--border) divide-y divide-(--border)">
+        <div className="border rounded-(--radius) border-(--border) divide-y divide-(--border)">
           {servers.map((server) => {
             const isSelected = selectedId === server.id
             return (
@@ -493,7 +493,7 @@ export default function StoragePage() {
                   </div>
                 </div>
                 {isSelected && (
-                  <span className="text-[10px] uppercase tracking-[0.14em] text-(--accent) shrink-0">Selected</span>
+                  <span className="text-[11.5px] font-medium text-(--accent) shrink-0">Selected</span>
                 )}
               </button>
             )
@@ -503,7 +503,7 @@ export default function StoragePage() {
 
       {/* Prompt when no server selected */}
       {!serversLoading && servers.length > 0 && !selectedId && (
-        <div className="border border-dashed border-(--border) px-5 py-8 text-center text-sm text-(--text-muted)">
+        <div className="border rounded-(--radius) border-dashed border-(--border) px-5 py-8 text-center text-sm text-(--text-muted)">
           Select a server above to load its storage audit.
         </div>
       )}
@@ -517,7 +517,7 @@ export default function StoragePage() {
               detail={deepAuditRan ? 'Scanning host directories and larger storage buckets. This can take longer on busy hosts.' : 'Reading root disk usage and Docker summary without scanning large directory trees.'}
             />
           ) : auditError && !audit ? (
-            <div className="border border-(--border) bg-(--surface) px-5 py-5 space-y-3">
+            <div className="border rounded-(--radius) border-(--border) bg-(--surface) px-5 py-5 space-y-3">
               <div className="text-sm font-medium text-(--text)">Audit unavailable</div>
               <p className="text-sm text-(--text-muted)">Could not retrieve storage data. Common causes:</p>
               <ul className="text-sm text-(--text-muted) space-y-1">
@@ -526,32 +526,32 @@ export default function StoragePage() {
                 <li className="flex items-start gap-2"><span className="text-(--text-subtle)">·</span>The SSH key path is invalid or the key file is missing</li>
                 <li className="flex items-start gap-2"><span className="text-(--text-subtle)">·</span>The SSH user lacks permission to inspect root-owned directories like <span className="font-mono">/var/lib/containerd</span> or <span className="font-mono">/var/lib/docker</span></li>
               </ul>
-              <div className="font-mono text-xs text-(--text-muted) border border-(--border) bg-(--surface-2) px-3 py-2 whitespace-pre-wrap">
+              <div className="font-mono text-xs text-(--text-muted) border rounded-(--radius) border-(--border) bg-(--surface-2) px-3 py-2 whitespace-pre-wrap">
                 {auditError}
               </div>
             </div>
           ) : audit ? (
             <>
               {auditError ? (
-                <div className="border border-(--red) bg-[rgba(239,68,68,0.08)] px-4 py-3">
-                  <div className="text-xs uppercase tracking-[0.18em] text-(--red) mb-2">
+                <div className="border rounded-(--radius) border-(--red) bg-[rgba(239,68,68,0.08)] px-4 py-3">
+                  <div className="text-[12.5px] font-medium text-(--red) mb-2">
                     {deepAuditRan ? 'Deep Audit Error' : 'Storage Error'}
                   </div>
                   <pre className="whitespace-pre-wrap font-mono text-xs text-(--text)">{auditError}</pre>
                 </div>
               ) : null}
 
-              <div className="border border-(--border) bg-(--surface) px-4 py-3 text-sm text-(--text-muted)">
+              <div className="border rounded-(--radius) border-(--border) bg-(--surface) px-4 py-3 text-sm text-(--text-muted)">
                 {deepAuditRan
                   ? 'Deep audit mode. Directory sizes may take longer to compute, especially for containerd and Docker data roots.'
                   : 'Fast overview mode. This uses root filesystem metadata and Docker summary for a quick read without recursive directory scans.'}
               </div>
 
               {/* Top buckets */}
-              <div className="grid gap-px md:grid-cols-3 border border-(--border)">
+              <div className="grid gap-px md:grid-cols-3 border rounded-(--radius) border-(--border)">
                 {audit.items.slice(0, 3).map((item) => (
                   <div key={item.key} className="px-4 py-4 bg-(--surface)">
-                    <div className="text-[10px] uppercase tracking-[0.16em] text-(--text-muted)">{item.label}</div>
+                    <div className="text-[11.5px] font-medium text-(--text-muted)">{item.label}</div>
                     <div className="mt-1 text-xl font-semibold text-(--text)">{formatBytes(item.sizeBytes)}</div>
                     <div className="mt-0.5 text-xs font-mono text-(--text-muted) truncate">{item.path}</div>
                   </div>
@@ -560,8 +560,8 @@ export default function StoragePage() {
 
               {/* Full breakdown */}
               {audit.items.length > 0 && (
-                <div className="border border-(--border) bg-(--surface) divide-y divide-(--border)">
-                  <div className="grid grid-cols-[1fr_auto] gap-4 px-4 py-2 text-[10px] uppercase tracking-[0.16em] text-(--text-muted)">
+                <div className="border rounded-(--radius) border-(--border) bg-(--surface) divide-y divide-(--border)">
+                  <div className="grid grid-cols-[1fr_auto] gap-4 px-4 py-2 text-[11.5px] font-medium text-(--text-muted)">
                     <span>Path</span>
                     <span>Size</span>
                   </div>
@@ -592,8 +592,8 @@ export default function StoragePage() {
 
               {/* docker system df */}
               {audit.dockerSystemDf ? (
-                <div className="border border-(--border) bg-[#0b0b0d]">
-                  <div className="border-b border-(--border) px-4 py-2 text-[10px] uppercase tracking-[0.16em] text-(--text-muted)">
+                <div className="border rounded-(--radius) border-(--border) bg-[#0b0b0d]">
+                  <div className="border-b border-(--border) px-4 py-2 text-[11.5px] font-medium text-(--text-muted)">
                     docker system df
                   </div>
                   <pre data-sensitive="true" className="px-4 py-3 whitespace-pre-wrap font-mono text-xs text-(--text)">
@@ -601,16 +601,16 @@ export default function StoragePage() {
                   </pre>
                 </div>
               ) : (
-                <div className="border border-dashed border-(--border) px-4 py-4 text-sm text-(--text-muted)">
+                <div className="border rounded-(--radius) border-dashed border-(--border) px-4 py-4 text-sm text-(--text-muted)">
                   Docker disk usage details are unavailable on this host.
                 </div>
               )}
 
               {dockerUsage?.dockerAvailable ? (
                 <div className="space-y-4">
-                  <div className="border border-(--border) bg-(--surface)">
+                  <div className="border rounded-(--radius) border-(--border) bg-(--surface)">
                     <div className="border-b border-(--border) px-4 py-3">
-                      <div className="text-[10px] uppercase tracking-[0.16em] text-(--text-muted)">Maintenance</div>
+                      <div className="text-[11.5px] font-medium text-(--text-muted)">Maintenance</div>
                       <div className="mt-1 text-sm text-(--text-muted)">
                         Run maintenance actions on demand from Launchpad without leaving the app.
                       </div>
@@ -628,10 +628,10 @@ export default function StoragePage() {
                     </div>
                   </div>
 
-                  <div className="border border-(--border) bg-(--surface)">
+                  <div className="border rounded-(--radius) border-(--border) bg-(--surface)">
                     <div className="flex flex-wrap items-start justify-between gap-3 border-b border-(--border) px-4 py-3">
                       <div>
-                        <div className="text-[10px] uppercase tracking-[0.16em] text-(--text-muted)">Docker Cleanup</div>
+                        <div className="text-[11.5px] font-medium text-(--text-muted)">Docker Cleanup</div>
                         <div className="mt-1 text-sm text-(--text-muted)">
                           Use this section to remove stopped-container references and delete old images directly from Launchpad.
                         </div>
@@ -648,17 +648,17 @@ export default function StoragePage() {
 
                     <div className="grid gap-px md:grid-cols-3 border-b border-(--border)">
                       <div className="bg-(--surface) px-4 py-4">
-                        <div className="text-[10px] uppercase tracking-[0.16em] text-(--text-muted)">Reclaimable now</div>
+                        <div className="text-[11.5px] font-medium text-(--text-muted)">Reclaimable now</div>
                         <div className="mt-1 text-xl font-semibold text-(--text)">{formatBytes(dockerUsage.reclaimableBytes)}</div>
                         <div className="mt-0.5 text-xs text-(--text-muted)">From Docker&apos;s own reclaimable estimate.</div>
                       </div>
                       <div className="bg-(--surface) px-4 py-4">
-                        <div className="text-[10px] uppercase tracking-[0.16em] text-(--text-muted)">Exited containers</div>
+                        <div className="text-[11.5px] font-medium text-(--text-muted)">Exited containers</div>
                         <div className="mt-1 text-xl font-semibold text-(--text)">{exitedContainers.length}</div>
                         <div className="mt-0.5 text-xs text-(--text-muted)">Stopped containers can keep old images from being removable.</div>
                       </div>
                       <div className="bg-(--surface) px-4 py-4">
-                        <div className="text-[10px] uppercase tracking-[0.16em] text-(--text-muted)">Tracked images</div>
+                        <div className="text-[11.5px] font-medium text-(--text-muted)">Tracked images</div>
                         <div className="mt-1 text-xl font-semibold text-(--text)">{dockerUsage.images.length}</div>
                         <div className="mt-0.5 text-xs text-(--text-muted)">Largest image layers on this host, sorted by size.</div>
                       </div>
@@ -676,7 +676,7 @@ export default function StoragePage() {
                           <div className="min-w-0">
                             <div className="flex flex-wrap items-center gap-2">
                               <div className="text-sm font-medium text-(--text) break-all">{image.reference}</div>
-                              <span className={`text-[10px] uppercase tracking-[0.16em] ${image.inUse ? 'text-(--accent)' : 'text-(--yellow)'}`}>
+                              <span className={`text-[11.5px] font-medium ${image.inUse ? 'text-(--green)' : 'text-(--yellow)'}`}>
                                 {image.inUse ? `In use by ${image.containerCount} container${image.containerCount === 1 ? '' : 's'}` : 'Unused'}
                               </span>
                             </div>
@@ -708,8 +708,8 @@ export default function StoragePage() {
                   </div>
 
                   {exitedContainers.length > 0 ? (
-                    <div className="border border-(--border) bg-(--surface)">
-                      <div className="border-b border-(--border) px-4 py-2 text-[10px] uppercase tracking-[0.16em] text-(--text-muted)">
+                    <div className="border rounded-(--radius) border-(--border) bg-(--surface)">
+                      <div className="border-b border-(--border) px-4 py-2 text-[11.5px] font-medium text-(--text-muted)">
                         Exited Containers
                       </div>
                       <div className="divide-y divide-(--border)">
@@ -730,8 +730,8 @@ export default function StoragePage() {
                   ) : null}
 
                   {runningContainers.length > 0 ? (
-                    <div className="border border-(--border) bg-(--surface)">
-                      <div className="border-b border-(--border) px-4 py-2 text-[10px] uppercase tracking-[0.16em] text-(--text-muted)">
+                    <div className="border rounded-(--radius) border-(--border) bg-(--surface)">
+                      <div className="border-b border-(--border) px-4 py-2 text-[11.5px] font-medium text-(--text-muted)">
                         Running Containers Holding Images
                       </div>
                       <div className="divide-y divide-(--border)">
@@ -751,8 +751,8 @@ export default function StoragePage() {
                     </div>
                   ) : null}
 
-                  <div className="border border-(--red) bg-[rgba(239,68,68,0.05)]">
-                    <div className="border-b border-(--red) px-4 py-2 text-[10px] uppercase tracking-[0.16em] text-(--red)">
+                  <div className="border rounded-(--radius) border-(--red) bg-[rgba(239,68,68,0.05)]">
+                    <div className="border-b border-(--red) px-4 py-2 text-[11.5px] font-medium text-(--red)">
                       Danger Zone
                     </div>
                     <div className="space-y-3 px-4 py-4">
@@ -766,15 +766,15 @@ export default function StoragePage() {
                   </div>
                 </div>
               ) : selectedId && !demoMode ? (
-                <div className="border border-dashed border-(--border) px-4 py-4 text-sm text-(--text-muted)">
+                <div className="border rounded-(--radius) border-dashed border-(--border) px-4 py-4 text-sm text-(--text-muted)">
                   {dockerUsageLoading ? 'Inspecting Docker images and containers…' : 'Docker inspection is unavailable for this host.'}
                 </div>
               ) : null}
 
               {/* Diagnostics */}
               {audit.diagnostics?.length ? (
-                <div className="border border-(--yellow) bg-[rgba(245,158,11,0.08)] px-4 py-3">
-                  <div className="text-xs uppercase tracking-[0.18em] text-(--yellow) mb-2">Diagnostics</div>
+                <div className="border rounded-(--radius) border-(--yellow) bg-[rgba(245,158,11,0.08)] px-4 py-3">
+                  <div className="text-[12.5px] font-medium text-(--yellow) mb-2">Diagnostics</div>
                   <div className="space-y-1">
                     {audit.diagnostics.map((entry) => (
                       <div key={`${entry.step}-${entry.message}`} className="text-sm text-(--text-muted)">
