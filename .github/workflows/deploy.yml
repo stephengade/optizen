@@ -1,0 +1,60 @@
+# Deploy Optizen to the production VPS on every push to main (or by hand from the Actions tab).
+#
+# Repository secrets (Settings > Secrets and variables > Actions):
+#   VPS_HOST         server address, e.g. 203.0.113.10
+#   VPS_USER         SSH user that owns the deployment
+#   VPS_DEPLOY_KEY   private key whose public half is pinned to deploy/remote-deploy.sh on the server
+#   VPS_KNOWN_HOSTS  the server's host key line(s), from: ssh-keyscan -t ed25519 <host>
+# The key cannot open a shell: the server runs only the deploy script for it.
+# Logs of a public repository are public, so the deploy prints no secrets.
+name: Deploy
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: deploy-production
+  cancel-in-progress: false
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: oven-sh/setup-bun@v2
+      - run: bun install --frozen-lockfile
+      - name: Type-check API
+        run: bunx tsc --noEmit -p apps/server
+      - name: Test API
+        run: bun test
+        working-directory: apps/server
+
+  deploy:
+    needs: check
+    # Forks have no secrets; do not try to deploy from them.
+    if: github.repository == 'stephengade/optizen'
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - name: Deploy over SSH
+        env:
+          VPS_HOST: ${{ secrets.VPS_HOST }}
+          VPS_USER: ${{ secrets.VPS_USER }}
+          VPS_DEPLOY_KEY: ${{ secrets.VPS_DEPLOY_KEY }}
+          VPS_KNOWN_HOSTS: ${{ secrets.VPS_KNOWN_HOSTS }}
+        run: |
+          if [ -z "$VPS_HOST" ] || [ -z "$VPS_DEPLOY_KEY" ]; then
+            echo "Deploy secrets are not set; skipping."
+            exit 0
+          fi
+          install -m 700 -d ~/.ssh
+          printf '%s\n' "$VPS_DEPLOY_KEY" > ~/.ssh/deploy_key
+          chmod 600 ~/.ssh/deploy_key
+          printf '%s\n' "$VPS_KNOWN_HOSTS" > ~/.ssh/known_hosts
+          ssh -i ~/.ssh/deploy_key -o IdentitiesOnly=yes -o StrictHostKeyChecking=yes \
+            -o ServerAliveInterval=30 "$VPS_USER@$VPS_HOST" deploy
