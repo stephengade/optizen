@@ -18,11 +18,12 @@ interface AuthContextValue extends AuthState {
 
 const AuthContext = createContext<AuthContextValue | null>(null)
 
-export function AuthProvider({ children }: { children: React.ReactNode }) {
+/** `disabled`: public marketing host, where the API does not exist — skip the status call. */
+export function AuthProvider({ children, disabled = false }: { children: React.ReactNode; disabled?: boolean }) {
   const [state, setState] = useState<AuthState>({
     isSetup: false,
     authenticated: false,
-    loading: true,
+    loading: !disabled,
   })
 
   const refresh = useCallback(async () => {
@@ -34,7 +35,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
   }, [])
 
-  useEffect(() => { refresh() }, [refresh])
+  useEffect(() => {
+    if (!disabled) void refresh()
+  }, [disabled, refresh])
 
   const login = async (password: string) => {
     try {

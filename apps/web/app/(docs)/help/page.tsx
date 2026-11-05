@@ -3,9 +3,14 @@ import { ArrowRight } from 'lucide-react'
 
 const sections = [
   {
+    href: '/help/install',
+    title: 'Install on your server',
+    description: 'Run your own Optizen on a VPS with Docker Compose and HTTPS.',
+  },
+  {
     href: '/help/get-started',
     title: 'Get started',
-    description: 'Fork, clone, install dependencies, configure env files, and run Optizen locally.',
+    description: 'For contributors: fork, clone, install dependencies, and run Optizen locally.',
   },
   {
     href: '/contribute',

@@ -1,7 +1,10 @@
 import Link from 'next/link'
 import { ArrowLeft } from 'lucide-react'
+import { isPublicSite } from '@/lib/site'
 
-export default function DocsLayout({ children }: { children: React.ReactNode }) {
+export default async function DocsLayout({ children }: { children: React.ReactNode }) {
+  const publicSite = await isPublicSite()
+
   return (
     <div className="min-h-screen bg-(--bg)">
       {/* Minimal nav */}
@@ -14,12 +17,14 @@ export default function DocsLayout({ children }: { children: React.ReactNode }) 
           <div className="flex items-center gap-4">
             <Link href="/contribute" className="text-xs text-(--text-muted) hover:text-(--text) transition-colors">Contribute</Link>
             <Link href="/help" className="text-xs text-(--text-muted) hover:text-(--text) transition-colors">Docs</Link>
-            <Link
-              href="/login"
-              className="inline-flex h-7 items-center gap-1.5 border border-(--border) px-3 text-xs text-(--text-muted) hover:text-(--text) hover:border-(--border-strong) transition-colors"
-            >
-              Sign in
-            </Link>
+            {publicSite ? null : (
+              <Link
+                href="/login"
+                className="inline-flex h-7 items-center gap-1.5 border border-(--border) px-3 text-xs text-(--text-muted) hover:text-(--text) hover:border-(--border-strong) transition-colors"
+              >
+                Sign in
+              </Link>
+            )}
           </div>
         </div>
       </header>
@@ -33,6 +38,7 @@ export default function DocsLayout({ children }: { children: React.ReactNode }) 
           <div className="flex flex-wrap items-center gap-x-4 gap-y-2 text-xs text-(--text-muted)">
             <Link href="/about" className="hover:text-(--text) transition-colors whitespace-nowrap">About</Link>
             <Link href="/contribute" className="hover:text-(--text) transition-colors whitespace-nowrap">Contribute</Link>
+            <Link href="/help/install" className="hover:text-(--text) transition-colors whitespace-nowrap">Install</Link>
             <Link href="/help/setup" className="hover:text-(--text) transition-colors whitespace-nowrap">Quick start</Link>
             <Link href="/help/projects" className="hover:text-(--text) transition-colors whitespace-nowrap">Projects</Link>
             <Link href="/help/workflows" className="hover:text-(--text) transition-colors whitespace-nowrap">Workflows</Link>

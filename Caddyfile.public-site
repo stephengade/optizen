@@ -1,0 +1,19 @@
+# Used by docker-compose.public-site.yml: public landing site + private dashboard on separate domains.
+{
+  email {$ACME_EMAIL}
+}
+
+# Dashboard (keep this hostname to yourself).
+{$DOMAIN} {
+  encode gzip zstd
+  reverse_proxy web:3000
+}
+
+# Public landing page and docs. The web app already refuses dashboard routes on this host
+# (PUBLIC_SITE_HOST); blocking the API here as well means it never reaches the app at all.
+{$PUBLIC_DOMAIN} {
+  encode gzip zstd
+  respond /api/* 404
+  respond /internal/* 404
+  reverse_proxy web:3000
+}

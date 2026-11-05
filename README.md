@@ -86,6 +86,25 @@ Notes:
 - The encryption key lives only in memory. After the API container restarts, sign in once before webhook-triggered deploys can run (they return 503 until then).
 - Deploy webhooks are public at `https://<DOMAIN>/api/webhooks/deploy/<projectId>/<secret>`.
 
+### Public landing site on its own domain
+
+The landing page and docs (`/`, `/about`, `/contribute`, `/help/*`) can be served on a public domain while the dashboard lives on a different one:
+
+1. Point DNS for both domains at the host and add to `.env`:
+
+   ```bash
+   DOMAIN=ops-x7k.example.com     # dashboard: pick a name that is not easy to guess
+   PUBLIC_DOMAIN=example.com      # public landing page + docs
+   ```
+
+2. Start with the override file:
+
+   ```bash
+   docker compose -f docker-compose.yml -f docker-compose.public-site.yml up -d --build
+   ```
+
+On `PUBLIC_DOMAIN` the dashboard, sign-in, setup and API do not exist (404; `/login` and `/setup` redirect to the install guide at `/help/install`), and the call-to-action buttons point to that guide. On `DOMAIN`, `/` goes straight to the dashboard. Without `PUBLIC_DOMAIN`, one domain serves everything as before.
+
 ### Type checking
 
 ```bash

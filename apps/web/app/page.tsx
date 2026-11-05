@@ -1,5 +1,6 @@
 import Link from 'next/link'
 import { ArrowRight, Star } from 'lucide-react'
+import { isPublicSite } from '@/lib/site'
 
 // ─── Data ────────────────────────────────────────────────────────────────────
 
@@ -122,7 +123,11 @@ const telemetry = [
 
 // ─── Component ───────────────────────────────────────────────────────────────
 
-export default function Home() {
+export default async function Home() {
+  // On the public host there is no dashboard: CTAs point to the self-hosting guide instead.
+  const publicSite = await isPublicSite()
+  const startHref = publicSite ? '/help/install' : '/setup'
+
   return (
     <main className="min-h-screen bg-(--bg)">
 
@@ -155,12 +160,14 @@ export default function Home() {
             >
               Docs
             </Link>
-            <Link
-              href="/login"
-              className="inline-flex h-7 items-center gap-1.5 border border-(--border) px-3 text-xs text-(--text-muted) hover:text-(--text) hover:border-(--border-strong) transition-colors"
-            >
-              Sign in
-            </Link>
+            {publicSite ? null : (
+              <Link
+                href="/login"
+                className="inline-flex h-7 items-center gap-1.5 border border-(--border) px-3 text-xs text-(--text-muted) hover:text-(--text) hover:border-(--border-strong) transition-colors"
+              >
+                Sign in
+              </Link>
+            )}
           </div>
         </div>
       </header>
@@ -181,10 +188,10 @@ export default function Home() {
         </p>
         <div className="mt-8 flex flex-wrap items-center gap-3">
           <Link
-            href="/setup"
+            href={startHref}
             className="inline-flex h-9 items-center gap-2 bg-(--accent) px-5 text-sm font-semibold text-(--bg) transition-opacity hover:opacity-90"
           >
-            Get started free
+            {publicSite ? 'Self-host it free' : 'Get started free'}
             <ArrowRight size={14} />
           </Link>
           <Link
@@ -480,7 +487,7 @@ export default function Home() {
           </div>
           <div className="flex flex-wrap items-center gap-3 shrink-0">
             <Link
-              href="/setup"
+              href={startHref}
               className="inline-flex h-9 items-center gap-2 bg-(--accent) px-5 text-sm font-semibold text-(--bg) transition-opacity hover:opacity-90"
             >
               Get started
