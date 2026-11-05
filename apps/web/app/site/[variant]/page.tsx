@@ -123,9 +123,10 @@ const telemetry = [
 // ─── Component ───────────────────────────────────────────────────────────────
 
 export default async function Home({ params }: { params: Promise<{ variant: string }> }) {
-  // On the public host there is no dashboard: CTAs point to the install guide instead.
+  // Optizen is self-hosted: "Get started" always means "install your own copy", never this
+  // instance's setup page. Only the Sign in link differs (hidden on the public host).
   const publicSite = (await params).variant === 'public'
-  const startHref = publicSite ? '/help/install' : '/setup'
+  const startHref = '/help/install'
 
   return (
     <main className="min-h-screen bg-(--bg)">
@@ -190,7 +191,7 @@ export default async function Home({ params }: { params: Promise<{ variant: stri
             href={startHref}
             className="inline-flex h-9 items-center gap-2 bg-(--accent) px-5 text-sm font-semibold text-(--bg) transition-opacity hover:opacity-90"
           >
-            {publicSite ? 'Self-host it free' : 'Get started free'}
+            Get started free
             <ArrowRight size={14} />
           </Link>
           <Link

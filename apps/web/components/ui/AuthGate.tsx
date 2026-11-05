@@ -19,11 +19,17 @@ export function AuthGate({ children }: { children: React.ReactNode }) {
     const isPublicRoute = isMarketingPath(pathname)
 
     if (!isSetup) {
-      if (!isAuthRoute && !isPublicRoute) router.replace('/setup')
+      // Fresh install: there is no password to sign in with yet.
+      if ((!isAuthRoute && !isPublicRoute) || pathname.startsWith('/login')) router.replace('/setup')
       return
     }
 
     if (!authenticated) {
+      // Already set up: the create-password form can only fail here, so send people to sign in.
+      if (pathname.startsWith('/setup')) {
+        router.replace('/login')
+        return
+      }
       if (!isAuthRoute && !isPublicRoute) {
         rememberReturnTo(`${pathname}${window.location.search}`)
         router.replace('/login')
