@@ -51,8 +51,10 @@ export interface MemoryReport {
   groups: MemoryProcessGroup[]
   containers: MemoryContainer[]
   dockerAvailable: boolean
-  /** Whether Launchpad can run privileged actions (root or passwordless sudo) */
+  /** Whether Optizen can run privileged actions (root, passwordless sudo, or Docker) */
   canElevate: boolean
+  /** How privileged actions run: as root, with passwordless sudo, or through a privileged Docker container */
+  elevation?: 'root' | 'sudo' | 'docker' | 'none'
   /** The kernel's OOM killer fired recently (from dmesg/journal, if readable) */
   recentOomKills: string[]
 }

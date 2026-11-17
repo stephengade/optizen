@@ -126,7 +126,8 @@ export default function ScanPage() {
     }
     setScanning(true)
     try {
-      const discovered = await Promise.all(
+      // One unreachable server should not hide the apps found on the others.
+      const settled = await Promise.allSettled(
         servers.map(async (server) => {
           const apps = await api.get<DiscoveredApp[]>(`/servers/${server.id}/discover`)
           return apps.map((app) => ({
@@ -137,9 +138,17 @@ export default function ScanPage() {
         })
       )
 
-      const flat = discovered.flat()
+      const flat = settled.flatMap((result) => (result.status === 'fulfilled' ? result.value : []))
       setResults(flat)
-      toast.success(flat.length > 0 ? `Found ${flat.length} running app${flat.length === 1 ? '' : 's'}` : 'No running Docker apps found')
+      settled.forEach((result, index) => {
+        if (result.status === 'rejected') {
+          const reason = result.reason instanceof ApiError ? result.reason.message : 'Scan failed'
+          toast.error(`${servers[index].name}: ${reason}`)
+        }
+      })
+      if (settled.some((result) => result.status === 'fulfilled')) {
+        toast.success(flat.length > 0 ? `Found ${flat.length} running app${flat.length === 1 ? '' : 's'}` : 'No running Docker apps found')
+      }
     } catch (error) {
       const message = error instanceof ApiError ? error.message : 'Failed to scan servers'
       toast.error(message)

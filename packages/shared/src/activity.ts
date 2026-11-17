@@ -27,6 +27,8 @@ export type ActivityType =
   | 'database_added'
   | 'database_removed'
   | 'database_write'
+  | 'database_backup_created'
+  | 'database_backup_deleted'
 
 export interface ActivityEvent {
   id: string

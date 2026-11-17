@@ -14,8 +14,19 @@ import { LoadingState } from '@/components/ui/LoadingState'
 import { ReauthModal } from '@/components/ui/ReauthModal'
 import { api, ApiError, isReauthRequiredError } from '@/lib/api'
 
+interface ProxyContainer {
+  name: string
+  image: string
+  type: 'caddy' | 'nginx'
+  publishesWeb: boolean
+  running: boolean
+}
+
 interface ProxyStatus {
   type: 'caddy' | 'nginx' | 'none'
+  mode?: 'host' | 'docker' | 'none'
+  container?: string
+  containers?: ProxyContainer[]
   running: boolean
   version: string
   configPath: string
@@ -51,14 +62,16 @@ export default function ServerProxyPage() {
   const [restoringId, setRestoringId] = useState<string | null>(null)
   const [confirmSaveOpen, setConfirmSaveOpen] = useState(false)
   const [reauthOpen, setReauthOpen] = useState(false)
+  const [container, setContainer] = useState<string | undefined>(undefined)
 
-  async function loadData(pathOverride?: string) {
+  async function loadData(pathOverride?: string, containerOverride: string | undefined = container) {
     setLoading(true)
     try {
-      const statusPromise = api.get<ProxyStatus>(`/proxy/${params.id}/status`)
-      const configPromise = api.get<ProxyConfig>(
-        `/proxy/${params.id}/config${pathOverride ? `?path=${encodeURIComponent(pathOverride)}` : ''}`
-      )
+      const search = new URLSearchParams()
+      if (containerOverride) search.set('container', containerOverride)
+      const statusPromise = api.get<ProxyStatus>(`/proxy/${params.id}/status${search.size ? `?${search}` : ''}`)
+      if (pathOverride) search.set('path', pathOverride)
+      const configPromise = api.get<ProxyConfig>(`/proxy/${params.id}/config${search.size ? `?${search}` : ''}`)
       const sitesPromise = api.get<NginxSites>(`/proxy/${params.id}/sites`)
       const projectsPromise = api.get<Project[]>(`/servers/${params.id}/projects`)
 
@@ -71,6 +84,7 @@ export default function ServerProxyPage() {
 
       if (statusResult.status === 'fulfilled') {
         setStatus(statusResult.value)
+        if (statusResult.value.container) setContainer(statusResult.value.container)
       } else {
         const message = statusResult.reason instanceof ApiError ? statusResult.reason.message : 'Failed to load proxy status'
         toast.error(message)
@@ -137,7 +151,7 @@ export default function ServerProxyPage() {
     try {
       const result = await api.put<{ success: boolean; path: string; message?: string; reloaded?: boolean; backupPath?: string }>(
         `/proxy/${params.id}/config`,
-        { content: config.content, path: config.path }
+        { content: config.content, path: config.path, container }
       )
       toast.success(
         result.message ??
@@ -160,7 +174,7 @@ export default function ServerProxyPage() {
   async function handleRestore(revisionId: string) {
     setRestoringId(revisionId)
     try {
-      const result = await api.post<{ backupPath?: string; path: string }>(`/proxy/${params.id}/restore`, { revisionId })
+      const result = await api.post<{ backupPath?: string; path: string }>(`/proxy/${params.id}/restore`, { revisionId, container })
       toast.success(result.backupPath ? `Proxy config restored. Backup created at ${result.backupPath}` : 'Proxy config restored')
       void loadData(result.path)
     } catch (error) {
@@ -179,8 +193,8 @@ export default function ServerProxyPage() {
   async function handleReload() {
     setReloading(true)
     try {
-      await api.post(`/proxy/${params.id}/reload`)
-      toast.success('Proxy reloaded')
+      await api.post(`/proxy/${params.id}/reload`, { container })
+      toast.success(status?.mode === 'docker' ? `Proxy reloaded in container ${status.container}` : 'Proxy reloaded')
       void loadData(config?.path)
     } catch (error) {
       if (isReauthRequiredError(error)) {
@@ -233,13 +247,39 @@ export default function ServerProxyPage() {
           <section className="border rounded-(--radius) border-(--border) bg-(--surface) p-6">
             <h2 className="text-lg font-semibold text-(--text)">Proxy status</h2>
             <p className="mt-2 text-sm text-(--text-muted)">
-              This page manages both host-level proxies and Docker-managed proxy config files. If Optizen cannot detect
-              a host Caddy or Nginx service, you can still load and edit a known config file path below.
+              Optizen finds Caddy or Nginx installed on the server or running in a Docker container. Saving validates
+              the config, and puts the old one back if the proxy rejects it.
             </p>
-            <div className="cell-grid mt-4 grid-cols-3 [--cell-bg:var(--surface-2)]">
+            {(status?.containers?.length ?? 0) > 1 ? (
+              <div className="mt-4 flex flex-wrap items-center gap-2">
+                <span className="text-[12.5px] font-medium text-(--text-muted)">Proxy container</span>
+                {status!.containers!.map((item) => (
+                  <Button
+                    key={item.name}
+                    variant={item.name === status?.container ? 'primary' : 'ghost'}
+                    size="sm"
+                    onClick={() => {
+                      setContainer(item.name)
+                      void loadData(undefined, item.name)
+                    }}
+                  >
+                    {item.name}
+                    {item.publishesWeb ? ' · ports 80/443' : ''}
+                    {item.running ? '' : ' · stopped'}
+                  </Button>
+                ))}
+              </div>
+            ) : null}
+            <div className="cell-grid mt-4 grid-cols-2 sm:grid-cols-4 [--cell-bg:var(--surface-2)]">
               <div className="p-4">
                 <div className="text-[12.5px] font-medium text-(--text-muted)">Type</div>
                 <div className="mt-2 text-sm text-(--text)">{status?.type ?? 'unknown'}</div>
+              </div>
+              <div className="p-4">
+                <div className="text-[12.5px] font-medium text-(--text-muted)">Runs in</div>
+                <div className="mt-2 truncate text-sm text-(--text)" title={status?.container}>
+                  {status?.mode === 'docker' ? `Docker: ${status.container}` : status?.mode === 'host' ? 'Host (systemd)' : 'n/a'}
+                </div>
               </div>
               <div className="p-4">
                 <div className="text-[12.5px] font-medium text-(--text-muted)">Running</div>
@@ -300,15 +340,17 @@ export default function ServerProxyPage() {
       <ConfirmActionModal
         open={confirmSaveOpen}
         title="Save proxy config"
-        description="Optizen will validate the candidate config first when a host proxy is detected, then snapshot the current version, create a remote backup, overwrite the file, and reload the proxy."
+        description="Optizen snapshots the current version, backs up the file, writes the new config, validates it, and reloads the proxy. If validation or the reload fails, the previous config is put back."
         confirmLabel="Save config"
         tone="primary"
         details={[
           `Target: ${config?.path || 'No path selected'}`,
           `Proxy type: ${config?.type || 'unknown'}`,
           status?.type === 'none'
-            ? 'Validation and reload are skipped for custom non-host-managed proxy files.'
-            : 'Validation happens before the live file is replaced.',
+            ? 'No proxy was found, so validation and reload are skipped.'
+            : status?.mode === 'docker'
+              ? `Validated and reloaded inside container ${status.container}; the old file is put back if validation fails.`
+              : 'Validation happens before the live file is replaced.',
         ]}
         loading={saving}
         onClose={() => setConfirmSaveOpen(false)}

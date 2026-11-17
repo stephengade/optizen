@@ -233,3 +233,16 @@ export function findClientCommand(engine: DatabaseEngine, sql: string): string |
   }
   return null
 }
+
+/** A dump of a database, stored on the database's server. */
+export interface DatabaseBackupFile {
+  name: string
+  sizeBytes: number
+  createdAt: string
+}
+
+export interface DatabaseBackupList {
+  /** Folder on the server that holds the dumps */
+  directory: string
+  backups: DatabaseBackupFile[]
+}

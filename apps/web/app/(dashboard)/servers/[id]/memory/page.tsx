@@ -30,7 +30,7 @@ function describeAction(action: PendingAction) {
         description:
           'Asks the kernel to discard cached file data. Nothing running is stopped and no data is lost, but disk reads are slower for a while as the cache refills.',
         confirmLabel: 'Drop cache',
-        details: ['Runs: sync && echo 3 > /proc/sys/vm/drop_caches', 'Needs root or passwordless sudo.'],
+        details: ['Runs: sync && echo 3 > /proc/sys/vm/drop_caches', 'Runs as root: directly, with passwordless sudo, or through a privileged Docker container.'],
       }
     case 'restart-container':
       return {
@@ -172,7 +172,7 @@ export default function ServerMemoryPage() {
             variant="ghost"
             size="sm"
             disabled={!report?.canElevate}
-            title={report?.canElevate ? undefined : 'Needs root or passwordless sudo for the SSH user'}
+            title={report?.canElevate ? undefined : 'Needs root, passwordless sudo, or Docker access for the SSH user'}
             onClick={() => setPending({ kind: 'drop-caches' })}
           >
             Drop page cache

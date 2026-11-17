@@ -1443,6 +1443,30 @@ export const serverRoutes = new Elysia({ prefix: '/servers' })
         .filter(Boolean)
         .map((line) => JSON.parse(line) as any)
 
+      // Check every candidate .env in one command: one SSH channel per container overflows the
+      // server's session limit (MaxSessions, 10 by default) on hosts with many containers.
+      const envCandidates = Array.from(
+        new Set(
+          containers
+            .map((container) => {
+              const labels = container.Config?.Labels ?? {}
+              const dir = labels['com.docker.compose.project.working_dir'] || container.Config?.WorkingDir
+              return dir ? `${String(dir).replace(/\/$/, '')}/.env` : ''
+            })
+            .filter(Boolean)
+        )
+      )
+      const existingEnvFiles = new Set<string>()
+      if (envCandidates.length > 0) {
+        const envCheck = await execCommand(
+          ssh,
+          envCandidates.map((path) => `[ -f ${shellEscape(path)} ] && printf '%s\n' ${shellEscape(path)}`).join('; ') + '; true'
+        )
+        for (const line of envCheck.stdout.split('\n')) {
+          if (line.trim()) existingEnvFiles.add(line.trim())
+        }
+      }
+
       const discovered = await Promise.all(
         containers.map(async (container) => {
           const image = container.Config?.Image ?? ''
@@ -1476,11 +1500,7 @@ export const serverRoutes = new Elysia({ prefix: '/servers' })
                 project.repoImage === repository)
           )
 
-          let envExists = false
-          if (envPath) {
-            const envCheck = await execCommand(ssh!, `[ -f '${envPath.replace(/'/g, `'\"'\"'`)}' ] && echo yes || echo no`)
-            envExists = envCheck.stdout.trim() === 'yes'
-          }
+          const envExists = envPath ? existingEnvFiles.has(envPath) : false
 
           return {
             containerId: container.Id,

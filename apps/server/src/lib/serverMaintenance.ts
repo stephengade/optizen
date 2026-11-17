@@ -1,4 +1,5 @@
 import type { Server } from '@launchpad/shared'
+import { asRoot, cleanStderr, describeRoute, NO_ROOT_HELP, NO_ROOT_MARKER, routeFrom } from './elevate'
 import { execCommand, getConnection } from './ssh'
 
 async function withSsh<T>(server: Server, handler: (ssh: Awaited<ReturnType<typeof getConnection>>) => Promise<T>) {
@@ -36,11 +37,23 @@ export async function runSafeServerPrune(server: Server) {
 
 export async function restartServerService(server: Server, service: 'docker' | 'containerd') {
   return withSsh(server, async (ssh) => {
-    const result = await execCommand(ssh, `sudo -n systemctl restart ${service}`)
+    // --no-block: when the route is Docker, restarting Docker ends the helper container itself.
+    const result = await execCommand(ssh, asRoot(`systemctl restart --no-block ${service}`))
+    const route = routeFrom(result.stderr)
     if (result.code !== 0) {
-      throw new Error(result.stderr || result.stdout || `Failed to restart ${service}`)
+      if (result.stderr.includes(NO_ROOT_MARKER)) throw new Error(`Restarting ${service}: ${NO_ROOT_HELP}`)
+      throw new Error(cleanStderr(result.stderr) || result.stdout || `Failed to restart ${service}`)
     }
-    return [result.stdout.trim(), result.stderr.trim()].filter(Boolean).join('\n')
+    // Wait for the service to come back (up to ~30s).
+    const wait = await execCommand(
+      ssh,
+      `for i in $(seq 1 30); do s=$(systemctl is-active ${service} 2>/dev/null); [ "$s" = active ] && { echo active; exit 0; }; sleep 1; done; echo "$s"`
+    )
+    const state = wait.stdout.trim().split('\n').pop()
+    if (state !== 'active') {
+      throw new Error(`${service} was restarted${describeRoute(route)} but is "${state || 'unknown'}" after 30 seconds. Check it on the server.`)
+    }
+    return `Restarted ${service}${describeRoute(route)}. It is active again.`
   })
 }
 

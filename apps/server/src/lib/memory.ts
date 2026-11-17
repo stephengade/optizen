@@ -11,6 +11,7 @@ import type {
   MemoryReport,
   Server,
 } from '@launchpad/shared'
+import { asRoot, cleanStderr, describeRoute, ELEVATION_PROBE, NO_ROOT_HELP, NO_ROOT_MARKER, routeFrom } from './elevate'
 import { execCommand, getConnection } from './ssh'
 
 type Ssh = Awaited<ReturnType<typeof getConnection>>
@@ -54,7 +55,7 @@ export const REPORT_SCRIPT = [
   'echo "@@meminfo"',
   'cat /proc/meminfo',
   'echo "@@elevate"',
-  'if [ "$(id -u)" = 0 ]; then echo root; elif sudo -n true 2>/dev/null; then echo sudo; else echo none; fi',
+  ELEVATION_PROBE,
   // This script and its helpers (ps, sort, awk…) run in their own session (sid = $$); hide them from the report.
   'ME=$$',
   'echo "@@ps"',
@@ -229,7 +230,10 @@ export function parseMemoryReport(output: string, serverId: string): MemoryRepor
     groups: parseGroups(sections.groups ?? []),
     containers: dockerAvailable ? parseContainers(dockerLines.slice(1), sections.dockerps ?? []) : [],
     dockerAvailable,
-    canElevate: ['root', 'sudo'].includes((sections.elevate ?? [])[0]?.trim() ?? ''),
+    canElevate: ['root', 'sudo', 'docker'].includes((sections.elevate ?? [])[0]?.trim() ?? ''),
+    elevation: (['root', 'sudo', 'docker'].includes((sections.elevate ?? [])[0]?.trim() ?? '')
+      ? (sections.elevate ?? [])[0]?.trim()
+      : 'none') as MemoryReport['elevation'],
     recentOomKills: (sections.oom ?? []).map((line) => line.trim()).filter(Boolean),
   }
 }
@@ -261,18 +265,15 @@ function combine(stdout: string, stderr: string) {
 export async function dropPageCache(server: Server): Promise<MemoryActionResult> {
   return withSsh(server, async (ssh) => {
     const before = await readAvailable(ssh)
-    const result = await execCommand(
-      ssh,
-      `if [ "$(id -u)" = 0 ]; then sync && echo 3 > /proc/sys/vm/drop_caches; else sudo -n sh -c 'sync && echo 3 > /proc/sys/vm/drop_caches'; fi`
-    )
+    const result = await execCommand(ssh, asRoot('sync && echo 3 > /proc/sys/vm/drop_caches'))
+    const route = routeFrom(result.stderr)
     if (result.code !== 0) {
-      const detail = combine(result.stdout, result.stderr)
-      throw new Error(
-        `Dropping caches needs root or passwordless sudo for the SSH user.${detail ? ` (${detail})` : ''}`
-      )
+      if (result.stderr.includes(NO_ROOT_MARKER)) throw new Error(`Dropping caches: ${NO_ROOT_HELP}`)
+      const detail = combine(result.stdout, cleanStderr(result.stderr))
+      throw new Error(`Failed to drop caches${describeRoute(route)}.${detail ? ` (${detail})` : ''}`)
     }
     const after = await readAvailable(ssh)
-    return { success: true, output: 'Page cache, dentries and inodes dropped.', availableBeforeBytes: before, availableAfterBytes: after }
+    return { success: true, output: `Page cache, dentries and inodes dropped${describeRoute(route)}.`, availableBeforeBytes: before, availableAfterBytes: after }
   })
 }
 
@@ -312,13 +313,15 @@ export async function killProcess(
     }
 
     const before = await readAvailable(ssh)
-    const result = await execCommand(
-      ssh,
-      `if kill -${signal} ${pid} 2>/dev/null || sudo -n kill -${signal} ${pid} 2>/dev/null; then for i in 1 2 3 4 5; do [ -e /proc/${pid} ] || break; sleep 1; done; if [ -e /proc/${pid} ]; then echo still-running; else echo exited; fi; else echo denied; fi`
-    )
+    const wait = `for i in 1 2 3 4 5; do [ -e /proc/${pid} ] || break; sleep 1; done; if [ -e /proc/${pid} ]; then echo still-running; else echo exited; fi`
+    let result = await execCommand(ssh, `if kill -${signal} ${pid} 2>/dev/null; then ${wait}; else echo denied; fi`)
+    if (result.stdout.trim().split('\n').pop() === 'denied') {
+      // Not our process: retry as root (sudo, or Docker when sudo needs a password).
+      result = await execCommand(ssh, asRoot(`if kill -${signal} ${pid} 2>/dev/null; then ${wait}; else echo denied; fi`))
+    }
     const state = result.stdout.trim().split('\n').pop()
     if (state === 'denied') {
-      throw new Error(`Permission denied: the SSH user cannot signal ${command} (pid ${pid}). It needs to own the process, be root, or have passwordless sudo.`)
+      throw new Error(`Permission denied: the SSH user cannot signal ${command} (pid ${pid}). Connect as root, allow passwordless sudo, or add the SSH user to the docker group.`)
     }
     if (state !== 'exited' && state !== 'still-running') {
       throw new Error(combine(result.stdout, result.stderr) || `Failed to signal process ${pid}`)

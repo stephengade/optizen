@@ -5,6 +5,13 @@ import { recordActivity } from '../lib/activity'
 import { encrypt, hasKey } from '../lib/crypto'
 import { requireDangerousActionAuth } from '../lib/dangerousAction'
 import { getDb, saveDb } from '../lib/db'
+import {
+  createDatabaseBackup,
+  deleteDatabaseBackup,
+  isDatabaseBackupName,
+  listDatabaseBackups,
+  readDatabaseBackup,
+} from '../lib/databaseBackups'
 import { browseTable, detectDatabases, DatabaseError, listTables, runQuery } from '../lib/databases'
 
 const NAME = /^[A-Za-z0-9][A-Za-z0-9_.-]{0,127}$/
@@ -278,6 +285,75 @@ export const databaseRoutes = new Elysia()
       }),
     }
   )
+  .get('/databases/:id/backups', async (context: any) => {
+    const loaded = await loadConnection(context)
+    if ('message' in loaded) return loaded
+    try {
+      return await listDatabaseBackups(loaded.server, loaded.connection)
+    } catch (error) {
+      return fail(context, error, 'Failed to list backups')
+    }
+  })
+  .post('/databases/:id/backups', async (context: any) => {
+    const loaded = await loadConnection(context)
+    if ('message' in loaded) return loaded
+    try {
+      const backup = await createDatabaseBackup(loaded.server, loaded.connection)
+      await recordActivity({
+        serverId: loaded.server.id,
+        type: 'database_backup_created',
+        status: 'success',
+        title: `Backed up ${loaded.connection.name}`,
+        detail: `${backup.name} (${backup.sizeBytes} bytes)`,
+      })
+      return backup
+    } catch (error) {
+      return fail(context, error, 'Backup failed')
+    }
+  })
+  .get('/databases/:id/backups/:name/download', async (context: any) => {
+    const loaded = await loadConnection(context)
+    if ('message' in loaded) return loaded
+    // A dump holds every row in clear text: same re-check as other sensitive downloads.
+    const denied = await requireDangerousActionAuth(context)
+    if (denied) return denied
+    const name = String(context.params.name)
+    if (!isDatabaseBackupName(name)) {
+      context.set.status = 404
+      return { message: 'Backup not found' }
+    }
+    try {
+      const content = await readDatabaseBackup(loaded.server, loaded.connection, name)
+      return new Response(content, {
+        headers: {
+          'Content-Type': 'application/gzip',
+          'Content-Disposition': `attachment; filename="${name}"`,
+          'Cache-Control': 'no-store',
+        },
+      })
+    } catch (error) {
+      return fail(context, error, 'Download failed')
+    }
+  })
+  .delete('/databases/:id/backups/:name', async (context: any) => {
+    const loaded = await loadConnection(context)
+    if ('message' in loaded) return loaded
+    const denied = await requireDangerousActionAuth(context)
+    if (denied) return denied
+    try {
+      await deleteDatabaseBackup(loaded.server, loaded.connection, String(context.params.name))
+      await recordActivity({
+        serverId: loaded.server.id,
+        type: 'database_backup_deleted',
+        status: 'warning',
+        title: `Deleted a backup of ${loaded.connection.name}`,
+        detail: String(context.params.name),
+      })
+      return { success: true }
+    } catch (error) {
+      return fail(context, error, 'Failed to delete backup')
+    }
+  })
   .get('/servers/:id/databases/detect', async (context: any) => {
     const denied = await guard(context)
     if (denied) return denied

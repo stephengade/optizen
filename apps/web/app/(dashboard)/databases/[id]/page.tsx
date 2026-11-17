@@ -13,6 +13,7 @@ import {
 } from '@launchpad/shared'
 import {
   AlertTriangle,
+  ArchiveRestore,
   ArrowLeft,
   ChevronLeft,
   ChevronRight,
@@ -29,6 +30,7 @@ import {
   Trash2,
 } from 'lucide-react'
 import { toast } from 'sonner'
+import { BackupsPanel } from '@/components/databases/BackupsPanel'
 import { DatabaseForm } from '@/components/databases/DatabaseForm'
 import { describeTarget, ENGINES, EngineMark } from '@/components/databases/engine'
 import { ResultGrid, toCsv } from '@/components/databases/ResultGrid'
@@ -89,7 +91,7 @@ export default function DatabaseConsolePage() {
   const [tablesError, setTablesError] = useState<string | null>(null)
   const [tablesLoading, setTablesLoading] = useState(false)
   const [filter, setFilter] = useState('')
-  const [view, setView] = useState<'data' | 'sql'>('data')
+  const [view, setView] = useState<'data' | 'sql' | 'backups'>('data')
   const [active, setActive] = useState<TableSummary | null>(null)
   const [editOpen, setEditOpen] = useState(false)
   const [removeOpen, setRemoveOpen] = useState(false)
@@ -309,6 +311,10 @@ export default function DatabaseConsolePage() {
               <Code2 size={14} />
               SQL
             </Tab>
+            <Tab active={view === 'backups'} onClick={() => setView('backups')}>
+              <ArchiveRestore size={14} />
+              Backups
+            </Tab>
             {/* Small screens: pick a table here since the sidebar is hidden */}
             {tables && tables.length > 0 && (
               <select
@@ -352,6 +358,9 @@ export default function DatabaseConsolePage() {
               defaultSql={active ? `select *\nfrom ${tableRef(connection.engine, active)}\nlimit 100;` : 'select 1;'}
               onSchemaChange={() => void loadTables()}
             />}
+          </div>
+          <div className={cn('min-h-0 flex-1 overflow-auto', view === 'backups' ? 'block' : 'hidden')}>
+            {view === 'backups' && <BackupsPanel connection={connection} />}
           </div>
         </section>
       </div>
