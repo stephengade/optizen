@@ -26,6 +26,20 @@ function buildLogCommand(project: {
     const { files, service } = composeTarget(project.deployCommands ?? [])
     const target = serviceOverride && COMPOSE_SERVICE.test(serviceOverride) ? serviceOverride : service
     const fileArgs = files.map((file) => `-f ${shellEscape(file)}`).join(' ')
+    if (target && project.workingDir) {
+      // Find the service's container by its Compose labels and read `docker logs`. This does not
+      // parse the compose file, so stacks whose file needs deploy-time variables still work.
+      const dir = project.workingDir.replace(/\/$/, '')
+      return {
+        command: [
+          `cid=$(docker ps -aq --filter ${shellEscape(`label=com.docker.compose.project.working_dir=${dir}`)} --filter ${shellEscape(`label=com.docker.compose.service=${target}`)} | head -n 1)`,
+          `[ -n "$cid" ] || { echo ${shellEscape(`No container found for service ${target} in ${dir}`)} >&2; exit 1; }`,
+          `docker logs --tail ${lines} --timestamps "$cid" 2>&1`,
+        ].join('; '),
+        cwd: undefined,
+        label: `Compose logs (${target})`,
+      }
+    }
     return {
       command: `docker compose ${fileArgs ? `${fileArgs} ` : ''}logs --tail ${lines} --no-color --timestamps${target ? ` ${shellEscape(target)}` : ''}`,
       cwd: project.workingDir,

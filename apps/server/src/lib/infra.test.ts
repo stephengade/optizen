@@ -84,5 +84,8 @@ describe('compose logs target', () => {
       composeTarget(['docker compose -f docker-compose.production.yml pull web', 'docker compose -f docker-compose.production.yml up -d web'])
     ).toEqual({ files: ['docker-compose.production.yml'], service: 'web' })
     expect(composeTarget(['docker compose pull', 'docker compose up -d'])).toEqual({ files: [], service: undefined })
+    expect(
+      composeTarget(['docker compose -p ploba -f docker-compose.production.yml --env-file .deploy_state up -d --no-deps worker'])
+    ).toEqual({ files: ['docker-compose.production.yml'], service: 'worker' })
   })
 })
