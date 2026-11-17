@@ -76,3 +76,13 @@ describe('elevation', () => {
     expect(cleanStderr("__OPTZ_ROUTE=docker\nUnable to find image 'alpine:3.20' locally\nreal error")).toBe('real error')
   })
 })
+
+describe('compose logs target', () => {
+  test('reads the compose file and service from deploy commands', async () => {
+    const { composeTarget } = await import('../routes/logs')
+    expect(
+      composeTarget(['docker compose -f docker-compose.production.yml pull web', 'docker compose -f docker-compose.production.yml up -d web'])
+    ).toEqual({ files: ['docker-compose.production.yml'], service: 'web' })
+    expect(composeTarget(['docker compose pull', 'docker compose up -d'])).toEqual({ files: [], service: undefined })
+  })
+})

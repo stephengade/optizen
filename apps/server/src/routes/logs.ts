@@ -14,15 +14,50 @@ function shellEscape(value: string) {
   return `'${value.replace(/'/g, `'\"'\"'`)}'`
 }
 
+const COMPOSE_SERVICE = /^[A-Za-z0-9][A-Za-z0-9_.-]{0,127}$/
+
+/**
+ * The compose file and service a project deploys, read from its deploy commands
+ * (e.g. `docker compose -f docker-compose.production.yml up -d web`).
+ */
+export function composeTarget(deployCommands: string[]): { files: string[]; service?: string } {
+  const files: string[] = []
+  let service: string | undefined
+  for (const command of deployCommands) {
+    const parts = command.trim().split(/\s+/)
+    if (parts[0] !== 'docker' || parts[1] !== 'compose') continue
+    for (let index = 2; index < parts.length; index += 1) {
+      const part = parts[index]
+      if ((part === '-f' || part === '--file') && parts[index + 1]) {
+        if (!files.includes(parts[index + 1])) files.push(parts[index + 1])
+        index += 1
+      } else if (part.startsWith('--file=')) {
+        const file = part.slice('--file='.length)
+        if (!files.includes(file)) files.push(file)
+      }
+    }
+    const up = parts.indexOf('up')
+    if (up !== -1) {
+      const last = parts[parts.length - 1]
+      if (parts.length - 1 > up && !last.startsWith('-') && COMPOSE_SERVICE.test(last)) service = last
+    }
+  }
+  return { files, service }
+}
+
 function buildLogCommand(project: {
   runtime?: string
   repoImage: string
   workingDir?: string
   name: string
-}, source: string, lines: number) {
+  deployCommands?: string[]
+}, source: string, lines: number, serviceOverride?: string) {
   if (source === 'compose') {
+    const { files, service } = composeTarget(project.deployCommands ?? [])
+    const target = serviceOverride && COMPOSE_SERVICE.test(serviceOverride) ? serviceOverride : service
+    const fileArgs = files.map((file) => `-f ${shellEscape(file)}`).join(' ')
     return {
-      command: `docker compose logs --tail ${lines} --no-color`,
+      command: `docker compose ${fileArgs ? `${fileArgs} ` : ''}logs --tail ${lines} --no-color --timestamps${target ? ` ${shellEscape(target)}` : ''}`,
       cwd: project.workingDir,
       label: 'Compose logs',
     }
@@ -89,7 +124,8 @@ export const logRoutes = new Elysia({ prefix: '/logs' })
 
     const source = typeof query.source === 'string' && query.source ? query.source : project.runtime === 'compose' ? 'compose' : 'container'
     const lines = typeof query.lines === 'string' ? Number(query.lines) : 120
-    const { command, cwd, label } = buildLogCommand(project, source, Number.isFinite(lines) ? Math.min(Math.max(lines, 20), 300) : 120)
+    const service = typeof query.service === 'string' && query.service ? query.service : undefined
+    const { command, cwd, label } = buildLogCommand(project, source, Number.isFinite(lines) ? Math.min(Math.max(lines, 20), 300) : 120, service)
 
     let ssh: Awaited<ReturnType<typeof getConnection>> | null = null
     try {

@@ -1478,6 +1478,17 @@ export const serverRoutes = new Elysia({ prefix: '/servers' })
             undefined
           const composeService = labels['com.docker.compose.service'] || undefined
           const composeProject = labels['com.docker.compose.project'] || undefined
+          // Deploy only this service, with the compose file(s) the stack was started from.
+          const composeFiles = String(labels['com.docker.compose.project.config_files'] || '')
+            .split(',')
+            .map((file: string) => file.trim())
+            .filter((file: string) => /^[A-Za-z0-9_./-]+$/.test(file))
+            .map((file: string) => (workingDir && file.startsWith(`${String(workingDir).replace(/\/$/, '')}/`) ? file.slice(String(workingDir).replace(/\/$/, '').length + 1) : file))
+          const fileArgs = composeFiles.length === 1 && /^(docker-)?compose\.ya?ml$/.test(composeFiles[0])
+            ? ''
+            : composeFiles.map((file: string) => `-f ${file} `).join('')
+          const serviceArg = composeService && /^[A-Za-z0-9][A-Za-z0-9_.-]*$/.test(composeService) ? ` ${composeService}` : ''
+          const composeCommands = [`docker compose ${fileArgs}pull${serviceArg}`, `docker compose ${fileArgs}up -d${serviceArg}`]
           const containerName = String(container.Name || '').replace(/^\//, '')
           const ports = Array.isArray(container.NetworkSettings?.Ports)
             ? []
@@ -1489,7 +1500,7 @@ export const serverRoutes = new Elysia({ prefix: '/servers' })
             repoImage: repository,
             workingDir,
             deployCommands: workingDir
-              ? ['docker compose pull', 'docker compose up -d']
+              ? composeCommands
               : ['docker pull ' + image],
           })
           const existingProject = db.data.projects.find(
@@ -1508,7 +1519,9 @@ export const serverRoutes = new Elysia({ prefix: '/servers' })
             image,
             imageRepository: repository,
             imageTag: tag,
-            status: container.State?.Status ?? 'unknown',
+            status: container.State?.Health?.Status
+              ? `${container.State?.Status ?? 'unknown'} (${container.State.Health.Status})`
+              : container.State?.Status ?? 'unknown',
             ports,
             workingDir,
             envPath: envExists ? envPath : undefined,
@@ -1527,13 +1540,13 @@ export const serverRoutes = new Elysia({ prefix: '/servers' })
                 repoImage: repository,
                 workingDir,
                 deployCommands: workingDir
-                  ? ['docker compose pull', 'docker compose up -d']
+                  ? composeCommands
                   : ['docker pull ' + image],
                 proxyType,
               }),
               repoImage: repository,
               deployCommands: workingDir
-                ? ['docker compose pull', 'docker compose up -d']
+                ? composeCommands
                 : ['docker pull ' + image],
               envPath: envExists ? envPath : undefined,
               workingDir,
