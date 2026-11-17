@@ -2,6 +2,7 @@ import { describe, expect, test } from 'bun:test'
 import type { DatabaseConnection } from '@launchpad/shared'
 import { backupNameFor, buildDumpScript, dumpInvocation, isDatabaseBackupName, parseBackupListing } from './databaseBackups'
 import { asRoot, cleanStderr, routeFrom } from './elevate'
+import { composeTarget } from './composeTarget'
 import { toHostPath, toInnerPath } from './proxyTarget'
 
 const pg: DatabaseConnection = {
@@ -78,8 +79,7 @@ describe('elevation', () => {
 })
 
 describe('compose logs target', () => {
-  test('reads the compose file and service from deploy commands', async () => {
-    const { composeTarget } = await import('../routes/logs')
+  test('reads the compose file and service from deploy commands', () => {
     expect(
       composeTarget(['docker compose -f docker-compose.production.yml pull web', 'docker compose -f docker-compose.production.yml up -d web'])
     ).toEqual({ files: ['docker-compose.production.yml'], service: 'web' })
